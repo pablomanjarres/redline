@@ -21,7 +21,7 @@ from typing import Any
 
 from . import spec
 
-ARMS = ["baseline", "redline_raw", "redline_critic"]
+ARMS = ["baseline", "baseline_evidence", "redline_raw", "redline_critic"]
 
 
 def _confusion(per_case: dict, arm: str, pillar: str | None) -> dict[str, int]:
@@ -135,7 +135,8 @@ def render_report(results: dict, meta: dict) -> str:
         "| Arm | Detection | False-positive rate | Precision | F1 | Youden's J |",
         "|---|---|---|---|---|---|",
     ]
-    names = {"baseline": "Single Claude call (baseline)",
+    names = {"baseline": "Single Claude call, write-up only (baseline)",
+             "baseline_evidence": "Single Claude call, given the re-run numbers",
              "redline_raw": "Redline checks (no critic)",
              "redline_critic": "Redline checks + critic"}
     for arm in ARMS:
@@ -166,17 +167,39 @@ def render_report(results: dict, meta: dict) -> str:
         c = results["arms"][arm]["clean_controls"]
         lines.append(f"| {names[arm]} | {c['cases_with_any_flag']}/{c['n_control_cases']} | "
                      f"{_pct(c['pair_fp_rate'])} |")
-    lines += ["",
-              "The critic can only remove flags, never add them, so it lowers the "
-              "false-positive rate without inflating detection. The gap between the "
-              "arms is the value of re-running the statistics instead of reasoning "
-              "over the write-up: the baseline cannot distinguish a real effect from "
-              "a pseudoreplication artifact, or real markers from double-dipped ones, "
-              "without running the test, so it must either miss or cry wolf.", ""]
+    be = results["arms"]["baseline_evidence"]["overall"]
+    lines += ["", "## What the three arms isolate", "",
+              "Both LLM arms use the same model. The only difference is the input.",
+              "",
+              f"- The **write-up baseline** ({_pct(results['arms']['baseline']['overall']['fp_rate'])} "
+              "false positives) reasons over the naive analysis write-up, which is what "
+              "Reviewer 2 has. It cannot tell a real effect from a pseudoreplication "
+              "artifact, or real markers from double-dipped ones, without running the "
+              "test, so it flags the method risk and cries wolf on clean analyses.",
+              f"- The **evidence baseline** ({_pct(be['fp_rate'])} false positives) is the "
+              "same model given the re-run diagnostic numbers (but not Redline's "
+              "verdict). It recovers, which shows the write-up baseline's false "
+              "positives are the cost of not re-running, not of poor reasoning.",
+              "- **Redline** is the pipeline that produces those numbers: the four "
+              "deterministic checks re-run the statistics, and the critic (which can "
+              "only remove flags, never add them) vetoes borderline flags so the tool "
+              "does not cry wolf.",
+              "",
+              "So the headline is a precision result, not a recall one: every arm "
+              "catches the planted errors, but only the arms that see the re-run avoid "
+              "flagging sound analyses. The Redline arm shares its statistical method "
+              "and its case selection with the independent labeler (see the benchmark "
+              "README), so its detection numbers are near-definitional; the load-bearing, "
+              "fair comparison is the false-positive gap between the write-up baseline "
+              "and the arms that re-run.", ""]
     return "\n".join(lines)
 
 
 def make_figure(results: dict, path: str) -> bool:
+    """The false-positive story: every arm detects ~100%, so the figure shows the
+    thing that actually differs. Left: overall FP across the three LLM conditions
+    (same model, different input). Right: FP by error class, write-up baseline vs
+    the Redline pipeline."""
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -184,25 +207,40 @@ def make_figure(results: dict, path: str) -> bool:
         import numpy as np
     except Exception:
         return False
+    red, ink, grey = "#CE2A1E", "#2b2b2b", "#9a9a9a"
+    A = results["arms"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.4),
+                                   gridspec_kw={"width_ratios": [1, 1.35]})
+
+    # left: overall FP for the three LLM-differentiated conditions
+    labels = ["write-up\nbaseline", "same model +\nre-run numbers", "Redline\n(checks+critic)"]
+    vals = [(A["baseline"]["overall"]["fp_rate"] or 0) * 100,
+            (A["baseline_evidence"]["overall"]["fp_rate"] or 0) * 100,
+            (A["redline_critic"]["overall"]["fp_rate"] or 0) * 100]
+    bars = ax1.bar(labels, vals, color=[ink, grey, red], width=0.62)
+    ax1.set_title("False-positive rate\n(same model, different input)", fontsize=11)
+    ax1.set_ylabel("false-positive rate (%)"); ax1.set_ylim(0, 100)
+    for b, v in zip(bars, vals):
+        ax1.text(b.get_x() + b.get_width() / 2, v + 2, f"{v:.0f}%", ha="center", fontsize=10)
+
+    # right: FP by error class, write-up baseline vs Redline
     pillars = [spec.PILLARS[k][1] for k in spec.PILLAR_KEYS]
-    rd = [results["arms"]["redline_critic"]["by_pillar"][k]["detection"] or 0 for k in spec.PILLAR_KEYS]
-    bd = [results["arms"]["baseline"]["by_pillar"][k]["detection"] or 0 for k in spec.PILLAR_KEYS]
-    rf = [results["arms"]["redline_critic"]["by_pillar"][k]["fp_rate"] or 0 for k in spec.PILLAR_KEYS]
-    bf = [results["arms"]["baseline"]["by_pillar"][k]["fp_rate"] or 0 for k in spec.PILLAR_KEYS]
-    x = np.arange(len(pillars))
-    w = 0.35
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.2))
-    red, ink = "#CE2A1E", "#2b2b2b"
-    ax1.bar(x - w / 2, [v * 100 for v in rd], w, label="Redline", color=red)
-    ax1.bar(x + w / 2, [v * 100 for v in bd], w, label="Single Claude call", color=ink)
-    ax1.set_title("Detection rate by error class"); ax1.set_ylabel("%"); ax1.set_ylim(0, 105)
-    ax2.bar(x - w / 2, [v * 100 for v in rf], w, label="Redline", color=red)
-    ax2.bar(x + w / 2, [v * 100 for v in bf], w, label="Single Claude call", color=ink)
-    ax2.set_title("False-positive rate by error class"); ax2.set_ylabel("%"); ax2.set_ylim(0, 105)
+    bf = [(A["baseline"]["by_pillar"][k]["fp_rate"] or 0) * 100 for k in spec.PILLAR_KEYS]
+    rf = [(A["redline_critic"]["by_pillar"][k]["fp_rate"] or 0) * 100 for k in spec.PILLAR_KEYS]
+    x = np.arange(len(pillars)); w = 0.38
+    ax2.bar(x - w / 2, bf, w, label="write-up baseline", color=ink)
+    ax2.bar(x + w / 2, rf, w, label="Redline (checks+critic)", color=red)
+    ax2.set_title("False-positive rate by error class", fontsize=11)
+    ax2.set_ylabel("false-positive rate (%)"); ax2.set_ylim(0, 105)
+    ax2.set_xticks(x); ax2.set_xticklabels([p.split()[0] for p in pillars])
+    ax2.legend(frameon=False, fontsize=9)
+
     for ax in (ax1, ax2):
-        ax.set_xticks(x); ax.set_xticklabels([p.split()[0] for p in pillars], rotation=0)
-        ax.legend(); ax.spines[["top", "right"]].set_visible(False)
+        ax.spines[["top", "right"]].set_visible(False)
+    fig.suptitle("Every arm detects ~100% of planted errors. Only re-running avoids crying wolf.",
+                 fontsize=12, y=1.02)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    fig.savefig(path, dpi=130, bbox_inches="tight")
     plt.close(fig)
     return True

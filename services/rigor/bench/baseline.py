@@ -59,20 +59,51 @@ Return ONLY a JSON object, no prose around it, of exactly this shape:
 """
 
 
-def run_case(case_id: str, artifact_text: str, model: str | None = None) -> dict[str, Any]:
-    """One baseline call. Returns detected booleans + the parsed judgment."""
-    raw = llm.call(SYSTEM_PROMPT, artifact_text, model=model, tag=f"baseline:{case_id}")
+# The evidence baseline: the SAME model, but handed the re-run diagnostic numbers
+# instead of the write-up. The gap between this and the write-up baseline isolates
+# the value of re-running the statistics from the value of reasoning: if this arm
+# scores well where the write-up baseline cries wolf, the false positives were the
+# cost of not re-running, which is exactly what Redline provides.
+EVIDENCE_SYSTEM_PROMPT = SYSTEM_PROMPT.replace(
+    "A scientist gives you their analysis write-up before it becomes a paper.",
+    "You are given the re-run diagnostic statistics for an analysis (the numbers "
+    "that only re-running the load-bearing tests produces).",
+).replace(
+    "Reason carefully about what the write-up does and does not establish. Some errors\n"
+    "can be judged from the write-up; some cannot be settled from the write-up alone,\n"
+    "in which case weigh how likely the error is given the design and the method\n"
+    "described.",
+    "Judge each error class directly from the diagnostic numbers. A cell-level p-value\n"
+    "that survives pseudobulk aggregation is a real effect (no pseudoreplication);\n"
+    "markers whose held-out AUC stays high are real (no double dipping); a state present\n"
+    "across most resolutions is stable (no fragility); a low Cramer's V is separable\n"
+    "(no confounding).",
+)
+
+
+def _parse(raw: str) -> dict[str, Any]:
     try:
         parsed = llm.extract_json(raw)
     except Exception as exc:
-        # a parse failure is a real baseline failure: it detected nothing usable
         return {"detected": {k: False for k in spec.PILLAR_KEYS},
                 "judgment": {}, "parse_error": str(exc), "raw": raw}
-    detected = {}
-    judgment = {}
+    detected, judgment = {}, {}
     for k in spec.PILLAR_KEYS:
         entry = parsed.get(k) or {}
         present = bool(entry.get("present", False)) if isinstance(entry, dict) else bool(entry)
         detected[k] = present
         judgment[k] = entry if isinstance(entry, dict) else {"present": present}
     return {"detected": detected, "judgment": judgment}
+
+
+def run_case(case_id: str, artifact_text: str, model: str | None = None) -> dict[str, Any]:
+    """The write-up baseline: one call over the analysis write-up (Reviewer 2)."""
+    raw = llm.call(SYSTEM_PROMPT, artifact_text, model=model, tag=f"baseline:{case_id}")
+    return _parse(raw)
+
+
+def run_case_evidence(case_id: str, evidence_text: str, model: str | None = None) -> dict[str, Any]:
+    """The evidence baseline: one call over the re-run diagnostic numbers."""
+    raw = llm.call(EVIDENCE_SYSTEM_PROMPT, evidence_text, model=model,
+                   tag=f"baseline_evidence:{case_id}")
+    return _parse(raw)

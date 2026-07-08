@@ -20,10 +20,25 @@ from redline.audit import run_check, default_config
 from . import spec
 
 
+def engine_backend() -> dict[str, str]:
+    """Which code path the engine will actually take, recorded in the results so
+    a cross-environment replay can detect drift (leiden vs KMeans, PyDESeq2 vs
+    Welch change the evidence floats)."""
+    import importlib.util as u
+    clustering = "leiden" if (u.find_spec("leidenalg") or u.find_spec("igraph")) else "kmeans"
+    differential = "pydeseq2" if u.find_spec("pydeseq2") else "welch"
+    return {"clustering": clustering, "differential": differential}
+
+
 def _configs(fields: list[dict], claim: dict) -> dict[int, dict]:
     """Per-check config, seeded from the role-driven defaults, then pointed at
-    the claim (the gene / state / technical column under audit)."""
-    seed = int(claim.get("label_seed", 0))
+    the claim (the gene / state / technical column under audit).
+
+    The engine's stochastic seed is deliberately OFFSET from the labeler's
+    ``label_seed`` so the engine's Poisson-thinning partition and clustering are
+    not the identical draws the labeler used. That keeps sampling noise as a real
+    source of possible disagreement between the grader and the tool under test."""
+    seed = int(claim.get("label_seed", 0)) + 104729   # distinct prime offset from the labeler
     c1 = dict(default_config(1, fields))
     c1.update({"unit": claim["unit_col"], "grouping": claim["condition_col"],
                "gene": claim["focus_gene"], "alpha": spec.ALPHA})

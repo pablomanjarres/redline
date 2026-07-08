@@ -24,6 +24,46 @@ def _fmt_p(p: float) -> str:
     return f"{p:.3f}"
 
 
+def render_evidence(per_pillar: dict) -> str:
+    """Render the engine's RE-RUN diagnostic numbers for the evidence-baseline
+    arm: the same model as the write-up baseline, but handed the statistics that
+    only re-running the analysis produces. The engine's own verdict, headline,
+    and state are deliberately stripped so the model judges from the numbers, not
+    from Redline's answer. The gap between this arm and the write-up baseline is
+    the value of re-running, isolated from reasoning quality."""
+    e1 = per_pillar["pseudoreplication"]["evidence"]
+    e2 = per_pillar["double_dipping"]["evidence"]
+    e3 = per_pillar["fragility"]["evidence"]
+    e4 = per_pillar["confounding"]["evidence"]
+
+    def g(d, k):
+        return d.get(k, "n/a")
+
+    return f"""\
+Re-run diagnostic statistics for a single-cell analysis (for rigor review).
+These are the results of re-running the load-bearing tests on the data.
+
+PSEUDOREPLICATION diagnostic
+  cell-level differential-expression p-value: {_fmt_p(g(e1, 'naive_p') if e1.get('naive_p') is not None else None)}
+  p-value after aggregating to the {g(e1, 'n_units')} biological replicates (pseudobulk): {_fmt_p(g(e1, 'honest_p') if e1.get('honest_p') is not None else None)}
+  cells: {g(e1, 'n_cells')}, replicate units: {g(e1, 'n_units')}
+
+DOUBLE-DIPPING diagnostic (count-split held-out marker test)
+  discovery-split AUC of the claimed markers: {g(e2, 'discovery_auc')}
+  held-out-split AUC of the same markers: {g(e2, 'heldout_auc')}
+  claimed markers: {', '.join(g(e2, 'markers')) if isinstance(e2.get('markers'), list) else g(e2, 'markers')}
+
+CLUSTERING-FRAGILITY diagnostic (resolution sweep)
+  fraction of resolution settings where the state persists (stability): {g(e3, 'stability')}
+  resolution range where present: {g(e3, 'present_range')} of {g(e3, 'n_settings')} settings
+
+CONFOUNDING diagnostic
+  Cramer's V between the comparison and the technical variable: {g(e4, 'cramers_v')}
+
+From these diagnostics, judge which of the four error classes is present.
+"""
+
+
 def render(case: dict, stats: dict) -> str:
     """``case`` is a manifest entry; ``stats`` is that case's labeler stats."""
     claim = case["claim"]

@@ -1,10 +1,13 @@
 """Shared constants, paths, and thresholds for the detection benchmark.
 
 Everything tunable lives here so a re-run is one file to read. The labeler
-thresholds below are the INDEPENDENT ground-truth definitions; they are chosen
-from the same statistics literature the engine cites, but the code that applies
-them (``bench.labeler``) is a separate implementation, so agreement between the
-labeler and the engine is a cross-check, not a tautology.
+thresholds below define when each error is "present" for ground-truth purposes.
+They mirror the engine's own decision boundaries (the labeler is a separate
+implementation but not a method-independent one), so agreement between the
+labeler and the engine is a consistency check, not a tautology-free validation.
+See ``bench.labeler`` for the honest accounting of what is definitional by
+construction (pillars 1 and 4) versus what retains some independence (pillars 2
+and 3).
 """
 
 from __future__ import annotations
@@ -36,7 +39,7 @@ AWS_REGION = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "
 ANTHROPIC_BEDROCK_VERSION = "bedrock-2023-05-31"
 LLM_TEMPERATURE = 0.0          # as deterministic as the API allows; still recorded
 LLM_MAX_TOKENS = 1600
-LLM_CONCURRENCY = int(os.environ.get("REDLINE_BENCH_CONCURRENCY", "6"))
+LLM_CONCURRENCY = int(os.environ.get("REDLINE_BENCH_CONCURRENCY", "3"))
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 BENCH_DIR = os.path.dirname(os.path.abspath(__file__))

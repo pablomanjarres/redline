@@ -44,9 +44,12 @@ def stats() -> dict:
         return dict(_STATS)
 
 
-def _key(model: str, system: str, user: str, max_tokens: int, temperature: float) -> str:
+def _key(model: str, system: str, user: str, max_tokens: int, temperature: float,
+         tag: str) -> str:
+    # tag is part of the key so two distinct tasks can never collide on one cache
+    # entry even if their prompts happen to be identical.
     h = hashlib.sha256()
-    for part in (model, system, user, str(max_tokens), f"{temperature:.3f}"):
+    for part in (model, system, user, str(max_tokens), f"{temperature:.3f}", tag):
         h.update(part.encode("utf-8"))
         h.update(b"\x00")
     return h.hexdigest()[:20]
@@ -83,8 +86,9 @@ def _invoke(model: str, system: str, user: str, max_tokens: int, temperature: fl
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
+    import random
     last_err: Optional[Exception] = None
-    for attempt in range(5):
+    for attempt in range(9):
         try:
             resp = _client().invoke_model(
                 modelId=model, contentType="application/json",
@@ -100,8 +104,10 @@ def _invoke(model: str, system: str, user: str, max_tokens: int, temperature: fl
         except Exception as exc:  # throttling / transient
             last_err = exc
             name = type(exc).__name__
-            if "Throttl" in name or "TooManyRequests" in str(exc) or "ServiceUnavailable" in name:
-                time.sleep(2 ** attempt)
+            transient = ("Throttl" in name or "TooManyRequests" in str(exc)
+                         or "ServiceUnavailable" in name or "Timeout" in name)
+            if transient and attempt < 8:
+                time.sleep(min(2 ** attempt, 40) + random.uniform(0, 1.5))
                 continue
             raise
     raise RuntimeError(f"Bedrock invoke failed after retries: {last_err}")
@@ -115,7 +121,7 @@ def call(system: str, user: str, *, model: Optional[str] = None,
     max_tokens = max_tokens or spec.LLM_MAX_TOKENS
     temperature = spec.LLM_TEMPERATURE if temperature is None else temperature
     _load()
-    k = _key(model, system, user, max_tokens, temperature)
+    k = _key(model, system, user, max_tokens, temperature, tag)
     with _LOCK:
         hit = _CACHE.get(k)
         if hit is not None:
