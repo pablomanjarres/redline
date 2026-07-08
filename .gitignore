@@ -23,6 +23,8 @@ venv/
 *.h5
 data/cache/
 services/rigor/data/cache/
+# ...except the small synthetic benchmark fixtures, which ARE the deliverable
+!services/rigor/bench/cases/*.h5ad
 
 # env / secrets
 .env
