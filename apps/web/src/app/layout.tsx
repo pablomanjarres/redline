@@ -1,20 +1,14 @@
 import '@redline/ui/tokens.css';
 
-// Self-hosted fonts (no external requests). Weights match the design source:
-// IBM Plex Sans 400/500/600/700 (+italic), IBM Plex Mono 400/500/600,
-// Source Serif 4 400/500/600 (+italic for prose emphasis).
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-sans/600.css';
-import '@fontsource/ibm-plex-sans/700.css';
-import '@fontsource/ibm-plex-sans/400-italic.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
-import '@fontsource/ibm-plex-mono/600.css';
-import '@fontsource/source-serif-4/400.css';
-import '@fontsource/source-serif-4/500.css';
-import '@fontsource/source-serif-4/600.css';
-import '@fontsource/source-serif-4/400-italic.css';
+// Self-hosted fonts (no external requests). "clinical precision" uses Inter for
+// UI and JetBrains Mono for data/labels. No serif.
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
 
 import './globals.css';
 
@@ -28,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#EAE6DD',
+  themeColor: '#F4F6F9',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

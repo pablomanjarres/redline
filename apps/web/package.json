@@ -12,9 +12,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@fontsource/ibm-plex-mono": "^5.1.0",
-    "@fontsource/ibm-plex-sans": "^5.1.0",
-    "@fontsource/source-serif-4": "^5.1.0",
+    "@fontsource/inter": "^5.1.0",
+    "@fontsource/jetbrains-mono": "^5.1.0",
     "@redline/contracts": "workspace:*",
     "@redline/engine": "workspace:*",
     "@redline/reasoning": "workspace:*",
