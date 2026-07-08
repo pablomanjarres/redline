@@ -1,0 +1,36 @@
+{
+  "name": "@redline/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --webpack --port 3002",
+    "build": "next build --webpack",
+    "start": "next start --port 3002",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.1.0",
+    "@fontsource/ibm-plex-sans": "^5.1.0",
+    "@fontsource/source-serif-4": "^5.1.0",
+    "@redline/contracts": "workspace:*",
+    "@redline/engine": "workspace:*",
+    "@redline/reasoning": "workspace:*",
+    "@redline/ui": "workspace:*",
+    "next": "16.2.6",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10",
+    "eslint-config-next": "^16.2.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

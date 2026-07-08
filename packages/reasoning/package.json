@@ -1,0 +1,31 @@
+{
+  "name": "@redline/reasoning",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "description": "The reasoning layer — Claude via AWS Bedrock names the failure mode, cites the fix, and rewrites the conclusion. Curated fallback when Bedrock is unconfigured.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "echo \"lint placeholder\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@redline/contracts": "workspace:*",
+    "@aws-sdk/client-bedrock-runtime": "^3.1050.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

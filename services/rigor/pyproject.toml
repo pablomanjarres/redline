@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "redline-rigor"
+version = "0.1.0"
+description = "Redline rigor engine — the four statistical checks on single-cell RNA-seq, importable as `redline`, runnable as an MCP server or a Cloud Run job."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "anndata>=0.10",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pandas>=2.1",
+  "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+# The heavy statistical toolchain. Needed for the real compute target; the
+# fixture target and the MCP contract tests run without it.
+stats = [
+  "scanpy>=1.10",
+  "decoupler>=1.8",
+  "pydeseq2>=0.4",
+]
+mcp = ["mcp>=1.2"]
+cloud = ["boto3>=1.34", "s3fs>=2024.2"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+redline-mcp = "redline.mcp_server:main"
+redline-job = "redline.job_runner:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["redline"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
