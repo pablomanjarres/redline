@@ -1,56 +1,48 @@
 'use client';
 
-import { Kicker } from '@redline/ui';
+import type { CheckId } from '@redline/contracts';
 import { useSession } from '@/state/session';
-import { CheckCard } from '@/components/workbench/CheckCard';
+import { CheckTile } from '@/components/workbench/CheckTile';
+
+const IDS: CheckId[] = [1, 2, 3, 4];
 
 /**
- * Workbench route: four independent instruments in a 2-column grid. "Re-run all
- * four" fires every check; each card opens its own panel.
+ * Workbench: the audit board. Four checks as dark tiles, each a live instrument
+ * you open and operate. "Re-run all four" fires every check at once.
  */
 export default function WorkbenchPage() {
   const { runAll } = useSession();
 
   return (
-    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '40px 48px 64px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
-        <div>
-          <Kicker>Workbench</Kicker>
-          <h1
-            style={{
-              margin: '12px 0 0',
-              font: '500 27px/1.15 var(--serif)',
-              letterSpacing: '-.01em',
-              color: 'var(--ink)',
-            }}
-          >
+    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '36px 40px 72px' }}>
+      {/* header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ font: '600 11px/1 var(--mono)', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+            Workbench
+          </div>
+          <h1 style={{ margin: '14px 0 0', font: '800 30px/1.05 var(--display)', letterSpacing: '-.02em', color: 'var(--ink)' }}>
             Four checks. Operate each one.
           </h1>
-          <p
-            style={{
-              margin: '9px 0 0',
-              maxWidth: 620,
-              font: '400 14.5px/1.5 var(--sans)',
-              color: 'var(--ink2)',
-            }}
-          >
-            Each is an independent instrument with its own knobs. Open one to run it and mark up your
-            chart. The dot shows what it found:{' '}
-            <span style={{ color: 'var(--red)', fontWeight: 600 }}>red</span> flagged,{' '}
-            <span style={{ color: 'var(--pass)', fontWeight: 600 }}>green</span> clean,{' '}
-            <span style={{ color: 'var(--amber)', fontWeight: 600 }}>amber</span> needs input.
+          <p style={{ margin: '12px 0 0', maxWidth: 640, font: '400 13.5px/1.6 var(--sans)', color: 'var(--ink-3)' }}>
+            Each check is an independent instrument with its own knobs.{' '}
+            <span style={{ color: 'var(--red)', fontWeight: 600 }}>Red</span> flags a problem,{' '}
+            <span style={{ color: 'var(--green)', fontWeight: 600 }}>green</span> verifies it holds,{' '}
+            <span style={{ color: 'var(--amber)', fontWeight: 600 }}>amber</span> needs your input.
           </p>
         </div>
         <button
           onClick={() => runAll()}
           style={{
             flex: 'none',
-            font: '600 13px/1 var(--sans)',
+            font: '700 11px/1 var(--sans)',
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
             color: 'var(--ink)',
-            background: 'var(--panel)',
-            border: '1px solid var(--line2)',
+            background: 'var(--panel-2)',
+            border: '1px solid var(--edge-2)',
             padding: '12px 18px',
-            borderRadius: 9,
+            borderRadius: 10,
             cursor: 'pointer',
           }}
         >
@@ -58,9 +50,10 @@ export default function WorkbenchPage() {
         </button>
       </div>
 
-      <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {([1, 2, 3, 4] as const).map((id) => (
-          <CheckCard key={id} checkId={id} />
+      {/* audit board */}
+      <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
+        {IDS.map((id) => (
+          <CheckTile key={id} checkId={id} />
         ))}
       </div>
     </div>
