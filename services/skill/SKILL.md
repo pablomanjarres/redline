@@ -36,7 +36,7 @@ The tools:
 | Foundation: resolve obs roles | `redline_resolve_fields` | `redline_audit.py --check fields` |
 | Pillar 1: pseudoreplication | `redline_check_pseudoreplication` | `redline_audit.py --check 1` |
 | Pillar 2: double dipping | `redline_check_double_dipping` | `redline_audit.py --check 2` |
-| Pillar 3: clustering fragility | `redline_check_clustering_fragility` | `redline_audit.py --check 3` |
+| Pillar 3: clustering fragility | `redline_check_fragility` | `redline_audit.py --check 3` |
 | Pillar 4: confounding | `redline_check_confounding` | `redline_audit.py --check 4` |
 
 ---
