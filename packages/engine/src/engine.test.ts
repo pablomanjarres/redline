@@ -10,8 +10,6 @@ import type {
   StatReadout,
 } from '@redline/contracts';
 import {
-  fixtureTarget,
-  getComputeTarget,
   curatedNarrative,
   assembleReport,
   reasoningLines,
@@ -19,8 +17,10 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_SCENARIO,
   defaultConfigFor,
-  RemoteTarget,
 } from './index.js';
+// The compute seam (fixture + remote targets) is server-only — it touches
+// child_process/fetch — so it lives in ./server, not the client-safe ./index.
+import { fixtureTarget, getComputeTarget, RemoteTarget } from './server.js';
 
 type AnyConfig = Check1Config | Check2Config | Check3Config | Check4Config;
 
