@@ -113,6 +113,15 @@ export default function EnvironmentPage() {
           matrix-dependent checks (the naive cell-level p, double-dipping AUC, clustering fragility) need the
           15–148 GiB expression matrices; run them through the engine with <Mono>REDLINE_COMPUTE_TARGET=local</Mono>.
         </p>
+        <p style={{ margin: '12px 0 0', maxWidth: 660, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-3)' }}>
+          The two stochastic checks report a confidence interval, not one number: the count-split (Check 2) and the
+          resolution sweep (Check 3) rerun hundreds of times and report the median with a 95% interval and the
+          repetition count, so a single lucky run cannot carry a finding. The interval is real and reproducible from a
+          seeded reference foil with no expression matrix at all (<Mono>services/rigor/data/build_ci_reference.py</Mono>,
+          proven in <Mono>tests/test_ci_intervals.py</Mono>). The interval values shown on the demo fixtures are
+          illustrative reference figures, the same status as the point estimates they surround, pending the
+          full-matrix run.
+        </p>
       </section>
 
       {/* three places it runs */}

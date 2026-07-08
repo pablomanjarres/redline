@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
-import { ConfoundChart, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { ConfoundChart, DistributionStrip, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { ciLabel } from '@/lib/format';
 import { InstrumentRail } from '@/components/check/InstrumentRail';
 import { ReasoningConsole } from '@/components/check/ReasoningConsole';
 import { VerdictReadout } from '@/components/check/VerdictReadout';
@@ -136,12 +137,23 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
           {/* stat strip */}
           {showFigure && result!.stats.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-              {result!.stats.map((s, i) => (
-                <div key={i} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
-                  <div style={{ font: '700 19px/1 var(--mono)', color: s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)' }}>{s.value}</div>
-                  <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
-                </div>
-              ))}
+              {result!.stats.map((s, i) => {
+                const accent = s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)';
+                return (
+                  <div key={i} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
+                    <div style={{ font: '700 19px/1 var(--mono)', color: accent }}>{s.value}</div>
+                    <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
+                    {s.interval && (
+                      <div style={{ marginTop: 10 }}>
+                        <DistributionStrip iv={s.interval} accent={s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink-3)'} />
+                        <div style={{ marginTop: 5, font: '400 9px/1.3 var(--mono)', color: 'var(--ink-4)' }}>
+                          {ciLabel(s.interval, s.value)} · {s.interval.n} runs
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
