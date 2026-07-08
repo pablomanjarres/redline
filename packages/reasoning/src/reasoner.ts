@@ -1,11 +1,13 @@
-import { FieldProposalResponse, Narrative } from '@redline/contracts';
+import { CriticJudgment, FieldProposalResponse, Narrative } from '@redline/contracts';
 import type {
+  CriticRequest,
   FieldProposalRequest,
   FieldSpec,
   NarrativeRequest,
 } from '@redline/contracts';
 import * as anthropic from './anthropic.js';
 import * as bedrock from './bedrock.js';
+import { buildCriticPrompt } from './critic-prompts.js';
 import { buildFieldProposalPrompt, buildNarrativePrompt } from './prompts.js';
 
 /**
@@ -24,17 +26,38 @@ export class ReasonerUnavailable extends Error {
 export interface Reasoner {
   /** True when a reasoning backend is configured. Read lazily; no network. */
   readonly available: boolean;
-  /** The configured backend, or undefined when none is wired. Lets a caller
-   *  stamp the source of a produced narrative or field proposal. */
+  /** The active backend, or undefined when none is wired. Lets a caller stamp the
+   *  source of a produced narrative, field proposal, or critic ruling. An injected
+   *  Messages seam presents as `bedrock`. */
   readonly backend: 'anthropic' | 'bedrock' | undefined;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
+  /**
+   * The critic: an independent, adversarial second pass over one candidate
+   * finding. Returns the validated ruling, or throws `ReasonerUnavailable` when
+   * no backend is wired or the reply does not parse, so the caller can fail safe
+   * toward showing the finding (marked critic-unverified) rather than hiding it.
+   */
+  critique(req: CriticRequest): Promise<CriticJudgment>;
 }
 
 const NARRATE_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
+const CRITIQUE_MAX_TOKENS = 1024;
 
 type Backend = 'anthropic' | 'bedrock';
+
+/**
+ * A raw Messages seam: system + user in, model text out. Injecting one bypasses
+ * the env-selected backend, so tests and the critic self-honesty harness can
+ * drive the parse and gate logic (including a forced rubber-stamp reply) without
+ * the network. The same code path hits real Bedrock in production.
+ */
+export type InvokeFn = (args: {
+  system: string;
+  user: string;
+  maxTokens: number;
+}) => Promise<string>;
 
 /**
  * Pick the reasoning backend from the environment. The **public path** is the
@@ -75,27 +98,52 @@ async function invoke(
  * free and never hits the network; `available` reflects the env at access time.
  * Both backends speak the same Anthropic Messages shape, so the prompts and the
  * JSON contract are identical across them.
+ *
+ * Pass `{ invoke }` to inject a Messages seam that replaces the env-selected
+ * backend. This is how the deterministic tests and the critic self-honesty
+ * harness exercise the parse and gate logic without the network. When injected,
+ * the reasoner reports `available` and a `bedrock` source, and every call routes
+ * through the injected function.
  */
-export function createReasoner(): Reasoner {
+export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
+  const injected = opts?.invoke;
+
+  // The active backend: the injected seam presents as bedrock (a real Messages
+  // shape); otherwise the env selection decides.
+  const activeBackend = (): Backend | undefined =>
+    injected ? 'bedrock' : selectBackend();
+
+  // Route one Messages request through the injected seam or the real backend.
+  const send = async (
+    system: string,
+    user: string,
+    maxTokens: number,
+  ): Promise<string> => {
+    if (injected) return injected({ system, user, maxTokens });
+    const backend = selectBackend();
+    if (!backend) throw new ReasonerUnavailable('No reasoning backend configured');
+    return invoke(backend, system, user, maxTokens);
+  };
+
   return {
     get available(): boolean {
-      return selectBackend() !== undefined;
+      return activeBackend() !== undefined;
     },
 
+    // The injected seam presents as bedrock; otherwise the env selection decides.
     get backend(): Backend | undefined {
-      return selectBackend();
+      return activeBackend();
     },
 
     async narrate(req: NarrativeRequest): Promise<Narrative> {
-      const backend = selectBackend();
-      if (!backend) {
+      if (activeBackend() === undefined) {
         throw new ReasonerUnavailable(
           'No reasoning backend configured; use the curated narrative',
         );
       }
       try {
         const { system, user } = buildNarrativePrompt(req);
-        const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
+        const text = await send(system, user, NARRATE_MAX_TOKENS);
         const narrative = Narrative.parse(extractJson(text));
         return enforceHonesty(req, narrative);
       } catch (err) {
@@ -104,19 +152,33 @@ export function createReasoner(): Reasoner {
     },
 
     async proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]> {
-      const backend = selectBackend();
-      if (!backend) {
+      if (activeBackend() === undefined) {
         throw new ReasonerUnavailable(
           'No reasoning backend configured; use the fixture fields',
         );
       }
       try {
         const { system, user } = buildFieldProposalPrompt(req);
-        const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
+        const text = await send(system, user, FIELDS_MAX_TOKENS);
         const { fields } = FieldProposalResponse.parse(extractJson(text));
         return fields;
       } catch (err) {
         throw asUnavailable('proposeFields', err);
+      }
+    },
+
+    async critique(req: CriticRequest): Promise<CriticJudgment> {
+      if (activeBackend() === undefined) {
+        throw new ReasonerUnavailable(
+          'No reasoning backend configured; skip the critic',
+        );
+      }
+      try {
+        const { system, user } = buildCriticPrompt(req);
+        const text = await send(system, user, CRITIQUE_MAX_TOKENS);
+        return CriticJudgment.parse(extractJson(text));
+      } catch (err) {
+        throw asUnavailable('critique', err);
       }
     },
   };
