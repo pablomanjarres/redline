@@ -89,10 +89,17 @@ available.
 
 | Pillar | Flaw | How it is planted | How it is caught |
 |---|---|---|---|
-| 1 | pseudoreplication | the focus gene gets a wide, deterministic between-unit baseline plus a small consistent arm offset | cell-level significance is real, pseudobulk over a few replicates collapses it |
-| 2 | double dipping | a spurious cell state is a plurality of cells with no coherent program | its markers separate at discovery and collapse on a held-out count split |
-| 3 | fragility | that spurious state has no real structure | it is a discrete cluster only inside a narrow resolution window |
+| 1 | pseudoreplication | the focus gene gets a wide, deterministic between-unit baseline plus a consistent arm offset scaled by 1/sqrt(replicates) so it stays a cell-level artifact at any donor count | cell-level significance is real, pseudobulk over the replicates collapses it |
+| 2 | double dipping | a spurious minority cell state with no coherent program; its top markers are read off the same cells that defined it | those in-sample markers do not survive a held-out Poisson count split |
+| 3 | fragility | that spurious minority state has no real structure | it is a discrete cluster only inside a narrow resolution window |
 | 4 | confounding | the technical column is made collinear with the grouping | Cramer's V is near 1 and the design is rank deficient |
+
+The pseudoreplication offset shrinks with the replicate count on purpose: a fixed
+offset becomes a genuine replicate-level effect that pseudobulk correctly detects
+once a dataset has many donors, which would stop being pseudoreplication. The
+spurious state is a minority (real clustering fragility is a minority
+subpopulation, not the bulk), and it is audited by name so the double-dipping
+check tests that state's own in-sample markers rather than the majority cluster.
 
 The clean variant induces the honest version of each: a donor-consistent effect
 that survives pseudobulk, cell states with reproducible markers, a stable cluster,
