@@ -12,6 +12,8 @@ import {
   type ComputeResult,
   type Narrative,
   type NarrativeRequest,
+  type CheckState,
+  type Citation,
 } from '@redline/contracts';
 import { curatedNarrative, SCENARIOS } from '@redline/engine';
 import { getComputeTarget } from '@redline/engine/server';
@@ -106,6 +108,58 @@ function buildRequest(scenarioId: ScenarioId, compute: ComputeResult): Narrative
   };
 }
 
+/** The method paper behind each check, for the honest generic fallback. */
+const FALLBACK_CITATION: Record<CheckId, Citation> = {
+  1: { authors: 'Squair et al.', year: 2021, venue: 'Nature Communications', note: 'Pseudoreplication inflates single-cell differential expression. Aggregate to the replicate and re-test.' },
+  2: { authors: 'Neufeld et al.', year: 2024, venue: 'Biostatistics', note: 'Count splitting tests markers on data that did not define the group. ClusterDE is the stronger method.' },
+  3: { authors: 'Luecken and Theis', year: 2019, venue: 'Molecular Systems Biology', note: 'Clustering resolution is a free parameter. A real group is stable across it.' },
+  4: { authors: 'Hicks et al.', year: 2018, venue: 'Biostatistics', note: 'A biological effect confounded with a technical variable cannot be separated.' },
+};
+
+const FAILURE_MODE: Record<CheckId, string> = {
+  1: 'Pseudoreplication',
+  2: 'Double dipping (post-clustering marker testing)',
+  3: 'Clustering fragility',
+  4: 'Technical-biological confounding',
+};
+
+/**
+ * An honest, scenario-agnostic narrative built from the COMPUTED state. Used
+ * only as the last-resort fallback (a scenario with no curated fixture narrative
+ * when the model call did not land), so the app always renders a finding that
+ * agrees with the numbers it just computed, never a fabricated or crashing one.
+ */
+function genericNarrative(checkId: CheckId, state: CheckState, claim: string | null): Narrative {
+  const citation = FALLBACK_CITATION[checkId];
+  const mode = FAILURE_MODE[checkId];
+  if (state === 'clean') {
+    return { error: null, citation, original: null, corrected: 'The check ran and the result holds under the correct method. There is no problem to fix here.' };
+  }
+  if (state === 'flag_only') {
+    return { error: mode, citation, original: claim, corrected: 'This check could not be completed on the data provided.', missing: 'The inputs this check needs are not present (for example, raw integer counts).' };
+  }
+  if (state === 'hard_stop') {
+    return { error: mode, citation, original: claim, corrected: 'No valid test is possible here. The design does not have enough independent replicates.' };
+  }
+  return { error: mode, citation, original: claim, corrected: 'The reported result does not survive the correct method. Read the corrected numbers beside it.' };
+}
+
+/** Try the curated fixture narrative; if the scenario has none, fall back to an
+ *  honest narrative built from the computed state so the route never throws. */
+function safeCurated(
+  scenarioId: ScenarioId,
+  checkId: CheckId,
+  config: unknown,
+  compute: ComputeResult,
+): Narrative {
+  try {
+    return curatedNarrative(scenarioId, checkId, config);
+  } catch {
+    const claim = SCENARIOS[scenarioId]?.claims.find((c) => c.check === checkId)?.text ?? null;
+    return genericNarrative(checkId, compute.state, claim);
+  }
+}
+
 /**
  * POST /api/audit/check — run one pillar. The compute target produces the numbers
  * + chart + verdict; the reasoning layer (or curated fallback) produces the prose.
@@ -134,14 +188,14 @@ export async function POST(req: Request) {
     let narrative: Narrative;
     let source: 'bedrock' | 'anthropic' | 'curated';
     if (!reasoner.available) {
-      narrative = curatedNarrative(body.scenarioId, body.checkId, body.config);
+      narrative = safeCurated(body.scenarioId, body.checkId, body.config, compute);
       source = 'curated';
     } else {
       try {
         narrative = await reasoner.narrate(buildRequest(body.scenarioId, compute));
         source = reasoner.backend ?? 'curated';
       } catch {
-        narrative = curatedNarrative(body.scenarioId, body.checkId, body.config);
+        narrative = safeCurated(body.scenarioId, body.checkId, body.config, compute);
         source = 'curated';
       }
     }

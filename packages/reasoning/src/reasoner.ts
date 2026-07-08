@@ -69,6 +69,32 @@ async function invoke(
   return bedrock.invokeMessages({ modelId, system, user, maxTokens });
 }
 
+const REASON_RETRIES = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry a reasoning call with a short exponential backoff. The verification
+ * harness fires many model calls in quick succession, and Bedrock throttles
+ * transiently (a 429 or a one-off unparseable reply). Retrying keeps the real
+ * model on the primary path instead of silently dropping to the curated
+ * fallback, which matters because the fallback is a different, static source.
+ */
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < REASON_RETRIES; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < REASON_RETRIES - 1) await sleep(400 * 2 ** attempt);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 /**
  * Build a reasoner backed by Claude — the first-party Claude API or AWS Bedrock,
  * whichever the environment configures (see `selectBackend`). Construction is
@@ -94,10 +120,11 @@ export function createReasoner(): Reasoner {
         );
       }
       try {
-        const { system, user } = buildNarrativePrompt(req);
-        const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
-        const narrative = Narrative.parse(extractJson(text));
-        return enforceHonesty(req, narrative);
+        return await withRetry(async () => {
+          const { system, user } = buildNarrativePrompt(req);
+          const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
+          return enforceHonesty(req, Narrative.parse(extractJson(text)));
+        });
       } catch (err) {
         throw asUnavailable('narrate', err);
       }
@@ -111,10 +138,11 @@ export function createReasoner(): Reasoner {
         );
       }
       try {
-        const { system, user } = buildFieldProposalPrompt(req);
-        const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
-        const { fields } = FieldProposalResponse.parse(extractJson(text));
-        return fields;
+        return await withRetry(async () => {
+          const { system, user } = buildFieldProposalPrompt(req);
+          const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
+          return FieldProposalResponse.parse(extractJson(text)).fields;
+        });
       } catch (err) {
         throw asUnavailable('proposeFields', err);
       }
