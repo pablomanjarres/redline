@@ -12,7 +12,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.1.0",
+    "@fontsource/archivo": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
     "@redline/contracts": "workspace:*",
     "@redline/engine": "workspace:*",
