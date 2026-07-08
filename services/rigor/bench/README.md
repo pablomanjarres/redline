@@ -11,15 +11,18 @@ pointless. It does not.
 > **Redline catches 100% of planted errors at a 0% false-positive rate; a single
 > Claude call catches 100% at 74%.** (Opus 4.6 powers the LLM calls in both arms.)
 
-Both arms catch the planted errors. The difference is precision: the single call
-cannot tell a real effect from a pseudoreplication artifact, or real markers from
-double-dipped ones, without running the test, so it flags the method risk
-everywhere and cries wolf on clean analyses. Redline re-runs the statistics and
-stays quiet when the analysis is sound.
+Every arm catches the planted errors. The difference is precision: the write-up
+call cannot tell a real effect from a pseudoreplication artifact, or real markers
+from double-dipped ones, without running the test, so it flags the method risk
+everywhere and cries wolf on clean analyses. The clincher is the third arm: give
+the **same model the re-run numbers** instead of the write-up and its
+false-positive rate collapses from 74% to 0%. The false positives were the cost of
+not re-running, and re-running is exactly what Redline does.
 
 | Arm | Detection | False-positive rate | Precision | F1 | Youden's J |
 |---|---|---|---|---|---|
-| Single Claude call (baseline) | 100% | 74% | 21% | 34% | 0.26 |
+| Single Claude call, write-up only (baseline) | 100% | 74% | 21% | 34% | 0.26 |
+| Single Claude call, given the re-run numbers | 100% | 0% | 100% | 100% | 1.00 |
 | Redline checks (no critic) | 100% | 2% | 91% | 95% | 0.98 |
 | **Redline checks + critic** | **100%** | **0%** | **100%** | **100%** | **1.00** |
 
@@ -63,26 +66,59 @@ write-up cannot. The false-positive gap (0% vs 74%) is the hard evidence behind
 Both arms use the **same model** (`us.anthropic.claude-opus-4-6-v1`, the strongest
 this account can invoke), so the only variable is the scaffolding.
 
-## Integrity of the ground truth
+## Integrity of the ground truth (read this honestly)
 
-The single failure that would make the number meaningless is circularity: defining
-"correct" as "what the engine says," so the engine scores 100% by construction.
-This benchmark avoids it:
+The obvious failure would be circularity: defining "correct" as "what the engine
+says," so the engine scores 100% by construction. This benchmark reduces that risk
+but does not fully escape it, and the honest accounting matters more than a clean
+number:
 
-- **Ground truth comes from construction, validated by an INDEPENDENT labeler.**
-  `labeler.py` recomputes, from scratch, whether each error is genuinely present
-  (its own Welch t-test, Poisson count-split, k-sweep, and Cramer's V). It never
-  imports `redline.pillars` / `redline.audit`. Agreement between the labeler and
-  the engine is a real cross-check, not a tautology.
-- **Cases are tuned against the labeler, never against the engine or the baseline.**
-  The generator reseeds until the labeler shows the intended pattern with a clear
-  margin (generate-and-filter). The two arms are then graded blind. When the engine
-  disagreed with the labeler (three borderline fragility calls), it counted against
-  the engine, not for it.
+- **The labeler is a separate implementation but not method-independent.**
+  `labeler.py` recomputes each error from scratch and never imports the engine, but
+  it applies the same core statistics the engine runs (Welch t, Poisson count-split
+  held-out AUC, a resolution sweep, Cramer's V). So agreement is a consistency
+  check, not proof of correctness, and it is strongest where the two share the most.
+- **For pseudoreplication and confounding the truth is definitional by construction.**
+  The generator plants a donor outlier with too few replicates, and makes the batch
+  collinear with the condition. Those cases are true by how they were built; the
+  labeler is a sanity check on them, not an oracle. For double dipping and fragility
+  the labeler retains a little more independence (it scores the given state mask on
+  a held-out split, and sweeps KMeans over an explicit k-grid, with a seed distinct
+  from the engine's), but in this environment the engine's own clustering also falls
+  back to KMeans (leiden is unavailable), so the two share the clustering primitive
+  and differ only in grid and seed. Treat the agreement as weak, not as validation.
+- **Cases are tuned against the labeler, never against the engine or the baseline,**
+  and filtered to a clear decision margin (`generate.py` `_accept`), which makes the
+  labels unambiguous but also removes the borderline cases where the engine would be
+  most likely to slip. This is a real limitation, disclosed below.
+- **Consequence:** the Redline arm shares its statistical method AND its case
+  selection with the grader, so its detection rate is near-definitional and should
+  not be read as an independent validation. The load-bearing, fair result is the
+  false-positive gap between the arms that see the re-run and the write-up baseline
+  that does not (next section).
 - **The harness is proven able to fail.** `selftest.py` checks that a null arm
   scores 0% detection, a flag-everything arm scores 100% false positives, the
   scorer arithmetic is correct, generation and labeling are deterministic, and
   replay never fabricates a missing call. Run `python -m bench.selftest`.
+
+## Three arms, so the result attributes cleanly
+
+Both LLM arms use the same model; only the input differs.
+
+- **Write-up baseline** reasons over the naive analysis write-up (what Reviewer 2
+  has). It cannot re-run the test, so on the three classes whose write-up is
+  identical for the sound and the broken analysis (pseudoreplication, double
+  dipping, fragility) it must either miss or cry wolf. It cries wolf.
+- **Evidence baseline** is the same model handed the re-run diagnostic numbers (the
+  cell-level vs pseudobulk p, the discovery vs held-out AUC, the resolution
+  stability, the Cramer's V), but not Redline's verdict. It recovers. That is the
+  key control: it shows the write-up baseline's false positives are the cost of not
+  re-running, not of weak reasoning.
+- **Redline** is the pipeline that produces those numbers (four deterministic checks
+  + a critic that only removes flags).
+
+The value being measured is the re-run, isolated from reasoning by the gap between
+the write-up baseline and the evidence baseline.
 
 ## The case set
 
@@ -114,13 +150,25 @@ cry wolf, while Redline's held-out re-test tells them apart.
   the design is balanced and flags it when it is not). Its false positives are
   appropriate methodological caution that reads as crying wolf only because it
   cannot run the test. That is the point, honestly measured, not a rigged loss.
-- **Limitations.** The cases are small and synthetic (the shipped product runs the
-  same checks on real `.h5ad`). The write-ups state the method explicitly, which
-  makes detection easier than a real paper that under-specifies it; the
-  differentiation here is precision, not recall. The clustering checks run on the
-  engine's deterministic KMeans/leiden path (leidenalg absent) so the number is
-  exactly reproducible; production may use a different clustering backend. The
-  number is frozen for one model; the harness re-runs against any Bedrock model.
+- **Limitations.**
+  - The cases are small and synthetic (the shipped product runs the same checks on
+    real `.h5ad`), and the case set is generate-and-filtered to a clear labeler
+    margin, so borderline cases (where the engine is likeliest to slip) are absent.
+  - The differentiation is precision, not recall: every arm catches the planted
+    errors, so the headline is entirely the false-positive gap. A one-number
+    "detection" reading would be misleading.
+  - The write-up baseline is judged partly on information the write-up withholds
+    (the discriminating statistic), which is realistic for a naive analysis but is
+    why the evidence baseline is included as the fair control.
+  - Redline's 0% false-positive rate is a knife-edge: the four deterministic checks
+    alone produce a nonzero rate (a few borderline fragility flags), and the critic,
+    an LLM step, is what removes them. The `redline_raw` row shows the pre-critic
+    number so this is not hidden.
+  - The engine runs its deterministic path (Welch for pillar 1, KMeans for
+    clustering since leiden is unavailable, PyDESeq2 absent), recorded in
+    `results.json` under `meta.engine_backend`, so `--replay` reproduces exactly in
+    that environment; production may use leiden/PyDESeq2 instead. The number is
+    frozen for one model; the harness re-runs against any Bedrock model.
 
 ## Reproduce
 

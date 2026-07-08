@@ -1,16 +1,30 @@
-"""Independent ground-truth labeler for the detection benchmark.
+"""Ground-truth labeler for the detection benchmark.
 
 This module recomputes, from scratch, whether each of the four statistical
-errors is genuinely present in a case. It NEVER imports ``redline.pillars`` /
-``redline.audit`` / ``redline.foundation``. It uses only numpy, scipy, and
-scikit-learn primitives (t-test, Poisson thinning, ROC-AUC, PCA/KMeans,
-chi-squared), with its own decision thresholds from ``bench.spec``. Because it
-is a separate implementation, agreement between this labeler and the Redline
-engine is a real cross-check, and the benchmark's ground-truth labels are not
-defined by the tool under test.
+errors is present in a case. It is a SEPARATE IMPLEMENTATION from the engine (it
+never imports ``redline.pillars`` / ``redline.audit`` / ``redline.foundation``),
+but it is NOT method-independent: it applies the same core statistics the engine
+runs (Welch t for pseudoreplication, Poisson-thinning held-out marker AUC for
+double dipping, a PCA/KMeans resolution sweep for fragility, chi-squared Cramer's
+V for confounding). So agreement between this labeler and the engine is a
+consistency check, not evidence of correctness, and it is strongest exactly where
+the two share the most (pillars 1 and 4). Read this honestly:
 
-The generator (``bench.generate``) tunes cases against THIS labeler, never
-against the engine, so the two arms are graded blind.
+- For pseudoreplication and confounding the truth is DEFINITIONAL by construction
+  (the generator plants a donor outlier with too few replicates, or makes the
+  technical variable collinear with the condition), so the labeler is really a
+  build-time sanity check on those, not an independent oracle.
+- For double dipping and fragility the labeler retains a little more distance (it
+  scores the given state mask on a held-out split and sweeps KMeans over an
+  explicit k-grid, with a seed distinct from the engine's, see ``redline_arm``),
+  but note that in a leiden-less environment the engine also falls back to KMeans,
+  so the two share the clustering primitive and differ only in grid and seed.
+
+The generator tunes cases against THIS labeler, never against the engine, and
+filters to a clear decision margin, which is disclosed as a limitation in the
+benchmark README. The load-bearing, fair comparison in the benchmark is the
+false-positive gap between the arms that see the re-run and the one that does
+not, not the Redline arm's near-definitional detection rate.
 """
 
 from __future__ import annotations
