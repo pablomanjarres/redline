@@ -40,6 +40,7 @@ class DatasetDescriptor:
     grouping_counts: dict[str, int]
     units_per_group: dict[str, int]  # grouping level -> distinct unit count
     total_units: int
+    min_units_compared: int  # fewest units in the two arms the engine compares
     has_counts: bool
     counts_source: Optional[str]
     candidate_genes: list[str]  # high-variance genes, a claim could headline any
@@ -63,6 +64,7 @@ class DatasetDescriptor:
             "groupingCounts": self.grouping_counts,
             "unitsPerGroup": self.units_per_group,
             "totalUnits": self.total_units,
+            "minUnitsCompared": self.min_units_compared,
             "hasCounts": self.has_counts,
             "countsSource": self.counts_source,
             "candidateGenes": self.candidate_genes,
@@ -173,6 +175,7 @@ def describe_dataset(adata: Any) -> DatasetDescriptor:
     grouping_counts: dict[str, int] = {}
     units_per_group: dict[str, int] = {}
     total_units = 0
+    compared_arms: tuple[str, ...] = ()
     g0 = np.zeros(int(getattr(adata, "n_obs", 0)), dtype=bool)
     g1 = g0.copy()
     gvec = _series(adata, grouping)
@@ -192,13 +195,22 @@ def describe_dataset(adata: Any) -> DatasetDescriptor:
             total_units = len(all_units)
         picked = two_groups(gstr)
         if picked is not None:
-            _ref, _alt, g0, g1 = picked
+            ref, alt, g0, g1 = picked
+            compared_arms = (str(ref), str(alt))
 
     candidate_genes = _high_variance_genes(counts, var_names, top=25)
     naive_focus = _naive_focus_gene(counts, var_names, g0, g1)
     state_candidates = _state_candidates(fields, grouping, unit)
 
-    min_units_per_group = min(units_per_group.values()) if units_per_group else 0
+    # The engine compares only the two arms it picks, so pillar-1 feasibility and
+    # the hard-stop verdict use the units in those two arms, not the global minimum
+    # over every grouping level (a rare third level must not veto a valid contrast).
+    if units_per_group and compared_arms:
+        min_units_per_group = min(units_per_group.get(a, 0) for a in compared_arms)
+    elif units_per_group:
+        min_units_per_group = min(units_per_group.values())
+    else:
+        min_units_per_group = 0
     feasibility = {
         "pseudoreplication": {
             "plantable": bool(unit and grouping and len(grouping_levels) >= 2 and min_units_per_group >= 2 and has_counts),
@@ -239,6 +251,7 @@ def describe_dataset(adata: Any) -> DatasetDescriptor:
         grouping_counts=grouping_counts,
         units_per_group=units_per_group,
         total_units=total_units,
+        min_units_compared=min_units_per_group,
         has_counts=has_counts,
         counts_source=counts_source,
         candidate_genes=candidate_genes,

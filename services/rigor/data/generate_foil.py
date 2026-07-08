@@ -58,8 +58,12 @@ def _demo(args: argparse.Namespace) -> int:
             tag = "clean" if clean else "foil"
             out = os.path.join(out_dir, f"{preset}.{tag}.h5ad")
             eprint(f"generating {preset} {tag}...")
-            gt = generate_foil(base, out, flaw="all", clean=clean, seed=args.seed,
-                               backend=args.planner, verify=not args.no_verify)
+            try:
+                gt = generate_foil(base, out, flaw="all", clean=clean, seed=args.seed,
+                                   backend=args.planner, verify=not args.no_verify)
+            except (RuntimeError, ValueError) as exc:
+                eprint(f"  {preset} {tag}: SKIPPED, {exc}")
+                continue
             ok = gt.verification.get("allMatch") if gt.verification else None
             eprint(f"  {preset} {tag}: verified={ok} engine={json.dumps(gt.verification.get('engine', {}))}")
             entries.append(gt.to_manifest_entry())

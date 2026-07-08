@@ -13,6 +13,7 @@ whose labels the harness and the oracle read.
 from __future__ import annotations
 
 import os
+import sys
 from typing import Any, Optional, Union
 
 from .descriptor import describe_dataset
@@ -49,9 +50,16 @@ def generate_foil(
     case_id: Optional[str] = None,
     scenario_id: Optional[str] = None,
     verify: bool = True,
+    strict: bool = True,
 ) -> GroundTruth:
     """Build one foil and its ground-truth record. Writes the ``.h5ad`` to
-    ``out_h5ad`` and, when ``verify`` is set, runs the engine to confirm."""
+    ``out_h5ad`` and, when ``verify`` is set, runs the engine to confirm.
+
+    When ``strict`` (the default), a foil the engine does not return the intended
+    verdicts for is deleted and a ``RuntimeError`` is raised, so a mislabeled
+    fixture is never kept (the never-cry-wolf invariant at the fixture level). Pass
+    ``strict=False`` to keep the foil and inspect ``gt.verification`` instead.
+    """
     adata, input_label = _load(input_data)
     scenario = scenario_id or _scenario_id(adata, input_label)
     descriptor = describe_dataset(adata)
@@ -59,6 +67,12 @@ def generate_foil(
         raise ValueError(
             "raw integer counts are required to build a foil (looked in layers['counts'], .raw, and X). "
             "Pillars 1 and 2 and the marker planting have no honest re-run without them."
+        )
+    if not descriptor.unit or not descriptor.grouping:
+        missing = ", ".join(x for x, v in (("a biological unit", descriptor.unit), ("a grouping", descriptor.grouping)) if not v)
+        raise ValueError(
+            f"could not resolve {missing} from the obs columns, so there is no contrast or replicate to build a "
+            "foil around. Confirm the field mapping or pass a dataset with a donor/condition-style design."
         )
     plan = plan_foil(descriptor, flaw=flaw, clean=clean, seed=seed, backend=backend)
     foil, facts = plant_foil(adata, plan, seed=seed)
@@ -81,12 +95,24 @@ def generate_foil(
         facts=facts,
         intended=intended_verdicts(plan),
         track_list=tracks(plan),
-        foil_path=out_h5ad,
+        # Absolute so a consumer resolves the foil regardless of where the manifest
+        # is written (the oracle resolves relative foil paths against the manifest).
+        foil_path=os.path.abspath(out_h5ad),
     )
     if verify:
         from .verify import verify_foil
 
         gt.verification = verify_foil(out_h5ad, plan)
+        if strict and not gt.verification.get("allMatch", False):
+            # Do not keep a foil whose planted flaw the engine did not catch.
+            try:
+                os.remove(out_h5ad)
+            except OSError:
+                pass
+            raise RuntimeError(
+                f"the engine did not return the intended verdicts for {cid}, so the foil is not trustworthy: "
+                f"{gt.verification.get('mismatches')}. Pass strict=False to keep it for inspection."
+            )
     return gt
 
 
@@ -98,7 +124,9 @@ def generate_batch(
 ) -> list[GroundTruth]:
     """Generate many foils. Each job is a dict with at least ``input``; optional
     ``flaw``, ``clean``, ``seed``, ``case_id``, ``scenario_id``, ``out``. Returns
-    the ground-truth records; write the manifest with ``groundtruth.write_manifest``.
+    the ground-truth records for the foils the engine caught; a foil that fails
+    verification is skipped and reported to stderr, so one bad dataset does not
+    abort the batch (and no mislabeled fixture enters the set).
     """
     results: list[GroundTruth] = []
     for i, job in enumerate(jobs):
@@ -107,16 +135,19 @@ def generate_batch(
         scenario = job.get("scenario_id")
         default_name = f"{scenario or 'foil'}_{'clean' if clean else flaw}_{i}.h5ad"
         out = job.get("out") or os.path.join(out_dir, default_name)
-        gt = generate_foil(
-            job["input"],
-            out,
-            flaw=flaw,
-            clean=clean,
-            seed=int(job.get("seed", 0)),
-            backend=backend,
-            case_id=job.get("case_id"),
-            scenario_id=scenario,
-            verify=verify,
-        )
-        results.append(gt)
+        try:
+            gt = generate_foil(
+                job["input"],
+                out,
+                flaw=flaw,
+                clean=clean,
+                seed=int(job.get("seed", 0)),
+                backend=backend,
+                case_id=job.get("case_id"),
+                scenario_id=scenario,
+                verify=verify,
+            )
+            results.append(gt)
+        except (RuntimeError, ValueError) as exc:
+            print(f"foilgen: skipped {job.get('input')} ({flaw}{'/clean' if clean else ''}): {exc}", file=sys.stderr)
     return results

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -99,6 +100,20 @@ _FRAMING = (
 )
 
 
+def _strip_dashes(text: str) -> str:
+    """Remove every dash the voice rule forbids from prose: em dash, en dash, and
+    a spaced or bare double hyphen. Model-emitted claims run through this so they
+    still pass the no-dash gate."""
+    for spaced in (" — ", " – ", " -- "):
+        text = text.replace(spaced, ", ")
+    return text.replace("—", ", ").replace("–", ", ").replace("--", ", ")
+
+
+def _clean_label(text: str) -> str:
+    """A short cell-state label with any forbidden dash reduced to a hyphen."""
+    return text.replace("—", "-").replace("–", "-").strip()[:40]
+
+
 def _oriented_arms(descriptor: DatasetDescriptor) -> tuple[str, str]:
     """Control and treated arm labels, oriented with the engine's own helper so a
     control-looking level is the reference."""
@@ -155,22 +170,20 @@ def _claims(
     control: str,
     focus: str,
     spurious: str,
-    spurious_markers: list[str],
     stable: str,
     n_cells: int,
 ) -> dict[str, str]:
     """Plain-language claims. For a planted flaw the claim is the over-reach; for a
     clean pillar the claim is the defensible statement the clean variant supports."""
-    marker_str = ", ".join(spurious_markers[:4]) if spurious_markers else "a handful of markers"
     claims: dict[str, str] = {}
     claims["1"] = (
-        f"{treated} significantly changes {focus} expression relative to {control} "
-        f"(p < 0.001 across {n_cells:,} cells)."
+        f"{treated} significantly changes {focus} expression relative to {control}, "
+        f"significant at the single-cell level across {n_cells:,} cells."
         if (not clean and 1 in planted)
         else f"{focus} moves consistently with {treated} across biological replicates and survives pseudobulk."
     )
     claims["2"] = (
-        f"A distinct {spurious} cell state defined by {marker_str}, enriched under {treated}."
+        f"A distinct {spurious} cell state, its marker genes read off the same cells that defined it."
         if (not clean and 2 in planted)
         else f"The {stable} state holds up: its markers still separate it on an independent split of the counts."
     )
@@ -196,12 +209,14 @@ def plan_heuristic(descriptor: DatasetDescriptor, flaw: str, clean: bool, seed: 
     spurious_state = _SPURIOUS_STATE_NAMES[seed % len(_SPURIOUS_STATE_NAMES)]
     stable_state = _STABLE_STATE_NAMES[seed % len(_STABLE_STATE_NAMES)]
     planted = [] if clean else _requested_pillars(flaw, descriptor)
-    claims = _claims(clean, planted, treated, control, focus, spurious_state, spurious_markers,
-                     stable_state, descriptor.n_cells)
+    claims = _claims(clean, planted, treated, control, focus, spurious_state, stable_state, descriptor.n_cells)
     return FoilPlan(
         unit=descriptor.unit,
         grouping=descriptor.grouping,
-        nuisance=descriptor.nuisance,
+        # Fall back to the technical column name the planter creates when the
+        # dataset has none, so the manifest never carries a null required field
+        # (the oracle treats nuisance as required) and matches what is planted.
+        nuisance=descriptor.nuisance or "batch",
         observation=descriptor.observation,
         state_col=descriptor.derived or "cell_state",
         control_level=control,
@@ -216,7 +231,7 @@ def plan_heuristic(descriptor: DatasetDescriptor, flaw: str, clean: bool, seed: 
         claims=claims,
         framing=_FRAMING,
         planned_by="heuristic",
-        min_units_per_group=(min(descriptor.units_per_group.values()) if descriptor.units_per_group else 0),
+        min_units_per_group=descriptor.min_units_compared,
     )
 
 
@@ -271,12 +286,18 @@ def _invoke_bedrock(system: str, prompt: str) -> Optional[str]:
         return None
     try:
         import boto3  # type: ignore
+        from botocore.config import Config  # type: ignore
 
-        client = boto3.client("bedrock-runtime", region_name=region)
+        # Bounded timeouts and a small retry cap so a Bedrock stall cannot hang a
+        # build-time generation for minutes.
+        client = boto3.client(
+            "bedrock-runtime",
+            region_name=region,
+            config=Config(connect_timeout=5, read_timeout=60, retries={"max_attempts": 2}),
+        )
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 1200,
-            "temperature": 0.4,
             "system": system,
             "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
         }
@@ -285,7 +306,10 @@ def _invoke_bedrock(system: str, prompt: str) -> Optional[str]:
         parts = payload.get("content") or []
         text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
         return text or None
-    except Exception:
+    except Exception as exc:
+        # Fail open to the heuristic, but say why so a misconfigured Bedrock is not
+        # mistaken for an unconfigured one.
+        print(f"foilgen: Bedrock planner unavailable, using the heuristic ({type(exc).__name__}: {exc})", file=sys.stderr)
         return None
 
 
@@ -324,14 +348,14 @@ def plan_bedrock(descriptor: DatasetDescriptor, flaw: str, clean: bool, seed: in
     focus = _grounded_gene(parsed.get("focusGene"), base.focus_gene)
     spurious_markers = _grounded_markers(parsed.get("spuriousMarkers"), base.spurious_markers)
     stable_markers = _grounded_markers(parsed.get("stableMarkers"), base.stable_markers)
-    spurious_state = str(parsed.get("spuriousState") or base.spurious_state).strip()[:40] or base.spurious_state
-    stable_state = str(parsed.get("stableState") or base.stable_state).strip()[:40] or base.stable_state
+    spurious_state = _clean_label(str(parsed.get("spuriousState") or base.spurious_state)) or base.spurious_state
+    stable_state = _clean_label(str(parsed.get("stableState") or base.stable_state)) or base.stable_state
     claims = base.claims
     model_claims = parsed.get("claims")
     if isinstance(model_claims, dict):
-        claims = {k: str(model_claims.get(k, base.claims.get(k, ""))) for k in ("1", "2", "3", "4")}
-        # Repair any em dash the model slipped in; the voice rule is non-negotiable.
-        claims = {k: v.replace("—", ", ").replace(" -- ", ", ") for k, v in claims.items()}
+        # Repair every forbidden dash the model may have slipped in; the voice rule
+        # is non-negotiable and the no-dash test also gates en dashes.
+        claims = {k: _strip_dashes(str(model_claims.get(k, base.claims.get(k, "")))) for k in ("1", "2", "3", "4")}
 
     return FoilPlan(
         unit=base.unit,
