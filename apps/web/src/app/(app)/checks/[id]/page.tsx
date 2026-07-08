@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { CheckId } from '@redline/contracts';
 import { useSession } from '@/state/session';
-import { CheckPanel } from '@/components/check/CheckPanel';
+import { CheckStage } from '@/components/check/CheckStage';
 
 function coerceCheckId(raw: string | string[] | undefined): CheckId {
   const s = Array.isArray(raw) ? raw[0] : raw;
@@ -32,5 +32,5 @@ export default function CheckRoute() {
     }
   }, [checkId, results, running, runCheck]);
 
-  return <CheckPanel checkId={checkId} />;
+  return <CheckStage checkId={checkId} />;
 }
