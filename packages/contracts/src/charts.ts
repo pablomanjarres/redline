@@ -39,6 +39,25 @@ export const HardStopChart = z.object({
   profiles: z.array(UnitProfile),
 });
 
+/**
+ * A stochastic statistic reported as a distribution over repeated runs, not one
+ * point. `median` is the central estimate, `lo`/`hi` bound the `level` interval
+ * (e.g. 0.95), `n` is the repetition count behind it, and `samples` carries the
+ * per-run values a strip or density draws. Real numbers only: an interval is
+ * emitted only when the check actually repeated its stochastic step, never
+ * fabricated around a point estimate. Every consumer treats it as optional, so
+ * single-run payloads and the locked fixtures still parse.
+ */
+export const Interval = z.object({
+  median: z.number(),
+  lo: z.number(),
+  hi: z.number(),
+  level: z.number(), // interval mass, e.g. 0.95
+  n: z.number().int(), // repetitions behind the interval
+  samples: z.array(z.number()).optional(), // per-run values, for the strip/density
+});
+export type Interval = z.infer<typeof Interval>;
+
 export const Marker = z.object({
   gene: z.string(),
   disc: z.number(), // separation (AUC) on the discovery split
@@ -52,14 +71,20 @@ export const GroupsChart = z.object({
   markers: z.array(Marker),
   split: z.number(),
   verified: z.boolean(),
-  discAUC: z.number().optional(),
-  holdAUC: z.number().optional(),
+  discAUC: z.number().optional(), // median discovery AUC across repeated splits
+  holdAUC: z.number().optional(), // median held-out AUC across repeated splits
+  // Distributions over repeated count-splits (Add-on 3). The scalars above carry
+  // the median; these carry the spread the figure and cards draw.
+  holdAUCDist: Interval.optional(),
+  discAUCDist: Interval.optional(),
+  markersHoldingDist: Interval.optional(), // surviving-marker count per split
 });
 
 export const FragilityStep = z.object({
   r: z.number(), // resolution setting
-  present: z.boolean(), // is the tracked group a discrete cluster here
+  present: z.boolean(), // is the tracked group a discrete cluster here (at the median run)
   clusters: z.number().int(),
+  presence: z.number().optional(), // fraction of repeated runs present here, 0..1 (Add-on 3)
 });
 export type FragilityStep = z.infer<typeof FragilityStep>;
 
@@ -69,7 +94,8 @@ export const FragilityChart = z.object({
   steps: z.array(FragilityStep),
   present: z.tuple([z.number(), z.number()]), // [minRes, maxRes] where it exists
   track: z.string(),
-  stability: z.number(), // fraction of settings where the group is present
+  stability: z.number(), // median stability fraction across repeated runs
+  stabilityDist: Interval.optional(), // distribution of the stability fraction (Add-on 3)
 });
 
 export const ConfoundGrid = z.object({

@@ -68,6 +68,35 @@ def fmt_pct(x: float) -> str:
     return f"{round(float(x) * 100)}%"
 
 
+def interval_json(
+    median: float,
+    lo: float,
+    hi: float,
+    level: float,
+    n: int,
+    samples: Optional[Sequence[float]] = None,
+) -> Json:
+    """The camelCase ``Interval`` JSON (mirrors packages/contracts/src/charts.ts).
+
+    A stochastic statistic reported as a distribution over ``n`` repeated runs:
+    the median, the ``level`` percentile bounds, and the per-run ``samples`` a
+    strip or density draws. The numeric aggregation (median, percentiles) lives
+    in ``redline.pillars`` where numpy is available; this builder is stdlib-only
+    so the contract tests import it without numpy. Emitted only when a check
+    actually repeated its stochastic step, never fabricated around a point.
+    """
+    d: Json = {
+        "median": round(float(median), 4),
+        "lo": round(float(lo), 4),
+        "hi": round(float(hi), 4),
+        "level": round(float(level), 4),
+        "n": int(n),
+    }
+    if samples is not None:
+        d["samples"] = [round(float(s), 4) for s in samples]
+    return d
+
+
 # ── StatReadout ───────────────────────────────────────────────────────────────
 @dataclass
 class StatReadout:
@@ -75,6 +104,7 @@ class StatReadout:
     value: str
     bad: Optional[bool] = None
     good: Optional[bool] = None
+    interval: Optional[Json] = None  # a median+CI distribution (from interval_json)
 
     def to_json(self) -> Json:
         d: Json = {"label": self.label, "value": str(self.value)}
@@ -82,11 +112,19 @@ class StatReadout:
             d["bad"] = bool(self.bad)
         if self.good is not None:
             d["good"] = bool(self.good)
+        if self.interval is not None:
+            d["interval"] = self.interval
         return d
 
 
-def stat(label: str, value: Any, bad: Optional[bool] = None, good: Optional[bool] = None) -> StatReadout:
-    return StatReadout(label=label, value=str(value), bad=bad, good=good)
+def stat(
+    label: str,
+    value: Any,
+    bad: Optional[bool] = None,
+    good: Optional[bool] = None,
+    interval: Optional[Json] = None,
+) -> StatReadout:
+    return StatReadout(label=label, value=str(value), bad=bad, good=good, interval=interval)
 
 
 # ── Chart piece dataclasses ───────────────────────────────────────────────────
@@ -126,9 +164,13 @@ class FragilityStep:
     r: float
     present: bool
     clusters: int
+    presence: Optional[float] = None  # fraction of repeated runs present here, 0..1
 
     def to_json(self) -> Json:
-        return {"r": round(float(self.r), 4), "present": bool(self.present), "clusters": int(self.clusters)}
+        d: Json = {"r": round(float(self.r), 4), "present": bool(self.present), "clusters": int(self.clusters)}
+        if self.presence is not None:
+            d["presence"] = round(float(self.presence), 4)
+        return d
 
 
 @dataclass
@@ -178,6 +220,9 @@ def groups_chart(
     verified: bool,
     disc_auc: Optional[float] = None,
     hold_auc: Optional[float] = None,
+    hold_auc_dist: Optional[Json] = None,
+    disc_auc_dist: Optional[Json] = None,
+    markers_holding_dist: Optional[Json] = None,
 ) -> Json:
     d: Json = {
         "kind": "groups",
@@ -189,6 +234,12 @@ def groups_chart(
         d["discAUC"] = round(float(disc_auc), 4)
     if hold_auc is not None:
         d["holdAUC"] = round(float(hold_auc), 4)
+    if hold_auc_dist is not None:
+        d["holdAUCDist"] = hold_auc_dist
+    if disc_auc_dist is not None:
+        d["discAUCDist"] = disc_auc_dist
+    if markers_holding_dist is not None:
+        d["markersHoldingDist"] = markers_holding_dist
     return d
 
 
@@ -197,14 +248,18 @@ def fragility_chart(
     present: tuple[float, float],
     track: str,
     stability: float,
+    stability_dist: Optional[Json] = None,
 ) -> Json:
-    return {
+    d: Json = {
         "kind": "fragility",
         "steps": [s.to_json() for s in steps],
         "present": [round(float(present[0]), 4), round(float(present[1]), 4)],
         "track": str(track),
         "stability": round(float(stability), 4),
     }
+    if stability_dist is not None:
+        d["stabilityDist"] = stability_dist
+    return d
 
 
 def confound_chart(grid: ConfoundGrid, cramers_v: Optional[float], verified: bool) -> Json:

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Chart } from './charts.js';
+import { Chart, Interval } from './charts.js';
 import { CheckId, CheckState } from './primitives.js';
 
 export const Citation = z.object({
@@ -13,9 +13,10 @@ export type Citation = z.infer<typeof Citation>;
 
 export const StatReadout = z.object({
   label: z.string(),
-  value: z.string(),
+  value: z.string(), // the median (or point) value, formatted
   bad: z.boolean().optional(),
   good: z.boolean().optional(),
+  interval: Interval.optional(), // the median+CI distribution behind this stat (Add-on 3)
 });
 export type StatReadout = z.infer<typeof StatReadout>;
 
