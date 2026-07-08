@@ -1,34 +1,21 @@
-'use client';
-
 /**
- * The workbench shell: everything from field resolution onward. A full-height
- * column of the 58px top bar over a row of the 246px sidebar and the scrolling
- * main pane. Intake keeps its own chrome and lives outside this route group.
+ * The audit stage shell: everything from design resolution onward. A full-height
+ * column — masthead, the pipeline rail, then the full-bleed dark stage. No
+ * sidebar. Intake keeps its own chrome and lives outside this route group.
  */
 
 import type { ReactNode } from 'react';
-import { TopBar } from '@/components/shell/TopBar';
-import { Sidebar } from '@/components/shell/Sidebar';
+import { Masthead } from '@/components/shell/Masthead';
+import { Pipeline } from '@/components/shell/Pipeline';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="rl-app-shell"
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        background: 'var(--desk)',
-      }}
-    >
-      <TopBar />
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Sidebar />
-        <main className="rl-scroll rl-app-main" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-          {children}
-        </main>
-      </div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Masthead />
+      <Pipeline />
+      <main className="rl-scroll" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        {children}
+      </main>
     </div>
   );
 }
