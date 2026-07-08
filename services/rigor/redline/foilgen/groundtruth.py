@@ -96,11 +96,15 @@ class GroundTruth:
                 rec["flawedStatistic"] = self.facts.get("naive_statistic", {})
                 rec["expectedCorrected"] = corrected.get("1", {})
             elif pid == 2:
+                states = self.facts.get("states", {})
                 rec["flawedStatistic"] = {
-                    "method": "marker genes ranked on the same cells used to define the state (double dipping)",
-                    "spuriousState": self.facts.get("states", {}).get("spurious_state"),
-                    "namedMarkers": self.facts.get("states", {}).get("spurious_markers_named", []),
-                    "computed_how": "the claimed markers are re-scored on an independent Poisson count split; they collapse.",
+                    "method": "the state's marker genes were read off the same cells that defined it (double dipping)",
+                    "spuriousState": states.get("spurious_state"),
+                    "auditedMarkers": states.get("doubledip_markers", []),
+                    "computed_how": (
+                        "the state's top in-sample markers are re-scored on an independent Poisson count split; "
+                        "none still separate it, so the state has no reproducible marker program."
+                    ),
                 }
                 rec["expectedCorrected"] = corrected.get("2", {})
             elif pid == 3:
@@ -134,7 +138,11 @@ class GroundTruth:
             "nuisance": p.nuisance,
             "state_col": p.state_col,
             "focus_gene": p.focus_gene,
-            "spurious": self.facts.get("states", {}).get("spurious_state") or p.spurious_state,
+            # The state Pillar 3 flags. On a clean variant nothing is spurious, so
+            # point this at the genuine stable state (a real, present, clean cluster)
+            # rather than a name no cell carries.
+            "spurious": (self.facts.get("states", {}).get("spurious_state") or p.stable_state) if p.clean
+            else (self.facts.get("states", {}).get("spurious_state") or p.spurious_state),
             "stable": p.stable_state,
             # The scientist's claimed markers for the spurious state. The double-
             # dipping check audits exactly these; they do not survive a held-out

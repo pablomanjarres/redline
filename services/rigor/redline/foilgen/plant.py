@@ -77,7 +77,7 @@ def _plant_pseudoreplication(
     arms = np.asarray([str(x) for x in obs[grouping].to_numpy()])
 
     # Assign each unit a deterministic baseline spread wide across the arm, plus a
-    # consistent arm offset. The wide within-arm spread means a few replicates per
+    # consistent arm offset. The wide within-arm spread means the replicates per
     # arm carry too much variance for a pseudobulk test to call it significant, but
     # the consistent offset lifts every treated cell a little, so a cell-level test
     # over hundreds of cells per arm is "significant". That gap is pseudoreplication.
@@ -87,11 +87,18 @@ def _plant_pseudoreplication(
     control_units = sorted({u for u in np.unique(units) if not _arm_of(u)})
     treated_units = sorted({u for u in np.unique(units) if _arm_of(u)})
     spread = np.linspace(2.5, 8.0, max(len(control_units), len(treated_units), 1))
+    # The offset must SHRINK as the replicate count grows, or a fixed offset becomes
+    # a genuine, replicate-level effect that pseudobulk correctly detects (the flaw
+    # would stop being pseudoreplication and the engine would return clean). Scaling
+    # by 1/sqrt(k) holds the pseudobulk effect size roughly constant across datasets
+    # with few or many donors, so the cell-level inflation is always the artifact.
+    k = max(min(len(control_units), len(treated_units)), 1)
+    offset = 2.0 * (3.0 / k) ** 0.5
     baseline: dict[str, float] = {}
     for i, u in enumerate(control_units):
         baseline[u] = float(spread[i % len(spread)])
     for i, u in enumerate(treated_units):
-        baseline[u] = float(spread[i % len(spread)]) + 2.0  # consistent arm offset
+        baseline[u] = float(spread[i % len(spread)]) + offset
     lam = np.array([baseline.get(u, 5.0) for u in units], dtype=float)
     X[:, gi] = rng.poisson(lam)
     return {
@@ -128,34 +135,25 @@ def state_layout(plan) -> list[tuple[str, float, str]]:
 
     kind: 'noise' (no coherent program), 'real_tight' (small strong cluster),
     'real_bulk' (large reproducible cluster), 'filler' (unstructured background).
-    The plurality state is the one the double-dipping check tests by default, so
-    its kind decides whether check 2 flags or stays clean. Every non-clean layout
-    still carries a genuine stable state, which Pillar 3 tracks as its clean
-    reference.
+    The spurious state is audited by name (target_group), so it does not need to
+    be the plurality; real clustering fragility is a minority subpopulation, so the
+    spurious state is a minority here. Every non-clean layout still carries a
+    genuine stable state, which Pillar 3 tracks as its clean reference.
     """
     planted = set(plan.planted_flaws)
     if plan.clean or not (2 in planted or 3 in planted):
-        # All real: a reproducible plurality and a small, strongly separated
-        # stable cluster (small so it stays one discrete cluster across the sweep).
-        return [("Bulk", 0.72, "real_bulk"), (plan.stable_state, 0.28, "real_tight")]
-    if 2 in planted and 3 in planted:
-        # Canonical: a spurious plurality (flags 2 and, when tracked, 3) plus a
-        # genuine stable cluster kept small so its inverse markers cannot rescue
-        # the spurious split, and background filler that lets clustering shatter
-        # the noise (so the spurious group matches a noise cluster, not "not the
-        # stable cluster").
-        return [(plan.spurious_state, 0.58, "noise"), (plan.stable_state, 0.10, "real_tight"),
-                ("Bystander", 0.32, "filler")]
-    if 2 in planted:
-        # Only double dipping: spurious plurality noise; the stable cluster is kept
-        # small (its inverse markers must not rescue the split) and tracked so
-        # fragility stays clean.
-        return [(plan.spurious_state, 0.58, "noise"), (plan.stable_state, 0.10, "real_tight"),
-                ("Bystander", 0.32, "filler")]
-    # Only fragility: a real reproducible plurality (check 2 clean), a small
-    # boundary-only spurious state to track, and a genuine stable cluster.
-    return [("Bulk", 0.45, "real_bulk"), (plan.spurious_state, 0.15, "noise"),
-            (plan.stable_state, 0.12, "real_tight"), ("Bystander", 0.28, "filler")]
+        # All real: a reproducible bulk plurality and a small, strongly separated
+        # stable cluster. The stable state is kept small so a strong block stays one
+        # discrete cluster across the sweep without over-splitting at high resolution.
+        return [("Bulk", 0.86, "real_bulk"), (plan.stable_state, 0.14, "real_tight")]
+    # A realistic over-cluster: the spurious state is a MINORITY with no coherent
+    # program. A reproducible bulk plurality holds up (so the default double-dipping
+    # check stays clean on it when Pillar 2 is not planted), a small genuine stable
+    # cluster is the clean fragility track, and a larger background filler pool
+    # keeps the spurious state from ever dominating a noise cluster (so it never
+    # reads as a discrete population and fragility flags it reliably).
+    return [("Bulk", 0.46, "real_bulk"), (plan.spurious_state, 0.14, "noise"),
+            (plan.stable_state, 0.14, "real_tight"), ("Bystander", 0.26, "filler")]
 
 
 # Marker-block magnitudes, tuned against the real engine so the intended verdict
@@ -164,9 +162,13 @@ def state_layout(plan) -> list[tuple[str, float, str]]:
 # the principal components and flattens the spurious noise (which would let the
 # stable inverse markers rescue the double-dipping split).
 TUNING = {
-    "stable_hi": 22.0,
+    # The stable block is strong so it stays one discrete cluster across the whole
+    # resolution sweep even when a high-variance focus gene (many donors) competes
+    # for the embedding. Pillar 2 is audited by name (target_group), so a strong
+    # stable block no longer risks dominating the double-dipping re-clustering.
+    "stable_hi": 30.0,
     "stable_lo": 0.2,
-    "stable_extra_genes": 8,
+    "stable_extra_genes": 10,
     "bulk_hi": 14.0,
     "bulk_lo": 0.3,
     "bulk_genes": 12,
@@ -231,19 +233,49 @@ def _plant_states(X: np.ndarray, obs, var_names: list[str], plan, seed: int) -> 
             _set_block(X, mask, bulk_cols, hi=TUNING["bulk_hi"], lo=TUNING["bulk_lo"], rng=rng)
             facts_states.append({"state": name, "kind": kind, "markers": [var_names[i] for i in bulk_cols]})
         else:
-            # noise / filler: no coherent program is written. The named spurious
-            # markers stay at background, which is exactly the double-dip lie.
+            # noise / filler: no coherent program is written. The spurious state
+            # has no real markers; its apparent markers come only from double
+            # dipping (see below).
             facts_states.append({"state": name, "kind": kind, "markers": []})
+
+    # The double-dip: read the spurious state's top markers off the same cells that
+    # define it. These genuinely separate it best in sample, and because the state
+    # has no real program they collapse on a held-out count split. The claim and
+    # the audit both use exactly these, so the ground truth is faithful.
+    spurious_name = _noise_name(layout)
+    doubledip: list[str] = []
+    if spurious_name is not None and not plan.clean:
+        exclude = {plan.focus_gene, *(var_names[i] for i in stable_cols), *(var_names[i] for i in bulk_cols)}
+        doubledip = _doubledip_markers(X, states == spurious_name, var_names, exclude, k=4)
+        if doubledip:
+            plan.spurious_markers = doubledip
 
     obs[plan.state_col] = states.astype(str)
     return {
         "state_col": plan.state_col,
         "states": facts_states,
-        "spurious_state": None if (plan.clean or not any(k == "noise" for _n, _p, k in layout)) else _noise_name(layout),
+        "spurious_state": None if (plan.clean or spurious_name is None) else spurious_name,
         "stable_state": plan.stable_state,
         "plurality_state": names[int(np.argmax(probs))],
+        "doubledip_markers": doubledip,
         "spurious_markers_named": plan.spurious_markers,
     }
+
+
+def _doubledip_markers(X: np.ndarray, spurious_mask: np.ndarray, var_names: list[str],
+                       exclude: set, k: int) -> list[str]:
+    """The genes that best separate the spurious state IN SAMPLE (the double dip),
+    excluding the focus gene and the real cluster markers. On a pure-noise state
+    these are chance separations that do not survive a held-out split."""
+    from ..pillars import safe_auc
+
+    y = spurious_mask.astype(int)
+    if y.sum() == 0 or y.sum() == y.size:
+        return []
+    log = np.log1p(np.clip(X, 0, None))
+    scored = [(safe_auc(log[:, j], y), g) for j, g in enumerate(var_names) if g not in exclude]
+    scored.sort(key=lambda t: t[0], reverse=True)
+    return [g for _auc, g in scored[:k]]
 
 
 def _noise_name(layout) -> Optional[str]:
@@ -306,11 +338,14 @@ def plant_foil(adata: Any, plan, seed: int = 0) -> tuple[Any, dict]:
     collinear = (not plan.clean) and (4 in planted)
     facts["confounding"] = _plant_confounding(obs, plan, collinear, seed)
 
-    # Write the reshaped counts back so every downstream path (X, counts layer,
-    # .raw) sees the same integer matrix.
+    # Write the reshaped counts back to X and the counts layer (the layer the
+    # engine's gating reads first). Drop any stale .raw the input carried so no
+    # downstream path can read pre-planting counts.
     Xf = np.rint(np.clip(X, 0, None)).astype(np.float32)
     a.X = Xf.copy()
     a.layers["counts"] = Xf.copy()
+    if getattr(a, "raw", None) is not None:
+        a.raw = None
 
     # Record the naive cell-level statistic the scientist would have reported.
     facts["naive_statistic"] = _naive_focus_statistic(Xf, obs, plan, gi)
