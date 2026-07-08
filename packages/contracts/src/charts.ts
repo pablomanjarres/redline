@@ -88,6 +88,12 @@ export const ConfoundChart = z.object({
 });
 
 /** The chart payload a check returns — the numbers a figure draws. */
+export type SignificanceChart = z.infer<typeof SignificanceChart>;
+export type HardStopChart = z.infer<typeof HardStopChart>;
+export type GroupsChart = z.infer<typeof GroupsChart>;
+export type FragilityChart = z.infer<typeof FragilityChart>;
+export type ConfoundChart = z.infer<typeof ConfoundChart>;
+
 export const Chart = z.discriminatedUnion('kind', [
   SignificanceChart,
   HardStopChart,

@@ -25,3 +25,14 @@ export type FieldSpec = z.infer<typeof FieldSpec>;
 
 export const RoleOption = z.object({ value: FieldRole, label: z.string() });
 export type RoleOption = z.infer<typeof RoleOption>;
+
+/** The role choices offered in the field editor. Every value is a real FieldRole. */
+export const ROLE_OPTIONS: RoleOption[] = [
+  { value: 'unit', label: 'Independent unit' },
+  { value: 'grouping', label: 'Grouping compared' },
+  { value: 'observation', label: 'Observation (not independent)' },
+  { value: 'nuisance', label: 'Nuisance / technical' },
+  { value: 'covariate', label: 'Technical covariate' },
+  { value: 'derived', label: 'Derived grouping' },
+  { value: 'ignore', label: 'Ignore' },
+];
