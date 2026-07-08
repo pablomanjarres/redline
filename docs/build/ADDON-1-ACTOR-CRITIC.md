@@ -1,4 +1,4 @@
-# Redline — Add-on 1: Actor-Critic finding verification (build contract)
+# Redline: Add-on 1: Actor-Critic finding verification (build contract)
 
 This is the authoritative spec for the actor-critic layer. It sits between a check
 producing a candidate finding and that finding reaching the user. Read `INTERFACES.md`,
@@ -66,11 +66,11 @@ Nothing here fakes the base page. The critic slice is real, wired, and self-veri
 
 ## Structured contract (`packages/contracts/src/critic.ts`)
 
-- `CriticJudgment` — the strict JSON the model returns:
+- `CriticJudgment`: the strict JSON the model returns:
   `{ verdict: 'confirm'|'downgrade'|'veto', keys_on: string, justification: string, confidence: 'high'|'medium'|'low' }`.
-- `CriticRequest` — what the critic sees: `checkId`, `computeState`, `claim`,
+- `CriticRequest`: what the critic sees: `checkId`, `computeState`, `claim`,
   `datasetTitle`, `evidence` (the numbers), and optional `method` / `design` / `checkReasoning`.
-- `CriticAssessment` — what is attached to a finding and logged: the resolved verdict,
+- `CriticAssessment`: what is attached to a finding and logged: the resolved verdict,
   `keysOn`, `justification`, `confidence`, `unverified` (fail-safe flag), and `source`
   (`bedrock`|`anthropic`|`curated`).
 - `CheckResult` gains `critic?: CriticAssessment` and `computeState?: CheckState` (the

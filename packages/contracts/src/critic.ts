@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CheckId, CheckState } from './primitives.js';
 
 /**
- * @redline/contracts/critic — the actor-critic layer. After a check (the actor)
+ * @redline/contracts/critic - the actor-critic layer. After a check (the actor)
  * produces a candidate finding, a separate Claude call (the critic) re-examines
  * it against the numbers and can confirm, downgrade, or veto it. Only a finding
  * the critic confirms surfaces as FLAGGED. These shapes are the strict contract

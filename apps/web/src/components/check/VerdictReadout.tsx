@@ -24,7 +24,7 @@ function conclusionLabel(state: CheckState, checkId: CheckId): string {
 
 /** The critic strip: how the independent second pass ruled on this finding. */
 function criticPresentation(a: CriticAssessment): { label: string; color: string } {
-  if (a.unverified) return { label: 'Unverified — shown by default', color: 'var(--ink-4)' };
+  if (a.unverified) return { label: 'Unverified, shown by default', color: 'var(--ink-4)' };
   if (a.verdict === 'veto') return { label: 'Vetoed the flag', color: 'var(--green)' };
   if (a.verdict === 'downgrade') return { label: 'Downgraded to advisory', color: 'var(--amber)' };
   return { label: 'Confirmed the flag', color: 'var(--ink-3)' };

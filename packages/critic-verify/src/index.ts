@@ -1,5 +1,5 @@
 /**
- * @redline/critic-verify — the actor-critic acceptance harness. It runs the critic
+ * @redline/critic-verify - the actor-critic acceptance harness. It runs the critic
  * over genuine oracle findings plus adversarial injections and grades whether it
  * confirms, downgrades, and vetoes correctly, whether a real model call fired per
  * finding, and whether a rubber-stamp critic is caught. The offline tests use

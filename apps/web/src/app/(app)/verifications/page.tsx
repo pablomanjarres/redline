@@ -239,9 +239,9 @@ export default function VerificationsPage() {
 }
 
 const KIND_TITLE: Record<(typeof KIND_ORDER)[number], string> = {
-  genuine: 'Genuine flags — the critic must confirm',
-  'over-fire': 'Over-fired flags on the clean case — the critic must veto (green)',
-  underpowered: 'Underpowered split — the critic must downgrade',
+  genuine: 'Genuine flags: the critic must confirm',
+  'over-fire': 'Over-fired flags on the clean case: the critic must veto (green)',
+  underpowered: 'Underpowered split: the critic must downgrade',
 };
 
 // The outcome carries no kind, so group by the case shape the harness encodes in
