@@ -4,11 +4,9 @@ import { C, stateColor } from '@redline/ui';
 import { keyer } from './svg';
 
 /**
- * The card thumbnail. Ported from `Redline.dc.html` `buildMini`: a compact
- * glyph per check, tinted by the verdict color. The two data-driven glyphs read
- * the check's chart off the result union: check 3 lights the middle presence
- * tiles and a stability meter when the tracked group is fragile (absent at some
- * sampled resolution); check 4 traces the confound diagonal once verified.
+ * The card thumbnail: a small, clean glyph per check, tinted by the verdict
+ * color. Miniatures of the full figures (bars, dumbbell, presence strip, 2x2
+ * grid), read from the result union. No hand-drawn marks.
  */
 export function MiniChart({
   checkId,
@@ -26,20 +24,23 @@ export function MiniChart({
   );
 
   if (checkId === 1) {
-    add(<rect x={70} y={16} width={26} height={64} rx={2} fill="#ECE9E0" stroke={C.line2} />);
-    add(<line x1={66} y1={26} x2={100} y2={18} stroke={C.red} strokeWidth={2.4} strokeLinecap="round" />);
-    add(<rect x={116} y={66} width={26} height={14} rx={2} fill={C.ink} />);
-    add(<line x1={60} y1={80} x2={158} y2={80} stroke={C.line2} />);
+    // two bars on a baseline with a dashed alpha rule: tall reported, short honest
+    add(<line x1={54} y1={82} x2={156} y2={82} stroke={C.line2} strokeWidth={1} />);
+    add(<line x1={54} y1={40} x2={156} y2={40} stroke={C.line2} strokeWidth={1} strokeDasharray="3 3" />);
+    add(<rect x={74} y={20} width={22} height={62} rx={3} fill={col} />);
+    add(<rect x={116} y={70} width={22} height={12} rx={3} fill={C.ink} />);
     return wrap(els);
   }
 
   if (checkId === 2) {
+    // dumbbell rows: discovery (ink) to held-out (verdict), collapsing left
     for (let i = 0; i < 4; i++) {
-      const y = 20 + i * 18;
-      add(<line x1={70} y1={y} x2={150} y2={y} stroke={C.line2} strokeWidth={1.5} />);
+      const y = 22 + i * 17;
+      add(<line x1={78} y1={y} x2={150} y2={y} stroke={C.line2} strokeWidth={1.5} strokeLinecap="round" />);
       add(<circle cx={150} cy={y} r={3.5} fill={C.ink} />);
       add(<circle cx={78} cy={y} r={3.5} fill="#fff" stroke={col} strokeWidth={2} />);
     }
+    add(<line x1={70} y1={14} x2={70} y2={86} stroke={C.line2} strokeWidth={1} strokeDasharray="3 3" />);
     return wrap(els);
   }
 
@@ -47,46 +48,28 @@ export function MiniChart({
     const fragile = result.chart.kind === 'fragility' ? result.chart.steps.some((s) => !s.present) : false;
     const stability = result.chart.kind === 'fragility' ? result.chart.stability : 0;
     for (let i = 0; i < 8; i++) {
-      const x = 30 + i * 20;
+      const x = 26 + i * 20;
       const on = fragile ? i >= 3 && i <= 5 : true;
-      add(<rect x={x} y={30} width={15} height={22} rx={3} fill={on ? col : C.panel3} stroke={on ? 'none' : '#DDD8CC'} />);
+      add(<rect x={x} y={28} width={15} height={24} rx={3} fill={on ? col : C.panel2} stroke={on ? 'none' : C.line2} strokeWidth={1} />);
     }
-    add(<rect x={30} y={64} width={150 * stability} height={8} rx={4} fill={col} />);
-    add(<rect x={30} y={64} width={150} height={8} rx={4} fill="none" stroke="#DDD8CC" />);
+    add(<rect x={26} y={66} width={149} height={7} rx={3.5} fill={C.panel2} stroke={C.line2} strokeWidth={1} />);
+    add(<rect x={26} y={66} width={Math.max(4, 149 * stability)} height={7} rx={3.5} fill={col} />);
     return wrap(els);
   }
 
-  const ox = 78;
-  const oy = 18;
+  // 2x2 contingency grid; occupied diagonal ringed when confounded
+  const ox = 76;
+  const oy = 20;
   const s = 30;
+  const verified = result.chart.kind === 'confound' ? result.chart.verified : false;
   for (let r = 0; r < 2; r++) {
     for (let cc = 0; cc < 2; cc++) {
       const f = r === cc;
-      add(
-        <rect
-          x={ox + cc * s}
-          y={oy + r * s}
-          width={s - 5}
-          height={s - 5}
-          rx={3}
-          fill={f ? C.ink : C.panel2}
-          stroke={f ? 'none' : '#DDD8CC'}
-          strokeDasharray={f ? '0' : '3 3'}
-        />,
-      );
+      add(<rect x={ox + cc * s} y={oy + r * s} width={s - 5} height={s - 5} rx={3} fill={f ? C.ink : C.panel2} stroke={f ? 'none' : C.line2} strokeWidth={1} strokeDasharray={f ? '0' : '3 3'} />);
+      if (f && verified) {
+        add(<rect x={ox + cc * s - 2} y={oy + r * s - 2} width={s - 1} height={s - 1} rx={4} fill="none" stroke={col} strokeWidth={1.75} />);
+      }
     }
-  }
-  const verified = result.chart.kind === 'confound' ? result.chart.verified : false;
-  if (verified) {
-    add(
-      <path
-        d={`M${ox} ${oy} C ${ox + s} ${oy + s * 0.4}, ${ox + s} ${oy + s}, ${ox + 2 * s - 6} ${oy + 2 * s - 8}`}
-        fill="none"
-        stroke={C.red}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />,
-    );
   }
   return wrap(els);
 }
