@@ -20,6 +20,21 @@ export const StatReadout = z.object({
 export type StatReadout = z.infer<typeof StatReadout>;
 
 /**
+ * Where a ComputeResult's numbers came from. Optional so older payloads and the
+ * locked fixtures still parse. `target` names the seam that ran (fixture / local
+ * / cloudrun / endpoint); `engine`, `ran`, `nonce`, and `elapsedMs` let the
+ * verification harness prove the numbers were freshly computed, not replayed.
+ */
+export const ComputeProvenance = z.object({
+  target: z.enum(['fixture', 'local', 'cloudrun', 'endpoint']),
+  engine: z.string().optional(),
+  ran: z.string().optional(),
+  nonce: z.string().optional(),
+  elapsedMs: z.number().optional(),
+});
+export type ComputeProvenance = z.infer<typeof ComputeProvenance>;
+
+/**
  * Numbers + chart + verdict. Produced by a ComputeTarget (the locked fixture,
  * or the real Python rigor engine). This is the half of a finding that is
  * statistics, not prose.
@@ -30,6 +45,7 @@ export const ComputeResult = z.object({
   headline: z.string(),
   stats: z.array(StatReadout),
   chart: Chart,
+  provenance: ComputeProvenance.optional(), // where these numbers came from; absent on older payloads
 });
 export type ComputeResult = z.infer<typeof ComputeResult>;
 
@@ -44,6 +60,7 @@ export const Narrative = z.object({
   original: z.string().nullable(), // the scientist's claim, struck through
   corrected: z.string(), // the defensible rewrite (or clean verdict)
   missing: z.string().optional(), // what's needed when a check can't run
+  source: z.enum(['bedrock', 'anthropic', 'curated', 'fixture']).optional(), // which reasoner produced this prose
 });
 export type Narrative = z.infer<typeof Narrative>;
 

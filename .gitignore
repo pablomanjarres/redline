@@ -39,3 +39,6 @@ services/rigor/data/cache/
 # logs
 *.log
 npm-debug.log*
+
+# generated foils, oracle outputs, probe scratch (regenerate via build_foils.py / oracle)
+services/rigor/cache/

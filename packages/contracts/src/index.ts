@@ -10,3 +10,4 @@ export * from './checks.js';
 export * from './dataset.js';
 export * from './reasoning.js';
 export * from './report.js';
+export * from './verification.js';
