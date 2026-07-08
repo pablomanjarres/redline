@@ -1,6 +1,6 @@
-<!-- Banner placeholder: drop a hero image at .github/banner.webp and wrap it here to match the house layout. Left out for now so nothing renders as a broken link. -->
-
-<h1 align="center">Redline</h1>
+<p align="center">
+  <img src=".github/redline-logo.svg" alt="Redline — statistical auditor for single-cell RNA-seq" width="860">
+</p>
 
 <p align="center"><strong>Break your own analysis before Reviewer 2 does.</strong></p>
 
@@ -12,7 +12,6 @@
   <img alt="React 19" src="https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB" />
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=flat&logo=nextdotjs&logoColor=white" />
   <img alt="Zod" src="https://img.shields.io/badge/Zod-3E67B1?style=flat&logo=zod&logoColor=white" />
-  <img alt="AWS Bedrock" src="https://img.shields.io/badge/AWS_Bedrock-232F3E?style=flat&logo=amazonwebservices&logoColor=white" />
   <img alt="MCP" src="https://img.shields.io/badge/MCP-CE2A1E?style=flat&logo=modelcontextprotocol&logoColor=white" />
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-CE2A1E?style=flat" />
   <img alt="status building" src="https://img.shields.io/badge/status-building-A9741A?style=flat" />
@@ -60,7 +59,7 @@ redline/
 │   ├── contracts/      # @redline/contracts: Zod shapes every surface speaks      · built
 │   ├── ui/             # @redline/ui: tokens, palette, React primitives           · built
 │   ├── engine/         # orchestration + the ComputeTarget seam + demo fixtures   · built
-│   └── reasoning/      # Claude via AWS Bedrock: names, cites, rewrites            · built
+│   └── reasoning/      # reasoning layer (Claude): names, cites, rewrites the finding · built
 └── services/           # Python side, outside the pnpm graph
     ├── rigor/          # scanpy / PyDESeq2 engine: MCP server + GCP Cloud Run job  · built
     └── skill/          # the same engine as a Claude Skill (for Claude Science)    · built
@@ -73,9 +72,9 @@ Every finding is numbers plus narrative: a `ComputeResult` (the verdict, the sta
 | Path | What it is | Status |
 |---|---|---|
 | `packages/contracts` | `@redline/contracts`: Zod schemas for every shape the system exchanges. Field roles and verdicts (`primitives`), resolved `obs` columns (`fields`), five discriminated chart payloads (`charts`), the compute-plus-narrative finding (`checks`), scenarios and datasets (`dataset`), the reasoning request/response (`reasoning`), and the assembled `AuditReport`. | built |
-| `packages/ui` | `@redline/ui`: the design system. A cream-paper palette with a single editorial red, IBM Plex Sans and Mono with Source Serif 4, verdict-to-color and verdict-to-label helpers, and presentational React primitives (`Panel`, `Badge`, `StatTile`, `Kicker`, `Button`, `Dot`). | built |
+| `packages/ui` | `@redline/ui`: the design system. The audit-instrument tokens (a light instrument surface, a reserved red for findings, a blue signal), Archivo and JetBrains Mono, and verdict-to-color / verdict-to-label helpers. | built |
 | `packages/engine` | Orchestration across the foundation step and the four checks, the `ComputeTarget` dispatch seam, and the locked deterministic fixtures that keep the demo path bulletproof. | built |
-| `packages/reasoning` | The reasoning layer: Claude via AWS Bedrock. Names the failure mode, cites the fixing method, rewrites the conclusion, and writes the clean verdict when a check passes. Falls back to curated deterministic copy when Bedrock is not configured. | built |
+| `packages/reasoning` | The reasoning layer. Claude names the failure mode, cites the fixing method, rewrites the conclusion, and writes the clean verdict when a check passes — over the first-party Claude API (the path you run, with your own key) or AWS Bedrock (the hosted demo), with a curated deterministic fallback when no key is set. | built |
 | `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. Deploys to Vercel. | built |
 | `services/rigor` | The real statistics in Python (scanpy, decoupler, PyDESeq2, numpy), exposed as an MCP server and runnable as a GCP Cloud Run job. | built |
 | `services/skill` | The rigor engine packaged as a Claude Skill (`SKILL.md` plus scripts), so the same core loads natively into Claude Science. | built |
@@ -88,7 +87,7 @@ One hard rule governs every demo. The authors did their analysis rigorously: the
 
 ## Tech stack
 
-TypeScript, Node 22, pnpm, and turbo, with Zod contracts binding every surface. React 19 and Next.js for the workbench. Python with scanpy, decoupler, and PyDESeq2 for the real statistics: pseudobulk differential expression, count-split reclustering, Leiden resolution sweeps, and design-matrix rank checks. Claude via AWS Bedrock for the reasoning layer, never the direct Anthropic API. MCP for the engine surface, packaged as a Claude Skill for Claude Science. GCP Cloud Run for the heavy jobs, Vercel for the web app.
+TypeScript, Node 22, pnpm, and turbo, with Zod contracts binding every surface. React 19 and Next.js for the workbench. Python with scanpy, decoupler, and PyDESeq2 for the real statistics: pseudobulk differential expression, count-split reclustering, Leiden resolution sweeps, and design-matrix rank checks. Claude writes the reasoning layer — the failure-mode name, the citation, the defensible rewrite — over the first-party Claude API, or AWS Bedrock for the hosted demo. MCP for the engine surface, packaged as a Claude Skill for Claude Science. GCP Cloud Run for the heavy jobs, Vercel for the web app.
 
 ## Getting started
 
@@ -109,10 +108,10 @@ pnpm test         # engine fixtures (26) + reasoning (7)
 Copy `.env.example` to `.env.local` and set only what you need. Nothing is hardcoded.
 
 ```bash
-# Reasoning runs on AWS Bedrock (never the direct Anthropic API).
-# Unset credentials fall back to curated deterministic copy, so the demo still runs.
-AWS_REGION=us-east-1
-REDLINE_BEDROCK_MODEL_ID=us.anthropic.claude-opus-4-5-20251101-v1:0
+# Reasoning — Claude. Set a key and Claude writes the findings; unset = curated fallback.
+ANTHROPIC_API_KEY=sk-ant-...                # first-party Claude API (the path you run)
+# REDLINE_ANTHROPIC_MODEL=claude-opus-4-8   # optional; defaults to Claude Opus 4.8
+# The hosted demo pins AWS Bedrock instead (REDLINE_REASONING_BACKEND=bedrock) — see .env.example.
 
 # Where the heavy statistics run: fixture (default) | local | cloudrun | endpoint
 REDLINE_COMPUTE_TARGET=fixture
@@ -126,7 +125,7 @@ REDLINE_S3_PREFIX=marson2025_data/
 
 Hackathon v1. Built for **Built with Claude: Life Sciences** (Anthropic × Gladstone Institutes).
 
-The stack is on disk and runs end to end: the contracts and design system, the orchestration engine with its `ComputeTarget` seam and the locked fixtures, the plots-first workbench (deployed to Vercel), the Bedrock reasoning layer with its curated fallback, and the Python rigor service (the four checks, the MCP server, the Cloud Run job runner, and the Claude Skill packaging). The `next build` is green, and the demo runs on the fixture target with zero cloud credentials. Point `REDLINE_COMPUTE_TARGET` at the Python engine to run the real statistics on your own `.h5ad`.
+The stack is on disk and runs end to end: the contracts and design system, the orchestration engine with its `ComputeTarget` seam and the locked fixtures, the plots-first workbench (deployed to Vercel), the Claude reasoning layer (first-party Claude API, or Bedrock for the hosted demo, with a curated fallback), and the Python rigor service (the four checks, the MCP server, the Cloud Run job runner, and the Claude Skill packaging). The `next build` is green, and the demo runs on the fixture target with zero cloud credentials. Point `REDLINE_COMPUTE_TARGET` at the Python engine to run the real statistics on your own `.h5ad`.
 
 ## License
 
