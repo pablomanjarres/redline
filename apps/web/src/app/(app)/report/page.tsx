@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useSession } from '@/state/session';
 import { fmt } from '@/lib/format';
 import { ReportRow } from '@/components/report/ReportRow';
@@ -8,14 +9,30 @@ import { ReportRow } from '@/components/report/ReportRow';
  * The audit report: a dark verdict sheet. A mono kicker + display title name
  * the specimen; a bold verdict band tallies the run in signal color and states
  * the overall verdict; one ReportRow per check carries the finding, the figure
- * on a lightbox plate, and the citation. Prints clean (the export button and
- * chrome carry `rl-no-print`).
+ * on a lightbox plate, and the citation. "Export PDF" renders a real, light,
+ * downloadable report document via `@/lib/report-pdf` (not a print of this
+ * dark page); the button carries `rl-no-print` so an ad-hoc Cmd+P still omits
+ * it.
  */
 export default function ReportPage() {
   const { report, dataset } = useSession();
+  const [exporting, setExporting] = useState(false);
 
-  const onExport = () => {
-    if (typeof window !== 'undefined') window.print();
+  // Generate a real, downloadable PDF report (not a print of the dark app
+  // page). The renderer is a heavy dependency, so it is code-split and only
+  // pulled in when the operator actually exports.
+  const onExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const { downloadReportPdf } = await import('@/lib/report-pdf');
+      await downloadReportPdf(report, dataset);
+    } catch (err) {
+      console.error('Report PDF export failed', err);
+      if (typeof window !== 'undefined') window.alert('Could not generate the PDF. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const counts = [
@@ -42,6 +59,8 @@ export default function ReportPage() {
         <button
           type="button"
           onClick={onExport}
+          disabled={exporting}
+          aria-busy={exporting}
           className="rl-no-print"
           aria-label="Export report as PDF"
           style={{
@@ -54,10 +73,11 @@ export default function ReportPage() {
             border: '1px solid var(--edge-2)',
             padding: '11px 16px',
             borderRadius: 10,
-            cursor: 'pointer',
+            cursor: exporting ? 'progress' : 'pointer',
+            opacity: exporting ? 0.6 : 1,
           }}
         >
-          Export PDF
+          {exporting ? 'Generating…' : 'Export PDF'}
         </button>
       </div>
 

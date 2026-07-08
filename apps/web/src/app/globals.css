@@ -28,9 +28,11 @@ button:focus-visible,
   border-radius: 4px;
 }
 
-/* PDF export (the report's "Export PDF" calls window.print()). The workbench
-   shell is a fixed-height, clipped flex column for the screen; for print we let
-   it flow onto paper and keep the fill colors that carry meaning. */
+/* Ad-hoc print (Cmd+P). The report's "Export PDF" now renders a real document
+   via @/lib/report-pdf and no longer relies on this, but a browser print of any
+   surface should still flow cleanly: the workbench shell is a fixed-height,
+   clipped flex column for the screen; for print we let it flow onto paper and
+   keep the fill colors that carry meaning. */
 @media print {
   @page {
     margin: 14mm;
