@@ -7,16 +7,69 @@ during the build. Run them once to populate the local cache before you exercise
 the real compute target or the oracle.
 
 Everything anonymous, no credentials. The source bucket is public with
-no-sign-request, so nothing here reads or needs AWS keys. Outputs land in
-`cache/`, which is gitignored. Datasets are never committed.
+no-sign-request, so nothing here reads or needs AWS keys. The heavy `.h5ad`
+outputs land in `cache/`, which is gitignored and never committed. The small,
+real published summary tables in `real/` (a few MB) ARE committed, so the repo
+carries real numbers without the 1.7 TB of matrices.
 
 ```
 services/rigor/data/
-  subset_marson.py     S3 -> small local subset (.h5ad, raw counts preserved)
-  build_naive_foil.py  subset -> the naive analysis Redline audits
-  oracle.py            Pillar 1 correctness check vs the authors' published answer key
-  cache/               gitignored outputs (the .h5ad files)
+  subset_marson.py       S3 -> small local subset (.h5ad, raw counts preserved)
+  build_naive_foil.py    subset -> the naive analysis Redline audits
+  oracle.py              Pillar 1 correctness check vs the authors' published answer key
+  build_real_marson.py   real/ tables -> real design + confound + DE (no matrix)
+  real/                  COMMITTED small real tables + derived real-marson.json
+  cache/                 gitignored heavy outputs (the .h5ad files)
 ```
+
+## Real numbers without the 1.7 TB (committed)
+
+The full dataset is 1.7 TB (individual matrices 15-148 GiB), so the four checks
+cannot re-run in CI or on serverless. But two small, real published tables are
+committed under `real/` and carry genuine numbers:
+
+- `real/sample_metadata.suppl_table.csv` (2.9 KB) - the real design: 4 donors
+  with covariates, 3 conditions, 2 sequencing runs.
+- `real/DE_stats.suppl_table.csv` (4.6 MB) - the authors' real donor-level DE
+  result, one row per perturbation x condition (33,983 rows).
+
+`build_real_marson.py` reads them (pure standard library; runs on stock Python)
+and writes `real/real-marson.json`:
+
+```bash
+python build_real_marson.py
+# real design (4 donors), condition x run Cramér's V = 0.50, 21,216/33,983 sig KDs
+```
+
+What that grounds, with no expression matrix:
+
+- **the experimental design** (foundation) and **Check 4 confounding** are fully
+  real. The real confound: every 48-hour-stimulation sample ran in batch R2, so
+  `culture_condition` is partly inseparable from `10xrun_id` (Cramér's V = 0.50).
+- **Check 1's replication structure** - the 4 donors and real per-perturbation
+  cell counts (the true replicate unit vs the naive cell count).
+
+What still needs the full `.h5ad` (the `cache/` foil):
+
+- the exact naive cell-level p-value, **Check 2** double-dipping AUC, and
+  **Check 3** clustering fragility. Build the foil (below) and run the engine.
+
+The app surfaces the real derived numbers on its Environment page.
+
+## Wiring the engine to the app (`remote_adapter.py`)
+
+The web app's `RemoteTarget` sends `{op, scenarioId}`; the engine's `redline-job`
+expects `{h5ad}`. `redline.remote_adapter` bridges them: it maps `scenarioId` to
+a local `.h5ad` path and dispatches to the engine.
+
+```bash
+export REDLINE_COMPUTE_TARGET=local
+export REDLINE_ENGINE_CMD="python -m redline.remote_adapter"
+export REDLINE_MARSON_H5AD=/abs/path/cache/cd4_tcell_perturbseq_subset.foil.h5ad
+```
+
+Until that points at a real file, `getComputeTarget()` falls back to the
+deterministic fixture, so nothing is presented as live that is not.
 
 ## The hard framing constraint (read before touching the demo)
 
