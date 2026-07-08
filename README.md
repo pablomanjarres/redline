@@ -55,15 +55,15 @@ The UI never changes, only the target does. A target that is not yet wired stays
 ```text
 redline/
 ├── apps/
-│   └── web/            # plots-first workbench (Next.js -> Vercel)               · planned
+│   └── web/            # plots-first workbench (Next.js -> Vercel)               · built
 ├── packages/
 │   ├── contracts/      # @redline/contracts: Zod shapes every surface speaks      · built
 │   ├── ui/             # @redline/ui: tokens, palette, React primitives           · built
-│   ├── engine/         # orchestration + the ComputeTarget seam + demo fixtures   · planned
-│   └── reasoning/      # Claude via AWS Bedrock: names, cites, rewrites            · planned
+│   ├── engine/         # orchestration + the ComputeTarget seam + demo fixtures   · built
+│   └── reasoning/      # Claude via AWS Bedrock: names, cites, rewrites            · built
 └── services/           # Python side, outside the pnpm graph
-    ├── rigor/          # scanpy / PyDESeq2 engine: MCP server + GCP Cloud Run job  · planned
-    └── skill/          # the same engine as a Claude Skill (for Claude Science)    · planned
+    ├── rigor/          # scanpy / PyDESeq2 engine: MCP server + GCP Cloud Run job  · built
+    └── skill/          # the same engine as a Claude Skill (for Claude Science)    · built
 ```
 
 Every finding is numbers plus narrative: a `ComputeResult` (the verdict, the stats, the chart payload) from the compute target, merged with a `Narrative` (the named failure mode, the citation, the struck-through claim, the defensible rewrite) from the reasoning layer. Both halves are Zod-typed in `@redline/contracts`, so the fixture, the Python engine, the reasoning layer, and the UI all speak one shape.
@@ -74,11 +74,11 @@ Every finding is numbers plus narrative: a `ComputeResult` (the verdict, the sta
 |---|---|---|
 | `packages/contracts` | `@redline/contracts`: Zod schemas for every shape the system exchanges. Field roles and verdicts (`primitives`), resolved `obs` columns (`fields`), five discriminated chart payloads (`charts`), the compute-plus-narrative finding (`checks`), scenarios and datasets (`dataset`), the reasoning request/response (`reasoning`), and the assembled `AuditReport`. | built |
 | `packages/ui` | `@redline/ui`: the design system. A cream-paper palette with a single editorial red, IBM Plex Sans and Mono with Source Serif 4, verdict-to-color and verdict-to-label helpers, and presentational React primitives (`Panel`, `Badge`, `StatTile`, `Kicker`, `Button`, `Dot`). | built |
-| `packages/engine` | Orchestration across the foundation step and the four checks, the `ComputeTarget` dispatch seam, and the locked deterministic fixtures that keep the demo path bulletproof. | planned |
-| `packages/reasoning` | The reasoning layer: Claude via AWS Bedrock. Names the failure mode, cites the fixing method, rewrites the conclusion, and writes the clean verdict when a check passes. Falls back to curated deterministic copy when Bedrock is not configured. | planned |
-| `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. Deploys to Vercel. | planned |
-| `services/rigor` | The real statistics in Python (scanpy, decoupler, PyDESeq2, numpy), exposed as an MCP server and runnable as a GCP Cloud Run job. | planned |
-| `services/skill` | The rigor engine packaged as a Claude Skill (`SKILL.md` plus scripts), so the same core loads natively into Claude Science. | planned |
+| `packages/engine` | Orchestration across the foundation step and the four checks, the `ComputeTarget` dispatch seam, and the locked deterministic fixtures that keep the demo path bulletproof. | built |
+| `packages/reasoning` | The reasoning layer: Claude via AWS Bedrock. Names the failure mode, cites the fixing method, rewrites the conclusion, and writes the clean verdict when a check passes. Falls back to curated deterministic copy when Bedrock is not configured. | built |
+| `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. Deploys to Vercel. | built |
+| `services/rigor` | The real statistics in Python (scanpy, decoupler, PyDESeq2, numpy), exposed as an MCP server and runnable as a GCP Cloud Run job. | built |
+| `services/skill` | The rigor engine packaged as a Claude Skill (`SKILL.md` plus scripts), so the same core loads natively into Claude Science. | built |
 
 ## The reference dataset
 
@@ -99,9 +99,9 @@ git clone https://github.com/pablomanjarres/redline.git
 cd redline
 
 pnpm install
-pnpm build        # today: builds @redline/contracts and @redline/ui
+pnpm build        # builds the four packages, then the Next.js workbench
 pnpm typecheck
-pnpm test
+pnpm test         # engine fixtures (26) + reasoning (7)
 ```
 
 ### Configuration
@@ -124,9 +124,9 @@ REDLINE_S3_PREFIX=marson2025_data/
 
 ## Status
 
-Hackathon v1, in progress. Built for **Built with Claude: Life Sciences** (Anthropic × Gladstone Institutes).
+Hackathon v1. Built for **Built with Claude: Life Sciences** (Anthropic × Gladstone Institutes).
 
-On disk today: the contracts (`@redline/contracts`) and the design system (`@redline/ui`) that every surface builds on. Being wired next: the orchestration engine and its `ComputeTarget` seam, the plots-first workbench, the Bedrock reasoning layer, and the Python rigor service (the MCP server plus its Claude Skill packaging). Build order is foundation first (design resolution), then the four checks in ascending implementation risk, then the reasoning and report assembly, then the UI.
+The stack is on disk and runs end to end: the contracts and design system, the orchestration engine with its `ComputeTarget` seam and the locked fixtures, the plots-first workbench (deployed to Vercel), the Bedrock reasoning layer with its curated fallback, and the Python rigor service (the four checks, the MCP server, the Cloud Run job runner, and the Claude Skill packaging). The `next build` is green, and the demo runs on the fixture target with zero cloud credentials. Point `REDLINE_COMPUTE_TARGET` at the Python engine to run the real statistics on your own `.h5ad`.
 
 ## License
 
