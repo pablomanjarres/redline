@@ -1,9 +1,5 @@
 <p align="center">
-  <img src=".github/redline-banner.png" alt="Redline — statistical auditor for single-cell RNA-seq" width="880">
-</p>
-
-<p align="center">
-  <img src=".github/redline-logo.svg" alt="Redline" width="640">
+  <img src=".github/redline-logo.svg" alt="Redline — statistical auditor for single-cell RNA-seq" width="860">
 </p>
 
 <p align="center"><strong>Break your own analysis before Reviewer 2 does.</strong></p>
@@ -25,6 +21,10 @@
 Redline audits the statistics behind a single-cell RNA-seq analysis before that analysis becomes a paper. A scientist hands it their data (an AnnData `.h5ad`) and the analysis they ran. Redline re-runs the load-bearing steps itself, then turns adversarial on the results: it finds where a conclusion is statistically invalid, or only looks significant because of how the data was handled. Every finding lands on the scientist's own figure, names the exact failure mode, cites the method paper that fixes it, and rewrites the conclusion in language that survives peer review.
 
 QC is a solved, commoditized layer, and a generic reviewer reads a finished manuscript. Redline works one level in from both: on your own data and your own code, on the statistical reasoning, before any of it is published. It catches four classes of error that no QC tool and no generic agent flags.
+
+<p align="center">
+  <img src=".github/redline-banner.png" alt="The classes of statistical error Redline catches" width="880">
+</p>
 
 ## What it catches
 
