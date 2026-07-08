@@ -4,21 +4,26 @@
  * `AuditReport` into a clean, light, paginated document (selectable text,
  * built-in Helvetica/Courier so it needs no font fetch) and saves it to disk.
  *
- * The PDF is a superset of the on-screen report row: it keeps the verdict
- * band, the struck-through claim, and the defensible rewrite, and it *adds*
- * the compute headline and the per-check statistics table — the numbers a
- * reviewer actually needs on paper. It renders only fields the engine
- * produced; it never invents a figure or a stat (see docs/honesty-rules.md).
+ * The PDF is a superset of the on-screen report row: per check it carries the
+ * evidence figure (drawn from `result.chart` with SVG primitives), the compute
+ * headline, the struck-through claim, the defensible rewrite, the statistics
+ * table, and the method citation. Every mark and number is read from the
+ * engine's result — it never invents a figure or a stat (docs/honesty-rules.md).
  */
+import { Fragment } from 'react';
 import {
   Document,
   Page,
   View,
   Text,
   StyleSheet,
+  Svg,
+  Rect,
+  Line,
+  Circle,
   pdf,
 } from '@react-pdf/renderer';
-import type { AuditReport, CheckResult, DatasetMeta, StatReadout } from '@redline/contracts';
+import type { AuditReport, Chart, CheckResult, DatasetMeta, StatReadout } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { fmt } from './format';
 
@@ -83,6 +88,138 @@ function safe(s: string): string {
     .replace(/[αβγσΔμ≥≤≈≠→←▸↑↓√∞−]/g, (ch) => GLYPHS[ch] ?? ch);
 }
 
+// ── Evidence figures ─────────────────────────────────────────────────────────
+// Clean, data-driven glyphs per check, drawn from `result.chart` with react-pdf
+// SVG primitives (miniatures of the on-screen figures; verdict-tinted). The
+// viewBox is a fixed 210×116 box scaled to the plate.
+const VB = { w: 210, h: 116 } as const;
+const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+
+function Figure({ chart, fg }: { chart: Chart; fg: string }) {
+  const svgProps = { viewBox: `0 0 ${VB.w} ${VB.h}`, style: { width: '100%', height: '100%' } as const };
+
+  // Check 1 — pseudoreplication: naive vs honest significance as two bars,
+  // with a dashed α rule. Bar height ∝ −log10(p); the naive bar towers past α,
+  // the honest bar sits below it.
+  if (chart.kind === 'significance') {
+    const base = 98, span = 78;
+    // Significance magnitude = |log10(p)|, robust to the sign convention of the
+    // stored `log10p`. Bigger = more significant; the α threshold is |log10(α)|.
+    const naiveSig = Math.abs(chart.naive.log10p);
+    const honestSig = Math.abs(chart.honest.log10p);
+    const alphaSig = Math.abs(Math.log10(chart.alpha || 0.05));
+    const max = Math.max(naiveSig, alphaSig * 1.15, 1);
+    const h = (s: number) => Math.max(3, (clamp(s, 0, max) / max) * span);
+    const alphaY = base - (clamp(alphaSig, 0, max) / max) * span;
+    return (
+      <Svg {...svgProps}>
+        <Line x1={38} y1={base} x2={186} y2={base} stroke="#D3DBE5" strokeWidth={1} />
+        <Line x1={38} y1={alphaY} x2={186} y2={alphaY} stroke="#9AA6B8" strokeWidth={1} strokeDasharray="3 3" />
+        <Rect x={74} y={base - h(naiveSig)} width={28} height={h(naiveSig)} rx={3} fill={fg} />
+        <Rect x={124} y={base - h(honestSig)} width={28} height={h(honestSig)} rx={3} fill="#10131A" />
+      </Svg>
+    );
+  }
+
+  // Check 1 hard branch — too few independent units: a row of unit dots.
+  if (chart.kind === 'hardstop') {
+    const n = clamp(chart.units, 1, 8);
+    const dots = Array.from({ length: n }, (_, i) => 46 + i * 20);
+    return (
+      <Svg {...svgProps}>
+        <Line x1={38} y1={74} x2={186} y2={74} stroke="#D3DBE5" strokeWidth={1} />
+        {dots.map((x, i) => (
+          <Circle key={i} cx={x} cy={58} r={6} fill="none" stroke={fg} strokeWidth={2} />
+        ))}
+      </Svg>
+    );
+  }
+
+  // Check 2 — double dipping: dumbbell per marker across an AUC axis (0.5→1).
+  // Discovery point in ink, held-out point in verdict color; a dashed rule at
+  // chance (0.5). Markers that collapse toward chance out of sample are the tell.
+  if (chart.kind === 'groups') {
+    const x0 = 58, x1 = 190;
+    const xf = (auc: number) => x0 + (clamp(auc, 0.5, 1) - 0.5) / 0.5 * (x1 - x0);
+    const rows = chart.markers.slice(0, 5);
+    const step = rows.length > 0 ? Math.min(20, 84 / rows.length) : 20;
+    const top = 20;
+    return (
+      <Svg {...svgProps}>
+        <Line x1={x0} y1={12} x2={x0} y2={104} stroke="#9AA6B8" strokeWidth={1} strokeDasharray="3 3" />
+        {rows.map((m, i) => {
+          const y = top + i * step;
+          return (
+            <Fragment key={i}>
+              <Line x1={xf(m.hold)} y1={y} x2={xf(m.disc)} y2={y} stroke="#D3DBE5" strokeWidth={1.5} />
+              <Circle cx={xf(m.disc)} cy={y} r={3.5} fill="#10131A" />
+              <Circle cx={xf(m.hold)} cy={y} r={3.5} fill="#FFFFFF" stroke={fg} strokeWidth={2} />
+            </Fragment>
+          );
+        })}
+      </Svg>
+    );
+  }
+
+  // Check 3 — fragility: a presence strip across the resolution sweep (filled =
+  // the tracked group is a discrete cluster there), plus a stability bar.
+  if (chart.kind === 'fragility') {
+    const steps = chart.steps.slice(0, 10);
+    const n = Math.max(steps.length, 1);
+    const gap = 4, left = 38, right = 186;
+    const cw = (right - left - gap * (n - 1)) / n;
+    return (
+      <Svg {...svgProps}>
+        {steps.map((s, i) => {
+          const x = left + i * (cw + gap);
+          return (
+            <Rect key={i} x={x} y={28} width={cw} height={30} rx={2.5}
+              fill={s.present ? fg : '#F1F4F8'} stroke={s.present ? 'none' : '#D3DBE5'} strokeWidth={1} />
+          );
+        })}
+        <Rect x={left} y={76} width={right - left} height={9} rx={4.5} fill="#F1F4F8" stroke="#D3DBE5" strokeWidth={1} />
+        <Rect x={left} y={76} width={Math.max(5, (right - left) * clamp(chart.stability, 0, 1))} height={9} rx={4.5} fill={fg} />
+      </Svg>
+    );
+  }
+
+  // Check 4 — confounding: the contingency grid (grouping × technical variable).
+  // Occupied cells in ink; when the two variables are inseparable (not verified)
+  // the occupied cells are ringed in verdict color.
+  if (chart.kind === 'confound') {
+    const rows = chart.grid.cells.slice(0, 4);
+    const nr = Math.max(rows.length, 1);
+    const nc = Math.max(rows[0]?.length ?? 1, 1);
+    const cell = clamp(Math.min(120 / nc, 68 / nr), 14, 34);
+    const gw = nc * cell, gh = nr * cell;
+    const ox = (VB.w - gw) / 2, oy = (VB.h - gh) / 2;
+    const pad = 3;
+    return (
+      <Svg {...svgProps}>
+        {rows.map((row, r) =>
+          row.slice(0, 4).map((v, c) => {
+            const filled = v > 0;
+            const x = ox + c * cell, y = oy + r * cell;
+            return (
+              <Fragment key={`${r}-${c}`}>
+                <Rect x={x + pad} y={y + pad} width={cell - pad * 2} height={cell - pad * 2} rx={3}
+                  fill={filled ? '#10131A' : '#F1F4F8'} stroke={filled ? 'none' : '#D3DBE5'} strokeWidth={1}
+                  strokeDasharray={filled ? undefined : '3 3'} />
+                {filled && !chart.verified && (
+                  <Rect x={x + pad - 2} y={y + pad - 2} width={cell - pad * 2 + 4} height={cell - pad * 2 + 4} rx={4}
+                    fill="none" stroke={fg} strokeWidth={1.75} />
+                )}
+              </Fragment>
+            );
+          }),
+        )}
+      </Svg>
+    );
+  }
+
+  return null;
+}
+
 const S = StyleSheet.create({
   page: {
     paddingTop: 42,
@@ -141,7 +278,22 @@ const S = StyleSheet.create({
     paddingHorizontal: 8,
     textTransform: 'uppercase',
   },
-  headline: { marginTop: 9, fontFamily: 'Helvetica', fontSize: 11, color: P.ink2 },
+  // body: figure plate (left) + verdict content (right)
+  body: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 14, gap: 16 },
+  plate: {
+    width: 176,
+    flexShrink: 0,
+    borderWidth: 1,
+    borderColor: P.line,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  plateHead: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 11, borderBottomWidth: 1, borderBottomColor: P.line },
+  plateLabel: { fontFamily: 'Courier-Bold', fontSize: 7, letterSpacing: 1.4, color: '#8792a3', textTransform: 'uppercase' },
+  plateFig: { height: 104, paddingVertical: 10, paddingHorizontal: 12 },
+  content: { flex: 1 },
+  headline: { fontFamily: 'Helvetica', fontSize: 11, color: P.ink2 },
   errorLine: { marginTop: 9, fontFamily: 'Courier-Bold', fontSize: 9.5, color: P.red },
   original: {
     marginTop: 9,
@@ -223,24 +375,41 @@ function CheckCard({ result }: { result: CheckResult }) {
         <Text style={[S.chip, { color: t.fg, borderColor: t.fg, backgroundColor: t.bg }]}>{stateLabel(state)}</Text>
       </View>
 
-      {headline ? <Text style={S.headline}>{safe(headline)}</Text> : null}
-      {error ? <Text style={S.errorLine}>{safe(error)}</Text> : null}
-      {original ? <Text style={S.original}>{safe(original)}</Text> : null}
+      <View style={S.body}>
+        {/* figure plate */}
+        <View style={S.plate}>
+          <View style={S.plateHead}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: t.fg }} />
+            <Text style={S.plateLabel}>Fig {num}</Text>
+          </View>
+          <View style={S.plateFig}>
+            <Figure chart={result.chart} fg={t.fg} />
+          </View>
+        </View>
 
-      <View style={S.correctedRow}>
-        <Text style={S.caret}>&gt;</Text>
-        <Text style={S.corrected}>{safe(corrected)}</Text>
+        {/* verdict content */}
+        <View style={S.content}>
+          {headline ? <Text style={S.headline}>{safe(headline)}</Text> : null}
+          {error ? <Text style={S.errorLine}>{safe(error)}</Text> : null}
+          {original ? <Text style={S.original}>{safe(original)}</Text> : null}
+
+          <View style={S.correctedRow}>
+            <Text style={S.caret}>&gt;</Text>
+            <Text style={S.corrected}>{safe(corrected)}</Text>
+          </View>
+
+          {missing ? (
+            <View style={S.missing}>
+              <Text style={S.missingTag}>Missing</Text>
+              <Text style={S.missingText}>{safe(missing)}</Text>
+            </View>
+          ) : null}
+
+          <StatTable stats={stats} />
+        </View>
       </View>
 
-      {missing ? (
-        <View style={S.missing}>
-          <Text style={S.missingTag}>Missing</Text>
-          <Text style={S.missingText}>{safe(missing)}</Text>
-        </View>
-      ) : null}
-
-      <StatTable stats={stats} />
-
+      {/* method citation: full width under the body */}
       <View style={S.cite}>
         <Text style={S.citeTag}>Method</Text>
         <View style={{ flex: 1 }}>
