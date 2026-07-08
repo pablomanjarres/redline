@@ -6,6 +6,7 @@
 export * from './primitives.js';
 export * from './fields.js';
 export * from './charts.js';
+export * from './critic.js';
 export * from './checks.js';
 export * from './dataset.js';
 export * from './reasoning.js';
