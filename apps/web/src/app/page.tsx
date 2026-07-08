@@ -12,9 +12,15 @@ import { fmt } from '@/lib/format';
  * they ran, picks a built-in scenario, then begins the audit. Nothing is tested
  * here; the first real work happens once fields are confirmed.
  */
+// Marson and Ketamine are the demo scenarios (locked fixtures), kept first. The
+// last three are verification foils: they only produce numbers on the real
+// `local` compute target (each reads its foil .h5ad), never the fixture path.
 const SCENARIOS: { id: ScenarioId; label: string }[] = [
   { id: 'marson', label: 'Marson' },
   { id: 'ketamine', label: 'Ketamine' },
+  { id: 'pfc', label: 'PFC' },
+  { id: 'clean', label: 'Clean' },
+  { id: 'nocounts', label: 'No counts' },
 ];
 
 export default function IntakePage() {
@@ -94,9 +100,14 @@ export default function IntakePage() {
                 <div style={{ font: '500 12.5px/1.2 var(--mono)', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataset.file}</div>
                 <div style={{ marginTop: 3, font: '400 11px/1 var(--mono)', color: 'var(--ink-4)' }}>{dataset.sizeGB} GB · loaded</div>
               </div>
-              <span title={computeTargetAvailable ? '' : 'connect a compute target to audit your own data'} style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: computeTargetAvailable ? 'pointer' : 'not-allowed' }}>
+              {/* Non-actionable by design: there is no upload handler in this build, so
+                  render a disabled, labelled control rather than a pointer-cursor span. */}
+              <button type="button" disabled
+                aria-label={computeTargetAvailable ? 'Upload .h5ad (not available in this build)' : 'Connect a compute target to audit your own data'}
+                title={computeTargetAvailable ? 'Upload is not available in this build' : 'connect a compute target to audit your own data'}
+                style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: 'not-allowed', background: 'none', border: 'none', padding: 0 }}>
                 {computeTargetAvailable ? 'Upload .h5ad' : 'connect a compute\ntarget for your own'}
-              </span>
+              </button>
             </div>
             <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: '14px 26px' }}>
               {stats.map((s) => (

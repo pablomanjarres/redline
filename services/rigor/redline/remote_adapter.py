@@ -38,6 +38,9 @@ from redline.job_runner import compute_result, resolve_fields, to_json
 SCENARIO_H5AD_ENV = {
     "marson": "REDLINE_MARSON_H5AD",
     "ketamine": "REDLINE_KETAMINE_H5AD",
+    "pfc": "REDLINE_PFC_H5AD",
+    "clean": "REDLINE_CLEAN_H5AD",
+    "nocounts": "REDLINE_NOCOUNTS_H5AD",
 }
 
 
