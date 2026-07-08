@@ -27,6 +27,9 @@ const CheckRequest = z.object({
   checkId: CheckId,
   config: z.union([Check1Config, Check2Config, Check3Config, Check4Config]),
   fields: z.array(FieldSpec),
+  // The verification harness sets this on liveness / re-run probes that only
+  // need the numbers, so a sweep of knob changes does not throttle the model.
+  noReason: z.boolean().optional(),
 });
 
 // One reasoner per process: Claude via the first-party API or Bedrock (per env),
@@ -187,7 +190,11 @@ export async function POST(req: Request) {
     // fixture numbers) so a finding always renders.
     let narrative: Narrative;
     let source: 'bedrock' | 'anthropic' | 'curated';
-    if (!reasoner.available) {
+    if (body.noReason) {
+      // Numbers-only probe: skip the model call, keep the finding renderable.
+      narrative = safeCurated(body.scenarioId, body.checkId, body.config, compute);
+      source = 'curated';
+    } else if (!reasoner.available) {
       narrative = safeCurated(body.scenarioId, body.checkId, body.config, compute);
       source = 'curated';
     } else {
