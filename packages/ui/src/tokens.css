@@ -1,0 +1,176 @@
+/* ============================================================================
+   Redline design tokens — the Constellation-adjacent "lab paper" system.
+   Cream desk, warm ink, a single decisive red for findings, quiet green/amber
+   for clean/needs-input. IBM Plex Sans/Mono for UI, Source Serif 4 for prose.
+   Fonts are self-hosted via @fontsource (imported in the app entry), so these
+   are family names only — no external requests.
+   ========================================================================== */
+:root {
+  --desk: #eae6dd;
+  --frame: #fbfaf6;
+  --panel: #ffffff;
+  --panel2: #f5f3ec;
+  --panel3: #efede4;
+  --ink: #1b1a17;
+  --ink2: #57544c;
+  --ink3: #8c887d;
+  --ink4: #b4afa3;
+  --line: #e7e3d9;
+  --line2: #d8d3c6;
+  --red: #ce2a1e;
+  --red-deep: #a81f16;
+  --red-soft: rgba(206, 42, 30, 0.09);
+  --red-line: rgba(206, 42, 30, 0.32);
+  --pass: #2e7d5b;
+  --pass-soft: rgba(46, 125, 91, 0.1);
+  --amber: #a9741a;
+  --amber-soft: rgba(169, 116, 26, 0.12);
+  --stop: #241b1a;
+  --accent: #2b5fb0;
+  --accent-soft: rgba(43, 95, 176, 0.09);
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --serif: 'Source Serif 4', Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--desk);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+button {
+  font-family: inherit;
+}
+select {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 9px 30px 9px 11px;
+  font-size: 13px;
+  font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%232B5FB0' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+select:focus,
+input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--line2);
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.rl-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.rl-scroll::-webkit-scrollbar-thumb {
+  background: var(--line2);
+  border-radius: 6px;
+  border: 3px solid var(--desk);
+}
+
+@keyframes rl-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes rl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes rl-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes rl-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0.15;
+  }
+}
+@keyframes rl-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rl-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media print {
+  .rl-no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
