@@ -17,7 +17,8 @@ export class FixtureTarget implements ComputeTarget {
   }
 
   async computeCheck(input: ComputeInput): Promise<ComputeResult> {
-    return fixtureCompute(input.scenarioId, input.checkId, input.config);
+    const result = await fixtureCompute(input.scenarioId, input.checkId, input.config);
+    return { ...result, provenance: { target: 'fixture' } };
   }
 }
 
