@@ -21,8 +21,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@redline/contracts": "workspace:*",
-    "@aws-sdk/client-bedrock-runtime": "^3.1050.0"
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1050.0",
+    "@redline/contracts": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

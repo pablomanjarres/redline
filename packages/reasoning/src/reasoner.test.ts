@@ -6,18 +6,25 @@ import type {
 import { createReasoner, ReasonerUnavailable } from './reasoner.js';
 import { buildFieldProposalPrompt, buildNarrativePrompt } from './prompts.js';
 
-// The unconfigured path must not depend on ambient env. Snapshot and clear.
-const ORIGINAL_MODEL_ID = process.env.REDLINE_BEDROCK_MODEL_ID;
+// The unconfigured path must not depend on ambient env. Snapshot and clear every
+// var that selects a backend: the Claude API key, the Bedrock model id, and the
+// forced-backend switch.
+const SNAPSHOT: Record<string, string | undefined> = {
+  REDLINE_BEDROCK_MODEL_ID: process.env.REDLINE_BEDROCK_MODEL_ID,
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  REDLINE_REASONING_BACKEND: process.env.REDLINE_REASONING_BACKEND,
+};
 
 beforeEach(() => {
   delete process.env.REDLINE_BEDROCK_MODEL_ID;
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.REDLINE_REASONING_BACKEND;
 });
 
 afterAll(() => {
-  if (ORIGINAL_MODEL_ID === undefined) {
-    delete process.env.REDLINE_BEDROCK_MODEL_ID;
-  } else {
-    process.env.REDLINE_BEDROCK_MODEL_ID = ORIGINAL_MODEL_ID;
+  for (const [key, value] of Object.entries(SNAPSHOT)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
   }
 });
 

@@ -4,12 +4,13 @@ import type {
   FieldSpec,
   NarrativeRequest,
 } from '@redline/contracts';
-import { getModelId, invokeMessages } from './bedrock.js';
+import * as anthropic from './anthropic.js';
+import * as bedrock from './bedrock.js';
 import { buildFieldProposalPrompt, buildNarrativePrompt } from './prompts.js';
 
 /**
- * Thrown whenever the Bedrock reasoner cannot produce a validated result: no
- * model id, no AWS credentials, a network failure, or an unparseable reply. The
+ * Thrown whenever the reasoner cannot produce a validated result: no backend
+ * configured, no credentials, a network failure, or an unparseable reply. The
  * API route catches this and falls back to the engine's curated narrative, so
  * the app always renders.
  */
@@ -21,7 +22,7 @@ export class ReasonerUnavailable extends Error {
 }
 
 export interface Reasoner {
-  /** True when a Bedrock model id is configured. Read lazily; no network. */
+  /** True when a reasoning backend is configured. Read lazily; no network. */
   readonly available: boolean;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
@@ -30,33 +31,64 @@ export interface Reasoner {
 const NARRATE_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
 
+type Backend = 'anthropic' | 'bedrock';
+
 /**
- * Build a reasoner backed by Claude on AWS Bedrock. Construction is free and
- * never hits the network; `available` reflects the env at access time. Bedrock
- * is used through `@aws-sdk/client-bedrock-runtime` with an Anthropic Messages
- * body, never the direct Anthropic API.
+ * Pick the reasoning backend from the environment. The **public path** is the
+ * first-party Claude API (`ANTHROPIC_API_KEY`) so anyone can run Redline against
+ * their own Claude key. The **internal demo** on Vercel pins **Bedrock** (Pablo's
+ * AWS creds). `REDLINE_REASONING_BACKEND` forces one explicitly; otherwise the
+ * Claude API wins when its key is present, else Bedrock, else nothing (curated).
+ */
+function selectBackend(): Backend | undefined {
+  const forced = process.env.REDLINE_REASONING_BACKEND?.trim().toLowerCase();
+  if (forced === 'anthropic') return anthropic.isConfigured() ? 'anthropic' : undefined;
+  if (forced === 'bedrock') return bedrock.isConfigured() ? 'bedrock' : undefined;
+  if (anthropic.isConfigured()) return 'anthropic';
+  if (bedrock.isConfigured()) return 'bedrock';
+  return undefined;
+}
+
+/** Route one Messages request to the selected backend. */
+async function invoke(
+  backend: Backend,
+  system: string,
+  user: string,
+  maxTokens: number,
+): Promise<string> {
+  if (backend === 'anthropic') {
+    return anthropic.invokeMessages({ system, user, maxTokens });
+  }
+  const modelId = bedrock.getModelId();
+  if (!modelId) {
+    throw new ReasonerUnavailable('REDLINE_BEDROCK_MODEL_ID is not set');
+  }
+  return bedrock.invokeMessages({ modelId, system, user, maxTokens });
+}
+
+/**
+ * Build a reasoner backed by Claude — the first-party Claude API or AWS Bedrock,
+ * whichever the environment configures (see `selectBackend`). Construction is
+ * free and never hits the network; `available` reflects the env at access time.
+ * Both backends speak the same Anthropic Messages shape, so the prompts and the
+ * JSON contract are identical across them.
  */
 export function createReasoner(): Reasoner {
   return {
     get available(): boolean {
-      return getModelId() !== undefined;
+      return selectBackend() !== undefined;
     },
 
     async narrate(req: NarrativeRequest): Promise<Narrative> {
-      const modelId = getModelId();
-      if (!modelId) {
+      const backend = selectBackend();
+      if (!backend) {
         throw new ReasonerUnavailable(
-          'REDLINE_BEDROCK_MODEL_ID is not set; use the curated narrative',
+          'No reasoning backend configured; use the curated narrative',
         );
       }
       try {
         const { system, user } = buildNarrativePrompt(req);
-        const text = await invokeMessages({
-          modelId,
-          system,
-          user,
-          maxTokens: NARRATE_MAX_TOKENS,
-        });
+        const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
         const narrative = Narrative.parse(extractJson(text));
         return enforceHonesty(req, narrative);
       } catch (err) {
@@ -65,20 +97,15 @@ export function createReasoner(): Reasoner {
     },
 
     async proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]> {
-      const modelId = getModelId();
-      if (!modelId) {
+      const backend = selectBackend();
+      if (!backend) {
         throw new ReasonerUnavailable(
-          'REDLINE_BEDROCK_MODEL_ID is not set; use the fixture fields',
+          'No reasoning backend configured; use the fixture fields',
         );
       }
       try {
         const { system, user } = buildFieldProposalPrompt(req);
-        const text = await invokeMessages({
-          modelId,
-          system,
-          user,
-          maxTokens: FIELDS_MAX_TOKENS,
-        });
+        const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
         const { fields } = FieldProposalResponse.parse(extractJson(text));
         return fields;
       } catch (err) {
