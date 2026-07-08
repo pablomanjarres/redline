@@ -230,6 +230,19 @@ export function buildCriticCases(): CriticCase[] {
   });
   cases.push({
     caseId: 'C',
+    checkId: 3,
+    label: 'C · fragility (over-fired flag)',
+    kind: 'over-fire',
+    expected: 'veto',
+    request: req('C', 3, 'The Rare state is a distinct, reproducible cell state.', {
+      stability: C.checks['3'].spurious.stability ?? 0, // 1.0: stable across the whole sweep
+      settings: C.checks['3'].spurious.settings,
+      totalSettings: C.checks['3'].spurious.totalSettings,
+      group: C.checks['3'].spurious.group,
+    }),
+  });
+  cases.push({
+    caseId: 'C',
     checkId: 4,
     label: 'C · confounding (over-fired flag)',
     kind: 'over-fire',
