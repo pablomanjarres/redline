@@ -1,38 +1,41 @@
 import type { CheckState } from '@redline/contracts';
 
 /**
- * The palette as raw hex — the SVG chart components draw with literal colors
- * (SVG `fill`/`stroke` can't read CSS custom properties reliably across all
- * renderers, and the report must print correctly). Keep in lockstep with
- * tokens.css.
+ * The palette as raw hex - the SVG chart components draw with literal colors
+ * (SVG fill/stroke can't reliably read CSS custom properties across renderers,
+ * and the report must print correctly). Keep in lockstep with tokens.css.
+ * "clinical precision": cool slate ink, one indigo for interaction, one clean
+ * red for findings.
  */
 export const C = {
-  desk: '#EAE6DD',
-  frame: '#FBFAF6',
+  desk: '#F4F6F9',
+  frame: '#FAFBFD',
   panel: '#FFFFFF',
-  panel2: '#F5F3EC',
-  panel3: '#EFEDE4',
-  ink: '#1B1A17',
-  ink2: '#57544C',
-  ink3: '#8C887D',
-  ink4: '#B4AFA3',
-  line: '#E7E3D9',
-  line2: '#D8D3C6',
-  red: '#CE2A1E',
-  redDeep: '#A81F16',
-  pass: '#2E7D5B',
-  amber: '#A9741A',
-  stop: '#241B1A',
-  accent: '#2B5FB0',
+  panel2: '#F1F4F8',
+  panel3: '#E8EDF4',
+  ink: '#0F1729',
+  ink2: '#46536B',
+  ink3: '#6B7789',
+  ink4: '#9AA6B8',
+  line: '#E7ECF2',
+  line2: '#D5DCE6',
+  grid: '#EDF1F6',
+  red: '#E5484D',
+  redDeep: '#C22A3A',
+  pass: '#12925E',
+  amber: '#B45309',
+  stop: '#1E293B',
+  accent: '#4F46E5',
+  accentSoft: '#EEF0FE',
 } as const;
 
 export const FONT = {
-  sans: "'IBM Plex Sans', system-ui, sans-serif",
-  mono: "'IBM Plex Mono', ui-monospace, Menlo, monospace",
-  serif: "'Source Serif 4', Georgia, serif",
+  sans: "'Inter', system-ui, -apple-system, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+  serif: "'Inter', system-ui, sans-serif",
 } as const;
 
-/** Verdict → the color that represents it, including UI-transient states. */
+/** Verdict -> the color that represents it, including UI-transient states. */
 export function stateColor(state: CheckState | 'ready' | 'running'): string {
   switch (state) {
     case 'flagged':
@@ -50,7 +53,7 @@ export function stateColor(state: CheckState | 'ready' | 'running'): string {
   }
 }
 
-/** Verdict → the human label shown on badges. */
+/** Verdict -> the human label shown on badges. */
 export function stateLabel(state: CheckState | 'ready' | 'running'): string {
   switch (state) {
     case 'flagged':

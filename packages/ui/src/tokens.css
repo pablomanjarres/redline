@@ -1,36 +1,44 @@
 /* ============================================================================
-   Redline design tokens — the Constellation-adjacent "lab paper" system.
-   Cream desk, warm ink, a single decisive red for findings, quiet green/amber
-   for clean/needs-input. IBM Plex Sans/Mono for UI, Source Serif 4 for prose.
-   Fonts are self-hosted via @fontsource (imported in the app entry), so these
-   are family names only — no external requests.
+   Redline design tokens - "clinical precision".
+   A calm, cool modern-tool system: near-white on cool gray, white cards with
+   soft elevation, cool-slate ink, one disciplined indigo for interaction, and a
+   single clean red reserved for findings (the redline). Inter for UI, JetBrains
+   Mono for data. No serif. Variable names are stable; only the values changed,
+   so every surface re-skins from here. Fonts are self-hosted (no external
+   requests); these are family names only.
    ========================================================================== */
 :root {
-  --desk: #eae6dd;
-  --frame: #fbfaf6;
-  --panel: #ffffff;
-  --panel2: #f5f3ec;
-  --panel3: #efede4;
-  --ink: #1b1a17;
-  --ink2: #57544c;
-  --ink3: #8c887d;
-  --ink4: #b4afa3;
-  --line: #e7e3d9;
-  --line2: #d8d3c6;
-  --red: #ce2a1e;
-  --red-deep: #a81f16;
-  --red-soft: rgba(206, 42, 30, 0.09);
-  --red-line: rgba(206, 42, 30, 0.32);
-  --pass: #2e7d5b;
-  --pass-soft: rgba(46, 125, 91, 0.1);
-  --amber: #a9741a;
-  --amber-soft: rgba(169, 116, 26, 0.12);
-  --stop: #241b1a;
-  --accent: #2b5fb0;
-  --accent-soft: rgba(43, 95, 176, 0.09);
-  --sans: 'IBM Plex Sans', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-  --serif: 'Source Serif 4', Georgia, serif;
+  --desk: #f4f6f9; /* cool app canvas */
+  --frame: #fafbfd;
+  --panel: #ffffff; /* cards */
+  --panel2: #f1f4f8; /* subtle fills */
+  --panel3: #e8edf4;
+  --ink: #0f1729; /* cool near-black */
+  --ink2: #46536b;
+  --ink3: #6b7789;
+  --ink4: #9aa6b8;
+  --line: #e7ecf2; /* cool hairlines */
+  --line2: #d5dce6;
+  --red: #e5484d; /* findings */
+  --red-deep: #c22a3a;
+  --red-soft: rgba(229, 72, 77, 0.08);
+  --red-line: rgba(229, 72, 77, 0.28);
+  --pass: #12925e;
+  --pass-soft: rgba(18, 146, 94, 0.1);
+  --amber: #b45309;
+  --amber-soft: rgba(180, 83, 9, 0.1);
+  --stop: #1e293b;
+  --accent: #4f46e5; /* indigo, interaction only */
+  --accent-2: #6366f1;
+  --accent-soft: rgba(79, 70, 229, 0.08);
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* No serif in this system; the token is kept so old references resolve to the
+     UI sans instead of a serif face. */
+  --serif: 'Inter', system-ui, sans-serif;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 1px 3px rgba(16, 24, 40, 0.05), 0 12px 28px -8px rgba(16, 24, 40, 0.14);
 }
 
 * {
@@ -47,6 +55,7 @@ body {
   background: var(--desk);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv05' 1, 'ss01' 1; /* Inter: single-story a, stylistic set */
 }
 a {
   color: var(--accent);
@@ -63,21 +72,27 @@ select {
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--line2);
-  border-radius: 8px;
-  padding: 9px 30px 9px 11px;
+  border-radius: 9px;
+  padding: 9px 32px 9px 12px;
   font-size: 13px;
   font-weight: 500;
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%232B5FB0' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%234F46E5' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   background-repeat: no-repeat;
-  background-position: right 11px center;
+  background-position: right 12px center;
+}
+select:hover {
+  border-color: var(--line2);
 }
 select:focus,
 input:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+  border-color: var(--accent);
 }
 input[type='range'] {
   -webkit-appearance: none;
@@ -94,7 +109,7 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.4);
   cursor: pointer;
 }
 input[type='range']::-moz-range-thumb {
@@ -114,16 +129,14 @@ input[type='range']::-moz-range-thumb {
   border-radius: 6px;
   border: 3px solid var(--desk);
 }
-
-@keyframes rl-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
+.rl-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ink4);
 }
+
 @keyframes rl-rise {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -159,10 +172,15 @@ input[type='range']::-moz-range-thumb {
 @keyframes rl-pulse {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   50% {
     opacity: 1;
+  }
+}
+@keyframes rl-draw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
