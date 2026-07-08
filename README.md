@@ -1,5 +1,9 @@
 <p align="center">
-  <img src=".github/redline-logo.svg" alt="Redline — statistical auditor for single-cell RNA-seq" width="860">
+  <img src=".github/redline-banner.png" alt="Redline — statistical auditor for single-cell RNA-seq" width="880">
+</p>
+
+<p align="center">
+  <img src=".github/redline-logo.svg" alt="Redline" width="640">
 </p>
 
 <p align="center"><strong>Break your own analysis before Reviewer 2 does.</strong></p>
