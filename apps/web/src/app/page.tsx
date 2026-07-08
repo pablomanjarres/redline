@@ -49,7 +49,7 @@ export default function IntakePage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, height: 62, padding: '0 34px', borderBottom: '1px solid var(--edge)' }}>
         <span style={{ position: 'relative' }}>
           <span style={{ font: '900 20px/1 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)' }}>REDLINE</span>
-          <span style={{ position: 'absolute', left: -2, right: -2, top: '54%', height: 2.5, background: 'var(--red)', borderRadius: 2, boxShadow: '0 0 10px rgba(255,77,78,.6)' }} />
+          <span style={{ position: 'absolute', left: -2, right: -2, top: '54%', height: 2.5, background: 'var(--red)', borderRadius: 2, boxShadow: '0 0 8px rgba(229,72,77,.35)' }} />
         </span>
         <span style={{ font: '500 9.5px/1 var(--mono)', letterSpacing: '.22em', color: 'var(--ink-3)', border: '1px solid var(--edge-2)', padding: '5px 9px', borderRadius: 5 }}>
           STATISTICAL AUDITOR
@@ -138,7 +138,7 @@ export default function IntakePage() {
         {/* begin */}
         <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 20 }}>
           <button type="button" onClick={onBegin} disabled={pending}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, font: '800 13px/1 var(--sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--surface)', background: 'var(--signal)', padding: '16px 26px', borderRadius: 10, border: 'none', cursor: pending ? 'default' : 'pointer', opacity: pending ? 0.7 : 1, boxShadow: '0 0 30px -6px rgba(88,199,255,.5)' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, font: '800 13px/1 var(--sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--surface)', background: 'var(--signal)', padding: '16px 26px', borderRadius: 10, border: 'none', cursor: pending ? 'default' : 'pointer', opacity: pending ? 0.7 : 1, boxShadow: '0 10px 24px -8px rgba(37,99,235,.45)' }}>
             {pending ? 'Resolving fields' : 'Begin audit'}
             <span style={{ fontSize: 15 }}>→</span>
           </button>

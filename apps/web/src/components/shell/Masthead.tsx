@@ -26,7 +26,7 @@ export function Masthead() {
         height: 62,
         padding: '0 26px',
         borderBottom: '1px solid var(--edge)',
-        background: 'linear-gradient(180deg, rgba(20,23,28,.7), rgba(11,13,18,.5))',
+        background: 'rgba(255,255,255,.82)',
         backdropFilter: 'blur(8px)',
         flex: 'none',
         position: 'relative',
@@ -44,7 +44,7 @@ export function Masthead() {
             height: 2.5,
             background: 'var(--red)',
             borderRadius: 2,
-            boxShadow: '0 0 10px rgba(255,77,78,.6)',
+            boxShadow: '0 0 8px rgba(229,72,77,.35)',
           }}
         />
       </Link>

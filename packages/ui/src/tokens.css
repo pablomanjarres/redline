@@ -1,55 +1,54 @@
 /* ============================================================================
-   Redline — "audit instrument". Built from scratch off the v1 spec, not the
-   handoff mockup. A dark control surface where the scientist's figure is the
-   hero on a bright lightbox plate; the four checks are a pipeline you step
-   through, not a sidebar of links. Archivo (bold grotesque) + JetBrains Mono.
-   Fonts self-hosted (no external requests); these are family names only.
+   Redline — "audit instrument", light. Same structure as the dark instrument;
+   only the token values change. A clean light surface, white cards, the figure
+   on a bright plate lifted by a soft shadow, one blue signal for interaction,
+   red reserved for findings. Archivo + JetBrains Mono. Fonts self-hosted.
    ========================================================================== */
 :root {
-  /* dark control surface */
-  --void: #06070a;
-  --surface: #0b0d12; /* app canvas / stage */
-  --panel: #12151c; /* raised chrome */
-  --panel-2: #171b23;
-  --panel-3: #1e232c;
-  --edge: #242a34; /* hairlines on dark */
-  --edge-2: #303845;
-  --edge-hi: #3c4552;
+  /* light surface */
+  --void: #eef2f7; /* recessed insets (console, code) */
+  --surface: #f3f5f9; /* app canvas / stage */
+  --panel: #ffffff; /* raised chrome */
+  --panel-2: #f1f4f8;
+  --panel-3: #e9edf4;
+  --edge: #e5eaf1; /* hairlines */
+  --edge-2: #d5dce7;
+  --edge-hi: #c1cad7;
 
-  /* bright lightbox plate — the scientist's figure lives here */
+  /* the figure plate — a bright white card on the light surface */
   --plate: #ffffff;
-  --plate-2: #f4f6f9;
+  --plate-2: #f7f9fc;
   --plate-line: #e6eaf0;
   --plate-ink: #10131a;
 
-  /* ink on the dark surface */
-  --ink: #eef1f6;
-  --ink-2: #aab3c2;
-  --ink-3: #757f8f;
-  --ink-4: #4c5563;
+  /* ink on the light surface */
+  --ink: #0f1729;
+  --ink-2: #46536b;
+  --ink-3: #6b7789;
+  --ink-4: #97a2b4;
 
   /* signals — red is the redline (findings); reserved, never decorative */
-  --red: #ff4d4e;
-  --red-2: #ff8788;
-  --red-deep: #e02b3d;
-  --red-soft: rgba(255, 77, 78, 0.12);
-  --red-line: rgba(255, 77, 78, 0.4);
-  --green: #2fd8a4;
-  --green-soft: rgba(47, 216, 164, 0.12);
-  --amber: #f7b23b;
-  --amber-soft: rgba(247, 178, 59, 0.13);
-  --stop: #e6eaf0;
+  --red: #e5484d;
+  --red-2: #dc2626;
+  --red-deep: #b91c2b;
+  --red-soft: rgba(229, 72, 77, 0.08);
+  --red-line: rgba(229, 72, 77, 0.32);
+  --green: #12925e;
+  --green-soft: rgba(18, 146, 94, 0.1);
+  --amber: #b45309;
+  --amber-soft: rgba(180, 83, 9, 0.11);
+  --stop: #1e293b;
 
-  /* cool signal for interaction (scrub, focus, active) */
-  --signal: #58c7ff;
-  --signal-soft: rgba(88, 199, 255, 0.14);
+  /* blue signal for interaction (scrub, focus, active) */
+  --signal: #2563eb;
+  --signal-soft: rgba(37, 99, 235, 0.08);
 
   --sans: 'Archivo', system-ui, -apple-system, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --display: 'Archivo', system-ui, sans-serif;
 
-  --glow: 0 0 0 1px var(--edge), 0 24px 60px -24px rgba(0, 0, 0, 0.7);
-  --plate-glow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 30px 70px -30px rgba(0, 0, 0, 0.75);
+  --glow: 0 0 0 1px var(--edge), 0 18px 44px -22px rgba(16, 24, 40, 0.18);
+  --plate-glow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 18px 40px -16px rgba(16, 24, 40, 0.16);
 }
 
 * {
@@ -64,8 +63,8 @@ body {
   font-family: var(--sans);
   color: var(--ink);
   background:
-    radial-gradient(1200px 700px at 78% -8%, rgba(88, 199, 255, 0.06), transparent 60%),
-    radial-gradient(1000px 620px at 8% 108%, rgba(255, 77, 78, 0.05), transparent 60%),
+    radial-gradient(1200px 700px at 80% -10%, rgba(37, 99, 235, 0.05), transparent 60%),
+    radial-gradient(1000px 620px at 6% 110%, rgba(229, 72, 77, 0.035), transparent 60%),
     var(--surface);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
@@ -83,14 +82,13 @@ button {
   font-family: inherit;
 }
 ::selection {
-  background: rgba(255, 77, 78, 0.28);
+  background: rgba(229, 72, 77, 0.2);
 }
 
-/* form controls on the dark surface */
 select {
   font-family: var(--mono);
   color: var(--ink);
-  background: var(--panel-2);
+  background: var(--panel);
   border: 1px solid var(--edge-2);
   border-radius: 8px;
   padding: 9px 32px 9px 12px;
@@ -99,8 +97,9 @@ select {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%2358C7FF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%232563EB' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   background-repeat: no-repeat;
   background-position: right 11px center;
 }
@@ -131,8 +130,8 @@ input[type='range']::-webkit-slider-thumb {
   height: 15px;
   border-radius: 50%;
   background: var(--signal);
-  border: 2px solid var(--surface);
-  box-shadow: 0 0 0 1px var(--signal), 0 0 12px rgba(88, 199, 255, 0.5);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.5);
   cursor: pointer;
 }
 input[type='range']::-moz-range-thumb {
@@ -140,7 +139,7 @@ input[type='range']::-moz-range-thumb {
   height: 15px;
   border-radius: 50%;
   background: var(--signal);
-  border: 2px solid var(--surface);
+  border: 2px solid #fff;
   cursor: pointer;
 }
 .rl-scroll::-webkit-scrollbar {
@@ -228,6 +227,5 @@ input[type='range']::-moz-range-thumb {
   }
   body {
     background: #fff;
-    color: #000;
   }
 }

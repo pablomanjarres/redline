@@ -36,7 +36,7 @@ export function Pipeline() {
       n: `0${id}`,
       label: ['Pseudoreplication', 'Double dipping', 'Fragility', 'Confounding'][id - 1]!,
       active: path === `/checks/${id}`,
-      light: run ? '#58C7FF' : r ? signalColor(r.state) : 'var(--ink-4)',
+      light: run ? '#2563EB' : r ? signalColor(r.state) : 'var(--ink-4)',
       pulse: run,
       locked: !fieldsConfirmed,
     });

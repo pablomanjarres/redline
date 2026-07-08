@@ -70,20 +70,20 @@ export function stateLabel(state: CheckState | 'ready' | 'running'): string {
   }
 }
 
-/** Signal colors for the dark chrome (verdict lights, badges on the surface). */
+/** Signal colors for the chrome (verdict lights, badges on the surface). */
 export function signalColor(state: CheckState | 'ready' | 'running'): string {
   switch (state) {
     case 'flagged':
-      return '#FF4D4E';
+      return '#E5484D';
     case 'clean':
-      return '#2FD8A4';
+      return '#12925E';
     case 'flag_only':
-      return '#F7B23B';
+      return '#B45309';
     case 'hard_stop':
-      return '#EEF1F6';
+      return '#1E293B';
     case 'running':
-      return '#58C7FF';
+      return '#2563EB';
     default:
-      return '#4C5563';
+      return '#97A2B4';
   }
 }
