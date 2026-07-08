@@ -96,6 +96,25 @@ def test_bedrock_reply_parses():
     assert _parse_bedrock("no json here") is None
 
 
+def test_bedrock_prose_is_dash_sanitized(monkeypatch):
+    """A model reply with em and en dashes in claims and state names is repaired,
+    so the Bedrock path (not just the heuristic) honors the no-dash rule."""
+    from redline.foilgen import planner as pl
+
+    fake = (
+        '{"focusGene": "FOXP3", "spuriousState": "Stress—Response", "stableState": "Core–Set", '
+        '"spuriousMarkers": ["IL2", "CTLA4"], "stableMarkers": ["CCR7", "SELL"], '
+        '"claims": {"1": "KD raises FOXP3 across 5,000–10,000 cells — clearly.", "2": "a—b", "3": "x", "4": "y"}}'
+    )
+    monkeypatch.setattr(pl, "_invoke_bedrock", lambda system, prompt: fake)
+    d = describe_dataset(build_base(PRESETS["immune"], seed=0))
+    plan = pl.plan_bedrock(d, "all", False, 0)
+    assert plan.planned_by == "bedrock"
+    for blob in [plan.spurious_state, plan.stable_state, *plan.claims.values()]:
+        assert _EM_DASH not in blob, f"em dash survived Bedrock repair: {blob!r}"
+        assert _EN_DASH not in blob, f"en dash survived Bedrock repair: {blob!r}"
+
+
 def test_intended_verdicts_match_planted_flaws():
     d = describe_dataset(build_base(PRESETS["immune"], seed=0))
     v_all = intended_verdicts(plan_foil(d, flaw="all", backend="heuristic"))
@@ -192,6 +211,41 @@ def test_too_few_replicates_intends_hard_stop():
     assert intended_verdicts(plan)["1"] == "hard_stop"
 
 
+def _counts_adata(obs_cols: dict, n: int, g: int, seed: int = 0):
+    rng = np.random.default_rng(seed)
+    counts = rng.poisson(2.0, size=(n, g))
+    obs = pd.DataFrame(obs_cols, index=[f"c{i}" for i in range(n)])
+    a = anndata.AnnData(X=counts.astype(np.float32), obs=obs)
+    a.var_names = [f"g{i}" for i in range(g)]
+    a.layers["counts"] = counts.astype(np.float32)
+    return a
+
+
+def test_no_nuisance_column_yields_valid_manifest(tmp_path):
+    """A dataset without a technical column gets one created, so the manifest never
+    carries a null required field (the oracle rejects a null nuisance)."""
+    n = 300
+    donors = np.repeat([f"D{i}" for i in range(6)], n // 6)
+    cond = np.where(np.isin(donors, ["D0", "D2", "D4"]), "ctrl", "treated")
+    a = _counts_adata({"donor": donors, "condition": cond, "bc": [f"c{i}" for i in range(n)]}, n, 60)
+    d = describe_dataset(a)
+    assert d.nuisance is None  # no technical column resolved
+    gt = generate_foil(a, os.path.join(str(tmp_path), "nn.h5ad"), flaw="all", backend="heuristic", verify=False)
+    entry = gt.to_manifest_entry()
+    for key in _ORACLE_REQUIRED:
+        assert entry.get(key) is not None, f"required oracle field is null: {key}"
+    assert entry["nuisance"] == "batch"
+
+
+def test_missing_grouping_is_refused(tmp_path):
+    """A dataset with no resolvable grouping cannot be a foil, and is refused."""
+    n = 200
+    a = _counts_adata({"donor": np.repeat([f"D{i}" for i in range(4)], n // 4),
+                       "bc": [f"c{i}" for i in range(n)]}, n, 40)
+    with pytest.raises(ValueError, match="grouping"):
+        generate_foil(a, os.path.join(str(tmp_path), "ng.h5ad"), flaw="all", backend="heuristic", verify=False)
+
+
 # ── Slow tests (run the real engine) ──────────────────────────────────────────
 @pytest.mark.slow
 def test_planted_flaws_are_caught(tmp_path):
@@ -224,6 +278,22 @@ def test_generalizes_to_renamed_columns(tmp_path):
     assert gt.plan.unit == "subject" and gt.plan.grouping == "treatment"
     v = gt.verification
     assert v["allMatch"], f"engine did not catch the planted flaws on renamed columns: {v.get('mismatches')}"
+
+
+@pytest.mark.slow
+def test_pseudoreplication_holds_at_many_replicates(tmp_path):
+    """The pseudoreplication flaw must stay a flag when a dataset has many donors.
+    A fixed arm offset becomes a genuine replicate-level effect at high replicate
+    counts (pseudobulk would correctly call it, and the engine would return clean);
+    the offset is scaled by 1/sqrt(k) so the flaw stays a cell-level artifact."""
+    from dataclasses import replace
+
+    preset = replace(PRESETS["immune"], n_units_per_arm=10, cells_per_unit=60)  # 20 donors, 1200 cells
+    a = build_base(preset, seed=0)
+    gt = generate_foil(a, os.path.join(str(tmp_path), "hi.h5ad"), flaw="pseudoreplication", backend="heuristic", verify=True)
+    v = gt.verification
+    assert v["engine"]["1"] == "flagged", f"pseudoreplication collapsed at 10 donors/arm: {v['corrected']['1']}"
+    assert v["allMatch"], f"high-replicate foil mismatched: {v.get('mismatches')}"
 
 
 @pytest.mark.slow
