@@ -1,0 +1,180 @@
+{
+  "ready": true,
+  "timestamp": "2026-07-08T09:35:53.957Z",
+  "cases": [],
+  "aiWiring": {
+    "fieldResolution": {
+      "source": "n/a",
+      "real": false,
+      "detail": "Field resolution is graded by the base harness, not the critic slice."
+    },
+    "reasoning": {
+      "source": "bedrock",
+      "real": true,
+      "detail": "The critic fired 10 real bedrock calls, one per candidate finding."
+    },
+    "fieldResolutionAdaptsAcrossCases": false
+  },
+  "deadControls": [],
+  "failures": [],
+  "critic": {
+    "ready": true,
+    "model": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+    "realModelCalls": 10,
+    "cleanCaseGreen": true,
+    "outcomes": [
+      {
+        "caseId": "A",
+        "checkId": 1,
+        "label": "A · pseudoreplication (genuine)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "honestP=0.775, n=4",
+        "justification": "The naive cell-level p-value of 2.4e-7 collapses to a clearly non-significant honest p-value of 0.775 when properly aggregated to the 4 donor replicates, and the high ICC of 0.52 indicates substantial within-donor correlation that inflates the naive test, confirming genuine pseudoreplication.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "A",
+        "checkId": 2,
+        "label": "A · double dipping (genuine)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "holdAUC=0.5806627091431469, markersHolding=0, heldoutCells=560",
+        "justification": "With 560 held-out cells providing adequate power, the held-out AUC of 0.58 drops meaningfully from the discovery AUC of 0.61 and approaches chance level, while zero of 4 markers maintain their discriminative ability on the held-out split, indicating the marker program does not replicate out of sample.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "A",
+        "checkId": 3,
+        "label": "A · fragility, Effector (genuine)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "settings: 0, totalSettings: 10, stability: 0",
+        "justification": "The Effector cluster appeared as a discrete cluster in zero out of ten resolution settings, meaning it never emerged as a stable cluster across the entire sweep, which makes the claim that it is a distinct reproducible cell state unsupportable.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "A",
+        "checkId": 4,
+        "label": "A · confounding (genuine)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "cramersV=1, rankDeficient=true, separable=false",
+        "justification": "Cramer's V of 1 indicates perfect collinearity between the grouping variable (condition) and the technical variable (lane), and the rank-deficient design confirms these effects cannot be separated statistically.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "B",
+        "checkId": 1,
+        "label": "B · pseudoreplication (genuine, renamed columns)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "honestP=0.719, n=6, naiveP=1.3e-06",
+        "justification": "The naive cell-level p-value of 1.3e-06 collapses to a clearly non-significant honestP of 0.72 when properly aggregated to the 6 biological replicates (patients), demonstrating textbook pseudoreplication where apparent significance vanishes once the correct unit of analysis is used.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "B",
+        "checkId": 4,
+        "label": "B · confounding (genuine, renamed columns)",
+        "computeState": "flagged",
+        "verdict": "confirm",
+        "expected": "confirm",
+        "keysOn": "cramersV=1, rankDeficient=true, separable=false",
+        "justification": "Cramer's V of 1 indicates perfect collinearity between treatment and the technical variable, and the rank-deficient design matrix confirms the biological and technical effects cannot be separated statistically.",
+        "confidence": "high",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "C",
+        "checkId": 1,
+        "label": "C · pseudoreplication (over-fired flag)",
+        "computeState": "flagged",
+        "verdict": "veto",
+        "expected": "veto",
+        "keysOn": "honestP=4.8e-06",
+        "justification": "The honest replicate-level p-value of 4.8e-06 is highly significant, well below any conventional threshold, so the effect survives the proper pseudobulk test and this is not pseudoreplication.",
+        "confidence": "high",
+        "effectiveState": "clean",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "C",
+        "checkId": 2,
+        "label": "C · double dipping (over-fired flag)",
+        "computeState": "flagged",
+        "verdict": "veto",
+        "expected": "veto",
+        "keysOn": "holdAUC: 1",
+        "justification": "The held-out AUC is 1.0, meaning all 4 markers achieve perfect separation on 570 held-out cells, so there is no collapse in marker performance out of sample.",
+        "confidence": "high",
+        "effectiveState": "clean",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "C",
+        "checkId": 4,
+        "label": "C · confounding (over-fired flag)",
+        "computeState": "flagged",
+        "verdict": "veto",
+        "expected": "veto",
+        "keysOn": "cramersV=0.03333379502344234, rankDeficient=false, separable=true",
+        "justification": "Cramer's V of 0.033 indicates near-zero association between the grouping variable and technical nuisance, the design matrix has full rank, and the variables are explicitly separable, so there is no confounding to flag.",
+        "confidence": "high",
+        "effectiveState": "clean",
+        "realModelCall": true,
+        "passed": true
+      },
+      {
+        "caseId": "C",
+        "checkId": 2,
+        "label": "C · double dipping (underpowered split)",
+        "computeState": "flagged",
+        "verdict": "downgrade",
+        "expected": "downgrade",
+        "keysOn": "heldoutCells=14",
+        "justification": "The held-out split contains only 14 cells, which is too small to reliably estimate AUC for a subcluster marker test; the drop from 0.74 to 0.59 could reflect sampling noise rather than true separation loss.",
+        "confidence": "medium",
+        "effectiveState": "flagged",
+        "realModelCall": true,
+        "passed": true
+      }
+    ],
+    "selfTests": [
+      {
+        "name": "rubber-stamp critic is caught",
+        "caught": true,
+        "detail": "A rubber-stamp critic failed to veto the over-fires and downgrade the underpowered split, so the harness rejects it."
+      },
+      {
+        "name": "a failed critic call fails safe toward showing",
+        "caught": true,
+        "detail": "When the critic call throws, genuine findings stay flagged (shown by default), never hidden."
+      }
+    ]
+  }
+}
