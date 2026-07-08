@@ -1,0 +1,56 @@
+/* Minimal app-level extras. The base reset, palette, fonts, scrollbar styling,
+   and the rl-* keyframes all live in @redline/ui/tokens.css (imported first in
+   the root layout). Keep this file to what tokens.css does not cover. */
+
+/* Reduced-motion global guard. Complements the session store, which reveals
+   reasoning lines all at once for these users; here we neutralize the rl-*
+   SVG draw / pulse / rise animations everywhere they appear. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard focus ring for the inline-styled buttons and links (tokens.css only
+   rings inputs and selects). Mouse clicks stay ring-free via :focus-visible. */
+a:focus-visible,
+button:focus-visible,
+[role='button']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* PDF export (the report's "Export PDF" calls window.print()). The workbench
+   shell is a fixed-height, clipped flex column for the screen; for print we let
+   it flow onto paper and keep the fill colors that carry meaning. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .rl-app-shell,
+  .rl-app-main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .rl-scroll {
+    overflow: visible !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
