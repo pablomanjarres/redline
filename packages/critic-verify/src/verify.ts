@@ -54,7 +54,7 @@ async function main(): Promise<number> {
 
   const cases = buildCriticCases();
   console.error(
-    `Critic acceptance: ${cases.length} candidate findings via ${reasoner.source} (${model}).`,
+    `Critic acceptance: ${cases.length} candidate findings via ${reasoner.backend} (${model}).`,
   );
 
   const outcomes = await runCritic(reasoner, cases, { realModelCalls: true });
@@ -72,9 +72,9 @@ async function main(): Promise<number> {
         detail: 'Field resolution is graded by the base harness, not the critic slice.',
       },
       reasoning: {
-        source: reasoner.source ?? 'bedrock',
+        source: reasoner.backend ?? 'bedrock',
         real: critic.realModelCalls > 0,
-        detail: `The critic fired ${critic.realModelCalls} real ${reasoner.source} calls, one per candidate finding.`,
+        detail: `The critic fired ${critic.realModelCalls} real ${reasoner.backend} calls, one per candidate finding.`,
       },
       fieldResolutionAdaptsAcrossCases: false,
     },

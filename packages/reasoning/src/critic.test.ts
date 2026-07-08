@@ -69,10 +69,10 @@ describe('critique (unconfigured)', () => {
 });
 
 describe('critique (injected Messages seam)', () => {
-  it('reports available and a bedrock source when a seam is injected', () => {
+  it('reports available and a bedrock backend when a seam is injected', () => {
     const r = createReasoner({ invoke: async () => '{}' });
     expect(r.available).toBe(true);
-    expect(r.source).toBe('bedrock');
+    expect(r.backend).toBe('bedrock');
   });
 
   it('parses a strict judgment reply', async () => {

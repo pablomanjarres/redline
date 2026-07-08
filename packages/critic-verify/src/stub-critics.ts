@@ -17,7 +17,7 @@ const nope = async (): Promise<never> => {
 export function reasonerFrom(
   critique: (req: CriticRequest) => Promise<CriticJudgment>,
 ): Reasoner {
-  return { available: true, source: 'bedrock', narrate: nope, proposeFields: nope, critique };
+  return { available: true, backend: 'bedrock', narrate: nope, proposeFields: nope, critique };
 }
 
 function j(

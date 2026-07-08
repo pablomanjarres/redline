@@ -23,7 +23,7 @@ export async function runCritic(
   for (const c of cases) {
     try {
       const judgment = await reasoner.critique(c.request);
-      const gated = applyCriticGate(c.request.computeState, judgment, reasoner.source ?? 'curated');
+      const gated = applyCriticGate(c.request.computeState, judgment, reasoner.backend ?? 'curated');
       outcomes.push({
         caseId: c.caseId,
         checkId: c.checkId,
