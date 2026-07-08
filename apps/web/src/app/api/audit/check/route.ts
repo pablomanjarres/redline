@@ -169,6 +169,22 @@ function buildCriticRequest(
 }
 
 /**
+ * On a veto the finding is cleared, so the compute half must read coherently too:
+ * drop the red "bad" alarms and replace the flag headline. The stat values and the
+ * figure stay as the evidence the critic examined, and the critic strip explains why
+ * the flag was overturned. The narrative carries no headline or stats, so the gate
+ * seam is the only place that can heal them.
+ */
+function clearComputeForVeto(
+  compute: ComputeResult,
+): Pick<ComputeResult, 'headline' | 'stats'> {
+  return {
+    headline: 'The critic overturned this flag on review.',
+    stats: compute.stats.map((s) => (s.bad ? { ...s, bad: false } : s)),
+  };
+}
+
+/**
  * POST /api/audit/check — run one pillar. The compute target produces the numbers
  * + chart + verdict; the reasoning layer (or curated fallback) produces the prose.
  * Merge them into a CheckResult. Body-shape errors are 400, anything else 500.
@@ -235,14 +251,18 @@ export async function POST(req: Request) {
       }
     }
 
-    // Never-cry-wolf backstop at the gate seam: a vetoed finding must read clean,
-    // even if the narrative fell back to the curated (flagged) copy.
+    // Never-cry-wolf backstop at the gate seam: a vetoed finding must read clean.
+    // The narrative heals here; the compute half (flag headline + red "bad" stats)
+    // is neutralized below, so a cleared finding never renders as a clean verdict
+    // that still asserts the flag.
     if (effectiveState === 'clean' && narrative.error) {
       narrative = { ...narrative, error: null, original: null };
     }
+    const vetoed = critic?.verdict === 'veto';
 
     const result = CheckResult.parse({
       ...compute,
+      ...(vetoed ? clearComputeForVeto(compute) : {}),
       ...narrative,
       source,
       state: effectiveState,
