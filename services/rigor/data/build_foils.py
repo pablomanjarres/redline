@@ -177,6 +177,8 @@ def build_case_a(seed: int, eff_shift: float = 0.0, eff_p: float = 0.64, nai_p: 
         tracks=[("Effector", "flagged"), ("Naive", "clean")],
         intended={"1": "flagged", "2": "flagged",
                   "3": {"Effector": "flagged", "Naive": "clean"}, "4": "flagged"},
+        unit="donor_id", grouping="condition", nuisance="lane",
+        focus_gene="FOXP3", spurious="Effector", stable="Naive",
     )
 
 
@@ -242,6 +244,8 @@ def build_case_b(seed: int, react_shift: float = 0.0, react_p: float = 0.64, neu
         tracks=[("Reactive", "flagged"), ("Neuron", "clean")],
         intended={"1": "flagged", "2": "flagged",
                   "3": {"Reactive": "flagged", "Neuron": "clean"}, "4": "flagged"},
+        unit="patient", grouping="treatment", nuisance="batch",
+        focus_gene="GENEX", spurious="Reactive", stable="Neuron",
     )
 
 
@@ -306,6 +310,8 @@ def build_case_c(seed: int) -> "Foil":
         tracks=[("Rare", "clean")],
         intended={"1": "clean", "2": "clean",
                   "3": {"Rare": "clean"}, "4": "clean"},
+        unit="donor", grouping="condition", nuisance="batch",
+        focus_gene="REAL1", spurious="Rare", stable="Rare",
     )
 
 
@@ -357,6 +363,8 @@ def build_case_d(seed: int) -> "Foil":
         adata=adata,
         tracks=[("Naive", None)],
         intended={"1": "flag_only", "2": "flag_only", "3": {"Naive": "any"}, "4": "any"},
+        unit="donor_id", grouping="condition", nuisance="lane",
+        focus_gene="FOXP3", spurious="Naive", stable=None,
     )
 
 
@@ -368,6 +376,27 @@ class Foil:
     adata: ad.AnnData
     tracks: list[tuple[str, Optional[str]]]
     intended: dict[str, Any]
+    # Oracle descriptor: the obs columns and cell-state groups the independent
+    # oracle reads for this case. Emitted top-level in the manifest so a single
+    # `python -m redline.oracle --manifest ...` recomputes every case.
+    unit: str = ""
+    grouping: str = ""
+    nuisance: str = ""
+    focus_gene: str = ""
+    spurious: str = ""
+    stable: Optional[str] = None
+    state_col: str = "cell_state"
+
+    def descriptor(self) -> dict[str, Any]:
+        return {
+            "unit": self.unit,
+            "grouping": self.grouping,
+            "nuisance": self.nuisance,
+            "state_col": self.state_col,
+            "focus_gene": self.focus_gene,
+            "spurious": self.spurious,
+            "stable": self.stable,
+        }
 
     def obs_columns(self) -> list[str]:
         return [str(c) for c in self.adata.obs.columns]
@@ -401,6 +430,7 @@ def build_all(out_dir: str) -> list[Foil]:
                 "caseId": f.case_id,
                 "filename": f.filename,
                 "scenarioId": f.scenario_id,
+                **f.descriptor(),
                 "obs_columns": f.obs_columns(),
                 "intended_verdicts": f.intended,
             }
