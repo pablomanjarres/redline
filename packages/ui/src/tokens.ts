@@ -1,38 +1,37 @@
 import type { CheckState } from '@redline/contracts';
 
 /**
- * The palette as raw hex - the SVG chart components draw with literal colors
- * (SVG fill/stroke can't reliably read CSS custom properties across renderers,
- * and the report must print correctly). Keep in lockstep with tokens.css.
- * "clinical precision": cool slate ink, one indigo for interaction, one clean
- * red for findings.
+ * The chart palette as raw hex. The figures render on the bright lightbox plate
+ * (not the dark chrome), so these are dark-on-white: slate ink, recessive cool
+ * gridlines, one clean red for the finding, one blue for the operator's scrub.
+ * Kept in lockstep with the `--plate-*` tokens in tokens.css.
  */
 export const C = {
-  desk: '#F4F6F9',
-  frame: '#FAFBFD',
+  desk: '#FFFFFF',
+  frame: '#F7F9FC',
   panel: '#FFFFFF',
   panel2: '#F1F4F8',
-  panel3: '#E8EDF4',
-  ink: '#0F1729',
-  ink2: '#46536B',
-  ink3: '#6B7789',
+  panel3: '#E9EDF3',
+  ink: '#10131A',
+  ink2: '#44506A',
+  ink3: '#6A7688',
   ink4: '#9AA6B8',
-  line: '#E7ECF2',
-  line2: '#D5DCE6',
-  grid: '#EDF1F6',
+  line: '#E6EAF0',
+  line2: '#D3DBE5',
+  grid: '#EEF1F6',
   red: '#E5484D',
   redDeep: '#C22A3A',
   pass: '#12925E',
   amber: '#B45309',
   stop: '#1E293B',
-  accent: '#4F46E5',
-  accentSoft: '#EEF0FE',
+  accent: '#2563EB',
+  accentSoft: '#EEF2FE',
 } as const;
 
 export const FONT = {
-  sans: "'Inter', system-ui, -apple-system, sans-serif",
+  sans: "'Archivo', system-ui, -apple-system, sans-serif",
   mono: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
-  serif: "'Inter', system-ui, sans-serif",
+  serif: "'Archivo', system-ui, sans-serif",
 } as const;
 
 /** Verdict -> the color that represents it, including UI-transient states. */
@@ -68,5 +67,23 @@ export function stateLabel(state: CheckState | 'ready' | 'running'): string {
       return 'Running…';
     default:
       return 'Not run';
+  }
+}
+
+/** Signal colors for the dark chrome (verdict lights, badges on the surface). */
+export function signalColor(state: CheckState | 'ready' | 'running'): string {
+  switch (state) {
+    case 'flagged':
+      return '#FF4D4E';
+    case 'clean':
+      return '#2FD8A4';
+    case 'flag_only':
+      return '#F7B23B';
+    case 'hard_stop':
+      return '#EEF1F6';
+    case 'running':
+      return '#58C7FF';
+    default:
+      return '#4C5563';
   }
 }
