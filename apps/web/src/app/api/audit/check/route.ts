@@ -132,17 +132,21 @@ export async function POST(req: Request) {
     // error, fall back to the curated copy (kept in exact agreement with the
     // fixture numbers) so a finding always renders.
     let narrative: Narrative;
+    let source: 'bedrock' | 'anthropic' | 'curated';
     if (!reasoner.available) {
       narrative = curatedNarrative(body.scenarioId, body.checkId, body.config);
+      source = 'curated';
     } else {
       try {
         narrative = await reasoner.narrate(buildRequest(body.scenarioId, compute));
+        source = reasoner.backend ?? 'curated';
       } catch {
         narrative = curatedNarrative(body.scenarioId, body.checkId, body.config);
+        source = 'curated';
       }
     }
 
-    const result = CheckResult.parse({ ...compute, ...narrative });
+    const result = CheckResult.parse({ ...compute, ...narrative, source });
     return Response.json(result);
   } catch {
     return Response.json({ error: 'Internal error' }, { status: 500 });

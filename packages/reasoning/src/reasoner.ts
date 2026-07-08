@@ -24,6 +24,9 @@ export class ReasonerUnavailable extends Error {
 export interface Reasoner {
   /** True when a reasoning backend is configured. Read lazily; no network. */
   readonly available: boolean;
+  /** The configured backend, or undefined when none is wired. Lets a caller
+   *  stamp the source of a produced narrative or field proposal. */
+  readonly backend: 'anthropic' | 'bedrock' | undefined;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
 }
@@ -77,6 +80,10 @@ export function createReasoner(): Reasoner {
   return {
     get available(): boolean {
       return selectBackend() !== undefined;
+    },
+
+    get backend(): Backend | undefined {
+      return selectBackend();
     },
 
     async narrate(req: NarrativeRequest): Promise<Narrative> {
