@@ -27,9 +27,9 @@ const CheckRequest = z.object({
   fields: z.array(FieldSpec),
 });
 
-// One reasoner per process: Bedrock when creds+model are wired, curated fallback
-// otherwise. Constructing it never touches the network, so this is safe at module
-// scope and reused across requests.
+// One reasoner per process: Claude via the first-party API or Bedrock (per env),
+// with a curated fallback when no backend is wired. Constructing it never touches
+// the network, so this is safe at module scope and reused across requests.
 const reasoner = createReasoner();
 
 /** Pull the load-bearing numbers out of a chart payload, keyed by chart kind. */
@@ -126,11 +126,13 @@ export async function POST(req: Request) {
     const target = getComputeTarget();
     const compute = await target.computeCheck(body);
 
-    // Fixtures and an unavailable reasoner use the curated copy (which is kept in
-    // exact agreement with the fixture numbers). A live reasoner narrates, and
-    // still falls back to curated on any error so a finding always renders.
+    // When a reasoning backend is wired — the Claude API for the public path, or
+    // Bedrock for the internal demo — Claude narrates the finding from the
+    // computed numbers, even on the fixture target. With no backend, or on any
+    // error, fall back to the curated copy (kept in exact agreement with the
+    // fixture numbers) so a finding always renders.
     let narrative: Narrative;
-    if (target.id === 'fixture' || !reasoner.available) {
+    if (!reasoner.available) {
       narrative = curatedNarrative(body.scenarioId, body.checkId, body.config);
     } else {
       try {
