@@ -38,7 +38,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head>Independent unit</Head>
               <div style={desc}>The field that is one true replicate. Cells nested inside it are not independent.</div>
-              <select value={cfg[1].unit} onChange={(e) => setCfg(1, { unit: e.target.value })} style={{ width: '100%' }} aria-label="Independent unit">
+              <select data-testid="knob-unit" value={cfg[1].unit} onChange={(e) => setCfg(1, { unit: e.target.value })} style={{ width: '100%' }} aria-label="Independent unit">
                 {knobs.units.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -47,7 +47,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head value={`α = ${cfg[1].alpha.toFixed(2)}`}>Significance threshold</Head>
               <div style={desc}>The α below which a p-value is called significant.</div>
-              <input type="range" min={0.01} max={0.1} step={0.01} value={cfg[1].alpha} onChange={(e) => setCfg(1, { alpha: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Significance threshold" />
+              <input data-testid="knob-alpha" type="range" min={0.01} max={0.1} step={0.01} value={cfg[1].alpha} onChange={(e) => setCfg(1, { alpha: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Significance threshold" />
             </div>
           </>
         )}
@@ -56,7 +56,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head value={`${Math.round(cfg[2].split * 100)}% held out`}>Held-out split</Head>
               <div style={desc}>Fraction of cells reserved to re-test the markers on data they never saw. Below 15% is too small to validate.</div>
-              <input type="range" min={0.05} max={0.5} step={0.05} value={cfg[2].split} onChange={(e) => setCfg(2, { split: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Held-out split" />
+              <input data-testid="knob-split" type="range" min={0.05} max={0.5} step={0.05} value={cfg[2].split} onChange={(e) => setCfg(2, { split: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Held-out split" />
             </div>
             <div>
               <Head>Grouping</Head>
@@ -71,7 +71,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head>Group to track</Head>
               <div style={desc}>Which cluster to test for stability across settings.</div>
-              <select value={cfg[3].track} onChange={(e) => setCfg(3, { track: e.target.value })} style={{ width: '100%' }} aria-label="Group to track">
+              <select data-testid="knob-track" value={cfg[3].track} onChange={(e) => setCfg(3, { track: e.target.value })} style={{ width: '100%' }} aria-label="Group to track">
                 {knobs.tracks.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -80,18 +80,18 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head value={`${cfg[3].min.toFixed(1)} – ${cfg[3].max.toFixed(1)}`}>Resolution range</Head>
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <input type="range" min={0.2} max={1} step={0.2} value={cfg[3].min} onChange={(e) => setCfg(3, { min: parseFloat(e.target.value) })} style={{ flex: 1 }} aria-label="Resolution minimum" />
-                <input type="range" min={1} max={2.5} step={0.2} value={cfg[3].max} onChange={(e) => setCfg(3, { max: parseFloat(e.target.value) })} style={{ flex: 1 }} aria-label="Resolution maximum" />
+                <input data-testid="knob-min" type="range" min={0.2} max={1} step={0.2} value={cfg[3].min} onChange={(e) => setCfg(3, { min: parseFloat(e.target.value) })} style={{ flex: 1 }} aria-label="Resolution minimum" />
+                <input data-testid="knob-max" type="range" min={1} max={2.5} step={0.2} value={cfg[3].max} onChange={(e) => setCfg(3, { max: parseFloat(e.target.value) })} style={{ flex: 1 }} aria-label="Resolution maximum" />
               </div>
             </div>
             <div>
               <Head value={`step ${cfg[3].step.toFixed(1)}`}>Step</Head>
-              <input type="range" min={0.1} max={0.5} step={0.1} value={cfg[3].step} onChange={(e) => setCfg(3, { step: parseFloat(e.target.value) })} style={{ width: '100%', marginTop: 8 }} aria-label="Step" />
+              <input data-testid="knob-step" type="range" min={0.1} max={0.5} step={0.1} value={cfg[3].step} onChange={(e) => setCfg(3, { step: parseFloat(e.target.value) })} style={{ width: '100%', marginTop: 8 }} aria-label="Step" />
             </div>
             <div style={{ background: 'var(--signal-soft)', border: '1px solid color-mix(in srgb, var(--signal) 30%, transparent)', borderRadius: 10, padding: '13px 14px' }}>
               <Head value={`res ${cfg[3].scrub.toFixed(2)}`}>Scrub · live</Head>
               <div style={{ ...desc, color: 'var(--ink-3)' }}>Drag to watch the group appear and vanish. Does not re-run the test.</div>
-              <input type="range" min={cfg[3].min} max={cfg[3].max} step={0.05} value={cfg[3].scrub} onChange={(e) => setCfg(3, { scrub: parseFloat(e.target.value) }, { rerun: false })} style={{ width: '100%' }} aria-label="Scrub resolution" />
+              <input data-testid="knob-scrub" type="range" min={cfg[3].min} max={cfg[3].max} step={0.05} value={cfg[3].scrub} onChange={(e) => setCfg(3, { scrub: parseFloat(e.target.value) }, { rerun: false })} style={{ width: '100%' }} aria-label="Scrub resolution" />
             </div>
           </>
         )}
@@ -111,6 +111,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
                   return (
                     <button
                       key={n.value}
+                      data-testid={`knob-nuisance-${n.value}`}
                       onClick={() => {
                         const cur = cfg[4].nuisance;
                         setCfg(4, { nuisance: on ? cur.filter((x) => x !== n.value) : cur.concat([n.value]) });
