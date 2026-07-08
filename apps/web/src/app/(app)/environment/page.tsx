@@ -88,6 +88,33 @@ export default function EnvironmentPage() {
         </div>
       </div>
 
+      {/* grounded in the real published data */}
+      <section aria-label="Grounded in the real data">
+        <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--red)', boxShadow: '0 0 8px var(--red)', flex: 'none' }}
+          />
+          <span style={{ font: '700 10px/1 var(--mono)', letterSpacing: '.18em', color: 'var(--ink)' }}>GROUNDED IN THE REAL DATA</span>
+        </div>
+        <p style={{ margin: '12px 0 0', maxWidth: 660, font: '400 13.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
+          These figures are computed from the real, published Marson/Pritchard tables (
+          <Mono>sample_metadata</Mono> and <Mono>DE_stats</Mono>, MIT-licensed, on the open S3 bucket), not the
+          demo fixtures. Derivation: <Mono>services/rigor/data/build_real_marson.py</Mono>.
+        </p>
+        <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+          <RealStat v="4" l="donors · the real replicate unit" />
+          <RealStat v="3" l="culture conditions" />
+          <RealStat v="0.50" l="condition × run Cramér's V" accent />
+          <RealStat v="21,216 / 33,983" l="significant on-target KDs" />
+        </div>
+        <p style={{ margin: '14px 0 0', maxWidth: 660, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-3)' }}>
+          The real confound Redline flags from the design alone: every 48-hour-stimulation sample ran in sequencing
+          batch R2, so <Mono>culture_condition</Mono> is partly inseparable from <Mono>10xrun_id</Mono> (V = 0.50). The
+          matrix-dependent checks (the naive cell-level p, double-dipping AUC, clustering fragility) need the
+          15–148 GiB expression matrices; run them through the engine with <Mono>REDLINE_COMPUTE_TARGET=local</Mono>.
+        </p>
+      </section>
+
       {/* three places it runs */}
       <section aria-label="Where Redline runs">
         <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -127,5 +154,22 @@ function EnvCard({ title, body }: { title: string; body: string }) {
       <h2 style={{ margin: '14px 0 0', font: '700 14px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{title}</h2>
       <p style={{ margin: '6px 0 0', font: '400 12.5px/1.5 var(--sans)', color: 'var(--ink-3)' }}>{body}</p>
     </div>
+  );
+}
+
+function RealStat({ v, l, accent }: { v: string; l: string; accent?: boolean }) {
+  return (
+    <div style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '14px 16px' }}>
+      <div style={{ font: '700 19px/1.1 var(--mono)', letterSpacing: '-.01em', color: accent ? 'var(--red)' : 'var(--ink)' }}>{v}</div>
+      <div style={{ marginTop: 7, font: '400 10px/1.35 var(--mono)', letterSpacing: '.03em', color: 'var(--ink-4)' }}>{l}</div>
+    </div>
+  );
+}
+
+function Mono({ children }: { children: string }) {
+  return (
+    <span style={{ font: '500 12px/1 var(--mono)', color: 'var(--ink-3)', background: 'var(--panel-2)', border: '1px solid var(--edge)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
   );
 }
