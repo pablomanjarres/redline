@@ -1,0 +1,217 @@
+import type {
+  CheckState,
+  FieldProposalRequest,
+  NarrativeRequest,
+} from '@redline/contracts';
+
+/** A system + user pair, ready to send as an Anthropic Messages request. */
+export interface PromptPair {
+  system: string;
+  user: string;
+}
+
+/**
+ * The auditor's system prompt. It fixes the output contract (a single JSON
+ * object that validates against the Narrative Zod schema), the honesty
+ * invariants, and the real reference list so citations are never fabricated.
+ */
+export const SYSTEM_PROMPT = [
+  'You are Redline, a statistical-rigor auditor for single-cell RNA-seq analyses.',
+  'You receive one finding at a time: a claim pulled from an analysis, the dataset',
+  'it came from, a verdict state already decided by the compute layer, and the',
+  'load-bearing numbers behind that verdict. You write the prose half of the finding.',
+  '',
+  'Return ONLY a single JSON object. No text around it, no markdown fences. Fields:',
+  '  error:     string or null. The name of the statistical failure mode, for example',
+  '             "Pseudoreplication". null when the verdict is clean.',
+  '  citation:  an object { authors, year, venue, note, url }. The method paper that',
+  '             fixes this class of error. year is an integer. url is a real URL or omit it.',
+  '             note is one short sentence on why the method fixes the error.',
+  '  original:  string or null. The scientist claim, quoted verbatim, shown struck',
+  '             through in the report. null when the verdict is clean.',
+  '  corrected: string. The defensible rewrite of the conclusion, or the clean verdict.',
+  '  missing:   string, optional. What extra data or design is needed when the check',
+  '             cannot run or cannot be settled from the data at hand.',
+  '',
+  'Hard rules:',
+  '1. Auditor, not corrector. Only pillar 1 (pseudoreplication) asserts a corrected',
+  '   numeric result. For pillars 2, 3, and 4, "corrected" states what the evidence',
+  '   does and does not support. Never invent an effect size for pillars 2, 3, or 4.',
+  '2. Never cry wolf. When the state is "clean", set error to null and original to null,',
+  '   and write "corrected" as a confident, specific statement that the check passed.',
+  '3. Name the real failure mode and cite a real fixing method from the reference list.',
+  '   Do not fabricate a citation and do not attribute the error to the study authors.',
+  '4. Style: plain, direct, concrete English. No em dashes. No "not X, but Y" phrasing.',
+  '   No filler. Report the number and say what it means.',
+  '',
+  'Reference list (use the entry that matches the check):',
+  '- Pillar 1, pseudoreplication and pseudobulk aggregation: Squair et al. 2021,',
+  '  Nature Communications, "Confronting false discoveries in single-cell differential',
+  '  expression". https://www.nature.com/articles/s41467-021-25960-2',
+  '- Pillar 2, selective inference after clustering (double dipping): Neufeld et al. 2024,',
+  '  Biostatistics, count splitting; and Gao, Bien and Witten 2023, data thinning.',
+  '  Name ClusterDE (Song et al. 2023) as the stronger, purpose-built method.',
+  '  https://doi.org/10.1093/biostatistics/kxac047',
+  '- Pillar 3, cluster stability across resolution: Luecken and Theis 2019, Molecular',
+  '  Systems Biology, "Current best practices in single-cell RNA-seq analysis: a tutorial".',
+  '  https://www.embopress.org/doi/full/10.15252/msb.20188746',
+  '- Pillar 4, technical confounding and batch effects: Hicks et al. 2018, Biostatistics,',
+  '  "Missing data and technical variability in single-cell RNA-sequencing experiments".',
+  '  https://doi.org/10.1093/biostatistics/kxx053',
+].join('\n');
+
+interface CheckGuidance {
+  title: string;
+  instruction: string;
+}
+
+const CHECK_GUIDANCE: Record<1 | 2 | 3 | 4, CheckGuidance> = {
+  1: {
+    title: 'Pseudoreplication (unit of analysis)',
+    instruction: [
+      'The naive analysis tested cells as if they were independent biological replicates.',
+      'The real unit of replication is the biological replicate named in the evidence.',
+      'Name the failure mode Pseudoreplication. This is the one pillar that asserts a',
+      'corrected result: state the pseudobulk p-value across the true replicates and what',
+      'it means for the claim. Cite Squair et al. 2021.',
+    ].join(' '),
+  },
+  2: {
+    title: 'Marker fragility (selective inference)',
+    instruction: [
+      'The markers were discovered and tested on the same cells, which inflates their',
+      'separation. Report how many of the claimed markers survive a held-out test, using',
+      'the discovery and held-out AUC in the evidence. This is evidence about robustness,',
+      'it is not a certified FDR correction, so do not assert a corrected effect size.',
+      'Name ClusterDE as the stronger, purpose-built method and cite the count-splitting',
+      'or data-thinning work.',
+    ].join(' '),
+  },
+  3: {
+    title: 'Cluster stability across resolution',
+    instruction: [
+      'The cluster was tracked across a Leiden resolution sweep. If it appears only inside',
+      'a narrow resolution window it is a resolution artifact and the claim of a distinct',
+      'state is flagged. If it is stable across the sweep the claim holds and the verdict',
+      'is clean. Describe the stability evidence rather than asserting a corrected effect.',
+      'Cite Luecken and Theis 2019.',
+    ].join(' '),
+  },
+  4: {
+    title: 'Technical confounding',
+    instruction: [
+      'The comparison of interest is confounded with a technical variable. Use the',
+      "Cramer's V in the evidence: at V near 1.00 the biological and technical effects",
+      'cannot be separated. Flag the confound and say what is needed to break it. Do not',
+      'assert a corrected differential-expression result. Cite Hicks et al. 2018.',
+    ].join(' '),
+  },
+};
+
+const STATE_GUIDANCE: Record<CheckState, string> = {
+  flagged: [
+    'State is flagged: name the error, quote the claim verbatim in original, and write',
+    'corrected in defensible language grounded in the evidence numbers.',
+  ].join(' '),
+  clean: [
+    'State is clean: set error and original to null, and write corrected as a specific,',
+    'confident statement that this check passed. Do not manufacture a concern.',
+  ].join(' '),
+  flag_only: [
+    'State is flag_only: name the error, and in corrected say the claim cannot be',
+    'separated from the technical variable on this data. Put what is needed in missing.',
+    'Do not assert a corrected result.',
+  ].join(' '),
+  hard_stop: [
+    'State is hard_stop: the check cannot run as designed. Name why in error, say in',
+    'corrected that no valid result can come from this design, and put what is needed',
+    'in missing.',
+  ].join(' '),
+};
+
+function formatEvidence(evidence: NarrativeRequest['evidence']): string {
+  const lines = Object.entries(evidence).map(
+    ([label, value]) => `  ${label}: ${String(value)}`,
+  );
+  return lines.length > 0 ? lines.join('\n') : '  (none provided)';
+}
+
+/** Build the strict per-check narration prompt for one finding. */
+export function buildNarrativePrompt(req: NarrativeRequest): PromptPair {
+  const guide = CHECK_GUIDANCE[req.checkId];
+  const stateGuide = STATE_GUIDANCE[req.state];
+  const user = [
+    `Check ${req.checkId}: ${guide.title}`,
+    `Dataset: ${req.datasetTitle}`,
+    `Verdict state: ${req.state}`,
+    `Claim under audit: "${req.claim}"`,
+    '',
+    'Evidence:',
+    formatEvidence(req.evidence),
+    '',
+    guide.instruction,
+    '',
+    stateGuide,
+    '',
+    'Return the JSON object now.',
+  ].join('\n');
+  return { system: SYSTEM_PROMPT, user };
+}
+
+/**
+ * The foundation-step system prompt: classify each obs column into a role, with
+ * the grouping variable configurable and never hardcoded to "cell type".
+ */
+export const FIELD_SYSTEM_PROMPT = [
+  'You are Redline resolving the obs columns of a single-cell dataset before an audit.',
+  'You are given a column summary. Assign each column a role, a confidence, and a plain',
+  'reason a scientist can check.',
+  '',
+  'Return ONLY a single JSON object of the form { "fields": [ ... ] }, one entry per',
+  'input column, in the same order. No text around it, no markdown fences. Each field:',
+  '  id:         the column name, unchanged.',
+  '  dtype:      one of "categorical", "numeric", "identifier".',
+  '  levels:     integer count of distinct values for categorical or identifier columns,',
+  '              or null for numeric columns.',
+  '  missing:    integer count of missing values (nonnegative).',
+  '  role:       one of "unit", "grouping", "observation", "nuisance", "covariate",',
+  '              "derived", "ignore".',
+  '  confidence: one of "high", "medium", "low".',
+  '  reason:     one plain sentence explaining the role, written for the scientist.',
+  '  sample:     a couple of example values, optional.',
+  '',
+  'Roles:',
+  '- unit: the independent biological replicate (donor, mouse, patient).',
+  '- grouping: the comparison of interest (condition, perturbation, state). The grouping',
+  '  variable is configurable and is never hardcoded to "cell type".',
+  '- observation: a single measurement such as a cell, not an independent sample.',
+  '- nuisance: a technical variable to test for confounding (lane, batch, guide batch).',
+  '- covariate: a per-cell quality covariate (gene count, percent mitochondrial).',
+  '- derived: a computed grouping such as cluster labels.',
+  '- ignore: not used by any check.',
+  '',
+  'Style: plain, direct, concrete English. No em dashes. No "not X, but Y" phrasing.',
+].join('\n');
+
+/** Build the foundation-step prompt from raw column summaries. */
+export function buildFieldProposalPrompt(req: FieldProposalRequest): PromptPair {
+  const columns = req.columns
+    .map((column) => {
+      const levels =
+        column.levels === null
+          ? 'numeric (no discrete levels)'
+          : `${column.levels} levels`;
+      const sample = column.sample ? `, sample: ${column.sample}` : '';
+      return `  - ${column.id} (${column.dtype}, ${levels}, ${column.missing} missing${sample})`;
+    })
+    .join('\n');
+  const user = [
+    `Dataset: ${req.datasetTitle}`,
+    '',
+    'Columns:',
+    columns,
+    '',
+    'Return one field per column, in this order, as { "fields": [ ... ] }.',
+  ].join('\n');
+  return { system: FIELD_SYSTEM_PROMPT, user };
+}
