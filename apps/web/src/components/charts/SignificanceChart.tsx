@@ -88,7 +88,7 @@ export function SignificanceChart({
 
   const c = chart;
   const units = c.units;
-  const maxV = Math.max(9.2, c.naive.log10p * 1.08);
+  const maxV = Math.max(9.2, c.naive.log10p * 1.18);
   const baseY = 286;
   const topY = 54;
   const Y = (v: number): number => baseY - (v / maxV) * (baseY - topY);
@@ -98,6 +98,9 @@ export function SignificanceChart({
   const bw = 62;
   const repTop = Y(c.naive.log10p);
   const honTop = Y(c.honest.log10p);
+  // Honest-side captions sit above whichever is higher, the honest bar top or
+  // the significance line, so they never land on the bar or the threshold rule.
+  const honLabelY = Math.min(honTop, aY);
   const cols =
     units.length === 6
       ? [40, 80, 120, 180, 220, 260]
@@ -146,13 +149,13 @@ export function SignificanceChart({
   add(<line x1={344} y1={baseY} x2={604} y2={baseY} stroke={C.line2} strokeWidth={1} />);
   add(<line x1={344} y1={aY} x2={604} y2={aY} stroke={C.ink3} strokeWidth={1} strokeDasharray="4 4" />);
   add(
-    txt(600, aY - 6, `α = ${alphaLabel} threshold`, {
+    txt(604, aY - 7, `α = ${alphaLabel}`, {
       textAnchor: 'end',
       fill: C.ink3,
       style: { font: fMono(500, 10) },
     }),
   );
-  add(txt(356, 52, '−log₁₀ p', { fill: C.ink3, style: { font: fMono(500, 10) } }));
+  add(txt(346, 44, '−log₁₀ p', { fill: C.ink3, style: { font: fMono(500, 10) } }));
 
   // reported (ghost) bar
   add(<rect x={bx1} y={repTop} width={bw} height={baseY - repTop} rx={3} fill="#ECE9E0" stroke={C.line2} strokeWidth={1} />);
@@ -190,7 +193,7 @@ export function SignificanceChart({
   // deflate arrow from reported to honest
   add(
     <path
-      d={`M${bx1 + bw / 2} ${repTop + 34} C ${bx1 + bw + 34} ${repTop + 40}, ${bx2 - 14} ${honTop - 52}, ${bx2 + bw / 2 - 2} ${honTop - 30}`}
+      d={`M${bx1 + bw / 2} ${repTop + 34} C ${bx1 + bw + 30} ${repTop + 55}, ${bx2 - 26} ${honTop - 16}, ${bx2 + 3} ${honTop}`}
       fill="none"
       stroke={C.red}
       strokeWidth={1.5}
@@ -199,7 +202,7 @@ export function SignificanceChart({
   );
   add(
     <path
-      d={`M${bx2 + bw / 2 - 8} ${honTop - 36} l 8 8 l 6 -10`}
+      d={`M${bx2 - 5} ${honTop - 8} l 8 8 l 6 -10`}
       fill="none"
       stroke={C.red}
       strokeWidth={1.5}
@@ -221,9 +224,9 @@ export function SignificanceChart({
       style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'rl-grow .55s .8s ease both' }}
     />,
   );
-  add(txt(bx2 + bw / 2, honTop - 24, 'honest re-test', { textAnchor: 'middle', fill: C.ink2, style: { font: fSans(500, 10) } }));
+  add(txt(bx2 + bw / 2, honLabelY - 26, 'honest re-test', { textAnchor: 'middle', fill: C.ink2, style: { font: fSans(500, 10) } }));
   add(
-    txt(bx2 + bw / 2, honTop - 10, `p = ${fmtP(c.honest.p)}`, {
+    txt(bx2 + bw / 2, honLabelY - 12, `p = ${fmtP(c.honest.p)}`, {
       textAnchor: 'middle',
       fill: C.ink,
       style: { font: fMono(600, 11.5) },
