@@ -1,0 +1,3084 @@
+{
+  "p1_pos_00": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.434028847135251e-08,
+        "unit_p": 0.44109402571591433,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE10",
+          "STATE11",
+          "STATE7",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0222
+      }
+    }
+  },
+  "p1_pos_01": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.907287485444307e-06,
+        "unit_p": 0.5078092354076574,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE3",
+          "STATE8",
+          "STATE9",
+          "STATE11"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0417
+      }
+    }
+  },
+  "p1_pos_02": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 2.5151044407154052e-08,
+        "unit_p": 0.44960583760753275,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE11",
+          "STATE0",
+          "STATE10",
+          "STATE7"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0083
+      }
+    }
+  },
+  "p1_pos_03": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.849380635717017e-07,
+        "unit_p": 0.47974719409870115,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE3",
+          "STATE6",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0306
+      }
+    }
+  },
+  "p1_pos_04": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 9.308570700259272e-10,
+        "unit_p": 0.39732016505605006,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE6",
+          "STATE11",
+          "STATE10",
+          "STATE7"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0306
+      }
+    }
+  },
+  "p1_pos_05": {
+    "truth": {
+      "pseudoreplication": true,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.3816183043025738e-08,
+        "unit_p": 0.428828682055441,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE11",
+          "STATE5",
+          "STATE1",
+          "STATE8"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0611
+      }
+    }
+  },
+  "p1_clean_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 5.926172399431951e-57,
+        "unit_p": 1.0564422965110328e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE11",
+          "STATE4",
+          "STATE10",
+          "STATE9"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.05
+      }
+    }
+  },
+  "p1_clean_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.5947876601729017e-59,
+        "unit_p": 0.0011917064878848495,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE0",
+          "STATE3",
+          "STATE10",
+          "STATE11"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0778
+      }
+    }
+  },
+  "p1_clean_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.743683609189447e-57,
+        "unit_p": 0.0008545595819828276,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE11",
+          "STATE8",
+          "STATE0",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0556
+      }
+    }
+  },
+  "p1_clean_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 2.0253656532271164e-58,
+        "unit_p": 0.004522299836427253,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE10",
+          "STATE2",
+          "STATE1"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.039
+      }
+    }
+  },
+  "p1_clean_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.022455267559389e-56,
+        "unit_p": 5.481427338539244e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE4",
+          "STATE10",
+          "STATE1",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0139
+      }
+    }
+  },
+  "p1_clean_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 6.312262888043281e-59,
+        "unit_p": 5.7149205002175e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE2",
+          "STATE4",
+          "STATE7"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0195
+      }
+    }
+  },
+  "spurious_state_pos_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.290516184350318e-60,
+        "unit_p": 0.0029084904747851965,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5854,
+        "hold_auc": 0.4889,
+        "markers": [
+          "BG17",
+          "BG89",
+          "STATE11",
+          "BG73"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.025
+      }
+    }
+  },
+  "spurious_state_pos_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.613937178165215e-58,
+        "unit_p": 0.0016705664230807573,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5875,
+        "hold_auc": 0.486,
+        "markers": [
+          "BG46",
+          "STATE6",
+          "BG35",
+          "BG15"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0722
+      }
+    }
+  },
+  "spurious_state_pos_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.194314712875453e-58,
+        "unit_p": 0.004980434073602598,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5889,
+        "hold_auc": 0.473,
+        "markers": [
+          "BG24",
+          "STATE11",
+          "BG13",
+          "BG14"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0389
+      }
+    }
+  },
+  "spurious_state_pos_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.1676944205883578e-58,
+        "unit_p": 0.006797279001879404,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5939,
+        "hold_auc": 0.4988,
+        "markers": [
+          "BG70",
+          "BG83",
+          "BG52",
+          "BG27"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0333
+      }
+    }
+  },
+  "spurious_state_pos_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.0783124405331613e-60,
+        "unit_p": 0.0001654362294843634,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5963,
+        "hold_auc": 0.4779,
+        "markers": [
+          "BG45",
+          "STATE3",
+          "BG14",
+          "BG82"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0361
+      }
+    }
+  },
+  "spurious_state_pos_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": true,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.2282479125365415e-57,
+        "unit_p": 4.985943863319405e-07,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.5915,
+        "hold_auc": 0.5013,
+        "markers": [
+          "BG42",
+          "BG66",
+          "BG48",
+          "BG25"
+        ],
+        "surviving": 0,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0361
+      }
+    }
+  },
+  "real_state_clean_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.2645575566079352e-65,
+        "unit_p": 2.3968957465063105e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE8",
+          "STATE0",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.064
+      }
+    }
+  },
+  "real_state_clean_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.359386419091074e-61,
+        "unit_p": 0.000288899827034152,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE4",
+          "STATE5",
+          "STATE7"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0472
+      }
+    }
+  },
+  "real_state_clean_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.321558964683779e-56,
+        "unit_p": 0.0014658272421551226,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE3",
+          "STATE5",
+          "STATE1",
+          "STATE7"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0362
+      }
+    }
+  },
+  "real_state_clean_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.3616656026964576e-55,
+        "unit_p": 0.0003824568565881977,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE8",
+          "STATE7",
+          "STATE4",
+          "STATE10"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.05
+      }
+    }
+  },
+  "real_state_clean_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.2649213016574544e-58,
+        "unit_p": 1.992191908932679e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE8",
+          "STATE7",
+          "STATE11",
+          "STATE2"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0139
+      }
+    }
+  },
+  "real_state_clean_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 2.312052693027967e-60,
+        "unit_p": 8.482134126162892e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE4",
+          "STATE0",
+          "STATE3",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0
+      }
+    }
+  },
+  "continuum_pos_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 8.263907505449121e-58,
+        "unit_p": 0.0011143998011628716,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.9555,
+        "hold_auc": 0.9484,
+        "markers": [
+          "STATE11",
+          "STATE10",
+          "STATE0",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.4286,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.1223
+      }
+    }
+  },
+  "continuum_pos_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.911899168720008e-56,
+        "unit_p": 0.00012759447158538432,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.9549,
+        "hold_auc": 0.9465,
+        "markers": [
+          "STATE9",
+          "STATE1",
+          "STATE3",
+          "STATE2"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.2857,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.025
+      }
+    }
+  },
+  "continuum_pos_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.0935404326711106e-63,
+        "unit_p": 4.5513042777930865e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.9577,
+        "hold_auc": 0.942,
+        "markers": [
+          "STATE7",
+          "STATE4",
+          "STATE1",
+          "STATE3"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.4286,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0306
+      }
+    }
+  },
+  "continuum_pos_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.82463189037183e-57,
+        "unit_p": 0.00031318091364631353,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.9519,
+        "hold_auc": 0.9546,
+        "markers": [
+          "STATE11",
+          "STATE6",
+          "STATE0",
+          "STATE1"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.4286,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0444
+      }
+    }
+  },
+  "continuum_pos_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.7572367531108554e-56,
+        "unit_p": 1.009635237342437e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.956,
+        "hold_auc": 0.9506,
+        "markers": [
+          "STATE3",
+          "STATE0",
+          "STATE8",
+          "STATE10"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.4286,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0722
+      }
+    }
+  },
+  "continuum_pos_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": true,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.2722002192243884e-63,
+        "unit_p": 0.0015294212293955117,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 0.9631,
+        "hold_auc": 0.945,
+        "markers": [
+          "STATE1",
+          "STATE7",
+          "STATE2",
+          "STATE4"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 0.4286,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            false
+          ],
+          [
+            7,
+            false
+          ],
+          [
+            8,
+            false
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0361
+      }
+    }
+  },
+  "p4_pos_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 5.716717645647499e-60,
+        "unit_p": 0.0003947877680375317,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE0",
+          "STATE2",
+          "STATE11",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_pos_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 2.490729476202136e-62,
+        "unit_p": 0.013965521896496986,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE8",
+          "STATE4",
+          "STATE1",
+          "STATE11"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_pos_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 2.341943035466562e-56,
+        "unit_p": 0.01053185354134956,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE10",
+          "STATE5",
+          "STATE8",
+          "STATE4"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_pos_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 6.109463477619248e-54,
+        "unit_p": 5.1245865522143446e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE10",
+          "STATE8",
+          "STATE0",
+          "STATE1"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_pos_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.9504058968774068e-59,
+        "unit_p": 7.478429582461014e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE5",
+          "STATE4",
+          "STATE7",
+          "STATE2"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_pos_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": true
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.117501024647072e-59,
+        "unit_p": 8.943205909865836e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE2",
+          "STATE9",
+          "STATE6",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 1.0
+      }
+    }
+  },
+  "p4_clean_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.1523525665838927e-55,
+        "unit_p": 2.422680075872624e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE1",
+          "STATE11",
+          "STATE3",
+          "STATE10"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0139
+      }
+    }
+  },
+  "p4_clean_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.6966090479133965e-54,
+        "unit_p": 4.9853733367231816e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE7",
+          "STATE6",
+          "STATE3",
+          "STATE1"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0028
+      }
+    }
+  },
+  "p4_clean_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.722198170864157e-53,
+        "unit_p": 0.00018076797571444945,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE4",
+          "STATE1",
+          "STATE5"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0389
+      }
+    }
+  },
+  "p4_clean_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.1981164150824552e-58,
+        "unit_p": 8.378132219046272e-05,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE1",
+          "STATE0",
+          "STATE7",
+          "STATE11"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0056
+      }
+    }
+  },
+  "p4_clean_04": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 5.678249489327531e-54,
+        "unit_p": 1.5845691820477829e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE9",
+          "STATE0",
+          "STATE4",
+          "STATE3"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0278
+      }
+    }
+  },
+  "p4_clean_05": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.4333200786256294e-55,
+        "unit_p": 5.254431994985665e-07,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE5",
+          "STATE9",
+          "STATE10",
+          "STATE4"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0083
+      }
+    }
+  },
+  "clean_control_clean_00": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 1.4809079077580998e-55,
+        "unit_p": 0.0004331593034631633,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE0",
+          "STATE1",
+          "STATE7",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0056
+      }
+    }
+  },
+  "clean_control_clean_01": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 8.408172147866135e-56,
+        "unit_p": 0.010242673575493626,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE10",
+          "STATE1",
+          "STATE0",
+          "STATE6"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.1029
+      }
+    }
+  },
+  "clean_control_clean_02": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 3.861886359635706e-60,
+        "unit_p": 8.419294115443234e-06,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE1",
+          "STATE8",
+          "STATE5",
+          "STATE10"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0306
+      }
+    }
+  },
+  "clean_control_clean_03": {
+    "truth": {
+      "pseudoreplication": false,
+      "double_dipping": false,
+      "fragility": false,
+      "confounding": false
+    },
+    "stats": {
+      "pseudoreplication": {
+        "cell_p": 4.451581094898774e-56,
+        "unit_p": 0.001225786964117245,
+        "n_cells": 720,
+        "n_units": 6,
+        "per_group_units": 3,
+        "focus_gene": "MARKERGENE"
+      },
+      "double_dipping": {
+        "disc_auc": 1.0,
+        "hold_auc": 1.0,
+        "markers": [
+          "STATE1",
+          "STATE7",
+          "STATE0",
+          "STATE4"
+        ],
+        "surviving": 4,
+        "n_markers": 4
+      },
+      "fragility": {
+        "stability": 1.0,
+        "settings": 7,
+        "present_ks": [
+          [
+            2,
+            true
+          ],
+          [
+            3,
+            true
+          ],
+          [
+            4,
+            true
+          ],
+          [
+            5,
+            true
+          ],
+          [
+            6,
+            true
+          ],
+          [
+            7,
+            true
+          ],
+          [
+            8,
+            true
+          ]
+        ]
+      },
+      "confounding": {
+        "cramers_v": 0.0167
+      }
+    }
+  }
+}
