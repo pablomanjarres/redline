@@ -14,6 +14,7 @@
   "dependencies": {
     "@fontsource/archivo": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@redline/contracts": "workspace:*",
     "@redline/engine": "workspace:*",
     "@redline/reasoning": "workspace:*",
