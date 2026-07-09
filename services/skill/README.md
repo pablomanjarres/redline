@@ -90,7 +90,7 @@ the engine.
    `redline/` skill directory, this folder). Claude loads it when a task matches
    the description: a scientist auditing a single-cell analysis before publishing.
 
-With both wired, Claude resolves the design, runs the four checks (via the MCP
+With both wired, Claude resolves the design, runs the registered checks (via the MCP
 tools or the local CLI), and writes the report following the skill's procedure.
 
 ## Claude Science
@@ -117,7 +117,10 @@ diagnostics run directly through `scripts/redline_audit.py` or the MCP tools.
 
 ## Honesty and configurability (carried from the engine)
 
-- Auditor, not corrector. Only Pillar 1 asserts a corrected (pseudobulk) result.
+- Correct, and show your work. Everything Redline asserts, recommends, or
+  corrects is shown, reproducible, and cited.
+- No fabricated fixes. An unsalvageable design is stated plainly, and no
+  corrected result is shown for it anywhere.
 - Never cry wolf. A passed check reports a confident clean verdict.
 - Pillar 2 is evidence (markers surviving a held-out test), not a certified FDR
   correction. ClusterDE is named as the stronger method.

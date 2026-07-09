@@ -32,9 +32,20 @@ packages/ui         @redline/ui: tokens (C, FONT, stateColor, stateLabel) + prim
 packages/engine     @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS.
 packages/reasoning  @redline/reasoning: Claude via AWS Bedrock + curated fallback.
 services/rigor      Python engine (scanpy / decoupler / PyDESeq2 / numpy): MCP server + GCP Cloud Run job.
+  redline/modules/  The CheckModule registry: eight checks, each with detect/prove/correct/
+                    preview/recommend. Single source of truth for the check set.
+  redline/correction/ The corrected-code emitter: static per-check templates, the render/slot
+                    machinery, the BH stats fallback, and the downloadable bundle builder.
 services/skill      The same engine packaged as a Claude Skill.
-docs/               Architecture, honesty rules, dataset, storyboard, deploy. Read first.
+docs/               Architecture, honesty rules, correction layer, dataset, storyboard, deploy. Read first.
 ```
+
+The eight checks: 1 pseudoreplication, 2 double dipping, 3 fragility, 4 confounding (the
+founding pillars, group `core`); 5 multiple testing, 6 unmodeled covariate, 7 resolution
+choice, 8 test assumptions (the rigor checks on the same interface, group `rigor`). The
+correction shapes (`CorrectedCode`, `Recommendation`, `PreviewArtifact`, `CorrectedBundle`,
+`Knob`) live in `packages/contracts/src/correction.ts`, mirrored in
+`services/rigor/redline/contracts.py`.
 
 The `docs/` index:
 
@@ -42,6 +53,7 @@ The `docs/` index:
 |---|---|
 | Understand the system | `docs/architecture.md` |
 | Not break an honesty invariant | `docs/honesty-rules.md` |
+| Add a rigor check, or emit corrected code | `docs/correction-layer.md` |
 | Know the hero dataset and its framing rule | `docs/dataset.md` |
 | Run the three-minute demo | `docs/demo-storyboard.md` |
 | Add a step to the guided tour, or run it hands-free | `docs/guided-tour.md` |
@@ -50,13 +62,17 @@ The `docs/` index:
 
 ## The finding shape (internalize this)
 
-Every finding is numbers plus prose that meet in the contract:
+Every finding is numbers, prose, and correction that meet in the contract:
 
 - `ComputeResult` = `{ checkId, state, headline, stats, chart }`. The statistics, from a
   `ComputeTarget` (the locked fixture or the real Python engine). Deterministic.
 - `Narrative` = `{ error, citation, original, corrected, missing? }`. The prose, from the
   reasoning layer (Claude via Bedrock) or its curated fallback.
-- `CheckResult = ComputeResult.merge(Narrative)` is what the UI renders per pillar.
+- `Correction` = `{ correctedCode?, recommendations?, preview? }`. The correction half,
+  from the same deterministic module. A `ComputeTarget` returns `EngineResult =
+  ComputeResult.extend(Correction.shape)`.
+- `CheckResult = ComputeResult.merge(Narrative).extend(Correction.shape)` is what the UI
+  renders per check.
 - `state` is `flagged | clean | flag_only | hard_stop`. `ready` and `running` are UI-only
   and are not part of the engine's return contract.
 
@@ -69,8 +85,12 @@ renders disabled and labeled.
 
 These are the product. Full detail in `docs/honesty-rules.md`.
 
-1. **Auditor, not corrector.** Only Pillar 1 (pseudoreplication) asserts a corrected
-   result. The rest report evidence and sensitivity.
+1. **Correct, and show your work.** Redline corrects the analysis and previews the
+   corrected result. Everything it asserts, recommends, or corrects is shown,
+   reproducible, and cited: the code is downloadable and runs, the preview is its output,
+   the recommendation names the method. No fabricated fixes: an unsalvageable finding
+   shows no corrected result anywhere (`PreviewArtifact` refuses an `after` when
+   `unsalvageable`).
 2. **Never cry wolf.** A passed check reports clean, confidently, in green. Never
    manufacture a flag.
 3. **Pillar 2 is evidence,** not a certified FDR correction. Name ClusterDE as the
@@ -119,7 +139,12 @@ This includes report copy, reasoning lines, headlines, captions, and these docs.
 5. Pillar 3 (cheapest; best interactive surface).
 6. The reasoning layer and report assembly, including the clean-verdict path.
 
-The UI is built last, but every pillar exposes its knobs so the UI can surface and tune
+The four founding pillars come first. The rigor checks (5 to 8) and the correction
+capabilities (corrected code, recommendations, fix-and-preview) hang off the same
+`CheckModule` interface and the registry, so they are added as modules without touching the
+driver. See `docs/correction-layer.md`.
+
+The UI is built last, but every check exposes its knobs so the UI can surface and tune
 each one.
 
 ## Git

@@ -8,15 +8,20 @@ build agents together lives in `docs/build/INTERFACES.md`, and the Zod types in
 ## One engine, every surface
 
 Redline is one rigor engine that runs everywhere a scientist works. The core is a
-foundation step (design resolution) plus four independent checks. Each check is its
-own module with its own input contract, detection logic, re-run routine, exposed
-knobs, and verdict. There is no monolithic `audit()` function. The tower has
-independent floors, and the same floors serve three surfaces:
+foundation step (design resolution) plus a registry of independent checks: four
+founding pillars and eight registered checks in total, checks 5 to 8 built on the same
+module interface. Each check is its own module with its own input contract, detection
+logic, re-run routine, corrected-code template, exposed knobs, and verdict. There is no
+monolithic `audit()` function. The registry (`services/rigor/redline/modules/` on the
+Python side, `CHECK_REGISTRY` in `packages/contracts/src/registry.ts` on the TS side) is
+the single source of truth for which checks exist, and adding one is adding a module and a
+registry row. See `correction-layer.md` for the module interface and the correction
+capabilities. The tower has independent floors, and the same floors serve three surfaces:
 
 - **The plots-first web workbench** (`apps/web`). The demo surface. Renders the
   scientist's figures and marks the findings on them.
-- **The MCP server** (`services/rigor`). The engine as tools. One tool per pillar
-  plus `redline_resolve_fields`. This is where the heavy Python statistics live.
+- **The MCP server** (`services/rigor`). The engine as tools. One tool per registered
+  check plus `redline_resolve_fields`. This is where the heavy Python statistics live.
 - **The Claude Skill** (`services/skill`). The same engine as procedural knowledge
   (`SKILL.md` plus scripts) so it drops into Claude Science and Claude Code natively.
 
@@ -33,11 +38,11 @@ redline/
       src/app/page.tsx       Intake / scenario landing.
       src/app/(app)/         The workbench shell (Sidebar + TopBar).
         fields/              Foundation: the design-resolution panel.
-        workbench/           The four-check overview (one card per pillar).
-        checks/[id]/         One pillar panel with its knobs and chart.
-        report/              The assembled audit across all four checks.
+        workbench/           The check overview (one card per registered check).
+        checks/[id]/         One check panel with its knobs, chart, and correction.
+        report/              The assembled audit across every registered check.
         environment/         The compute-target surface (fixture / local / cloudrun / endpoint).
-      src/app/api/audit/     Route handlers: /fields and /check.
+      src/app/api/audit/     Route handlers: /fields, /check, /preview; plus /bundle.
       src/state/session.tsx  Client session store (React context + localStorage).
       src/components/         shell, intake, fields, workbench, check, charts, report.
       src/lib/                api client, formatting.
@@ -58,8 +63,8 @@ to the same Zod shapes.
 
 ## The request path
 
-Both built-in scenarios flow the same way: intake, then field resolution, then four
-checks, then a report. Nothing downstream runs until the design is confirmed.
+Both built-in scenarios flow the same way: intake, then field resolution, then the
+registered checks, then a report. Nothing downstream runs until the design is confirmed.
 
 ```
   page.tsx (intake)
@@ -72,12 +77,23 @@ checks, then a report. Nothing downstream runs until the design is confirmed.
         v
   /workbench + /checks/[id]
         |  runCheck(id)  --POST /api/audit/check-->
-        |        getComputeTarget().computeCheck()   -> ComputeResult (numbers + chart + verdict)
-        |        createReasoner().narrate()          -> Narrative     (failure mode + citation + rewrite)
+        |        getComputeTarget().computeCheck()   -> EngineResult (numbers + chart + verdict + correction)
+        |        createReasoner().narrate()          -> Narrative    (failure mode + citation + rewrite)
         |        merge                                -> CheckResult
+        |  previewCheck(id)  --POST /api/audit/preview--> the heavy re-analysis, dispatched as a job
         v
-  /report   AuditReport derived from the four CheckResults
+  /report   AuditReport derived from the CheckResults
+  /bundle   --GET /api/bundle--> CorrectedBundle (readme + notebook + one script per flagged check)
 ```
+
+The correction layer adds two seams to this path. The `check` op now returns an
+`EngineResult` (the module's `run()` driver produces `(computeResult, correction)`), so the
+corrected code and the recommendations arrive with the numbers. A separate `preview` op on
+the remote adapter dispatches the heavy re-analysis (the pseudobulk re-test, the count-split
+reclustering, the resolution sweep) as a job, so a runaway re-run cannot block the app. The
+bundle route assembles the downloadable artifact (`CorrectedBundle`: a README, a
+consolidated notebook, and one runnable script per flagged check) that the scientist leaves
+with. See `correction-layer.md`.
 
 Route handlers stay thin. They validate the body with the contract schemas and
 delegate: all numeric logic lives in `@redline/engine`, all prose in
@@ -94,8 +110,9 @@ and it isolates the one part that calls a model.
 - **`ComputeResult`** is the statistics. `{ checkId, state, headline, stats, chart }`.
   Produced by a `ComputeTarget`: the locked fixture, or the real Python rigor engine.
   Deterministic. No model call. The `chart` is a discriminated union keyed on `kind`
-  (`significance`, `hardstop`, `groups`, `fragility`, `confound`), so the figure knows
-  exactly what to draw.
+  (`significance`, `hardstop`, `groups`, `fragility`, `confound`, plus `volcano` and `fdr`
+  for the corrected artifacts of the rigor checks), so the figure knows exactly what to
+  draw.
 - **`Narrative`** is the prose. `{ error, citation, original, corrected, missing? }`.
   Produced by the reasoning layer (Claude via Bedrock) or its curated fallback. It
   names the failure mode, cites the method paper that fixes it, strikes through the
@@ -103,10 +120,21 @@ and it isolates the one part that calls a model.
   `error` and `original` are `null` and `corrected` carries the confident clean
   statement.
 
-`CheckResult = ComputeResult.merge(Narrative)` is what the UI renders per pillar. The
-`state` enum (`flagged`, `clean`, `flag_only`, `hard_stop`) is the verdict the whole
-system agrees on; `ready` and `running` are UI-only transient states and are
-deliberately not part of the engine's return contract.
+- **`Correction`** is the third part, added by the correction layer. `{ correctedCode?,
+  recommendations?, preview? }`. Produced by the same deterministic module that produced
+  the numbers: the runnable script that reproduces the honest re-analysis, the concrete
+  next actions, and the corrected downstream result rendered beside the claim. Every field
+  is optional, so a check that cannot correct simply omits it. What a `ComputeTarget`
+  returns is `EngineResult = ComputeResult.extend(Correction.shape)`: the numbers plus
+  whatever correction the module could produce, before the prose is added.
+
+`CheckResult = ComputeResult.merge(Narrative).extend(Correction.shape)` is what the UI
+renders per check: numbers, prose, and correction. The `state` enum (`flagged`, `clean`,
+`flag_only`, `hard_stop`) is the verdict the whole system agrees on; `ready` and `running`
+are UI-only transient states and are deliberately not part of the engine's return contract.
+The correction shape is attached with `.extend()` so the sibling add-ons (the critic
+assessment, the per-stat confidence intervals) can attach their own optional keys to the
+same `CheckResult` without restructuring the type. See `correction-layer.md`.
 
 ## The ComputeTarget seam
 
