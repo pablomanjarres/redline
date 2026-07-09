@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { THREADED_ANCHORS, TOUR_ANCHORS, type TourAnchor } from './anchors';
 import { TOUR_STEPS } from './steps';
-import { INITIAL_TOUR_STATE, nextSpineIndex, tourReducer, type TourState } from './types';
+import { INITIAL_TOUR_STATE, nextSpineIndex, spineStepFor, tourReducer, type TourState } from './types';
 
 /**
  * The tour is prose that ships in the product, so it is bound by the repo's
@@ -400,6 +400,40 @@ describe('nextSpineIndex (the presenter skip)', () => {
   it('returns length past the end when nothing ahead is spine', () => {
     expect(nextSpineIndex(d, 4)).toBe(d.length);
     expect(nextSpineIndex(d, 99)).toBe(d.length);
+  });
+
+  describe('spineStepFor honors travel direction so Back is never dead', () => {
+    it('stays put when already on a spine step, either direction', () => {
+      expect(spineStepFor(d, 0, 'forward')).toBe(0);
+      expect(spineStepFor(d, 3, 'back')).toBe(3);
+    });
+
+    it('going forward onto a detail step skips ahead', () => {
+      expect(spineStepFor(d, 1, 'forward')).toBe(3);
+      expect(spineStepFor(d, 2, 'forward')).toBe(3);
+    });
+
+    it('going back onto a detail step skips BACK, not forward', () => {
+      // The bug: a back press onto index 1 or 2 must reach spine 0, never bounce to 3.
+      expect(spineStepFor(d, 1, 'back')).toBe(0);
+      expect(spineStepFor(d, 2, 'back')).toBe(0);
+    });
+
+    it('returns -1 when a search runs off the end (forward) or the front (back)', () => {
+      expect(spineStepFor(d, 4, 'forward')).toBe(-1);
+      expect(spineStepFor(['detail', 'detail'] as const, 1, 'back')).toBe(-1);
+    });
+
+    it('lets Back reach the real previous spine step on the actual script', () => {
+      const depths = TOUR_STEPS.map((s) => s.depth);
+      // From every spine step, a Back into a detail gap must resolve to an
+      // EARLIER spine step, never the one we started on.
+      for (let i = 1; i < depths.length; i++) {
+        if (depths[i] !== 'spine') continue;
+        const landed = spineStepFor(depths, i - 1, 'back');
+        expect(landed).toBeLessThan(i);
+      }
+    });
   });
 
   it('drives the real script from welcome through the whole spine to the engine', () => {

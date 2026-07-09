@@ -34,6 +34,7 @@ import { anchorSelector } from '@/lib/tour/anchors';
 import {
   INITIAL_TOUR_STATE,
   nextSpineIndex,
+  spineStepFor,
   tourReducer,
   type TourEnsure,
   type TourMode,
@@ -125,9 +126,18 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const restore = useRef<{ scenarioId: ScenarioId; track?: string; scrub?: number } | null>(null);
   // Where focus was before the tour took it, so Escape returns the reader there.
   const focusReturn = useRef<HTMLElement | null>(null);
+  // Which way the reader last moved, so the presenter spine-skip knows whether a
+  // detail step was reached going forward (skip ahead) or via Back (skip back).
+  const travel = useRef<'forward' | 'back'>('forward');
 
-  const next = useCallback(() => dispatch({ type: 'next' }), []);
-  const back = useCallback(() => dispatch({ type: 'back' }), []);
+  const next = useCallback(() => {
+    travel.current = 'forward';
+    dispatch({ type: 'next' });
+  }, []);
+  const back = useCallback(() => {
+    travel.current = 'back';
+    dispatch({ type: 'back' });
+  }, []);
   const goTo = useCallback((index: number) => dispatch({ type: 'goto', index }), []);
   const setMode = useCallback((mode: TourMode) => dispatch({ type: 'setMode', mode }), []);
   const togglePause = useCallback(() => dispatch({ type: 'togglePause' }), []);
@@ -246,7 +256,10 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const evt = step.advanceEvent ?? 'click';
     const onInteract = () => {
       if (timer) return; // first qualifying interaction wins
-      timer = setTimeout(() => dispatch({ type: 'next' }), ADVANCE_DELAY_MS);
+      timer = setTimeout(() => {
+        travel.current = 'forward';
+        dispatch({ type: 'next' });
+      }, ADVANCE_DELAY_MS);
     };
     el.addEventListener(evt, onInteract);
     return () => {
@@ -259,13 +272,17 @@ export function TourProvider({ children }: { children: ReactNode }) {
   // Presenter mode is the hands-free judge track: it plays `spine` steps and
   // skips `detail`, so the whole arc lands inside two minutes. Guided mode (the
   // reader driving with Next) still visits every step. When presenter lands on a
-  // detail step, from a resume or a manual arrow, it jumps to the next spine one.
+  // detail step it moves to a spine one in the direction it was travelling, so a
+  // Back press steps to the PREVIOUS spine step instead of bouncing forward onto
+  // the one it just left.
   useEffect(() => {
     if (!state.active || state.mode !== 'presenter' || state.paused) return;
     if (step.depth !== 'detail') return;
-    const target = nextSpineIndex(TOUR_DEPTHS, state.index);
-    if (target >= TOUR_STEPS.length) dispatch({ type: 'stop' });
-    else if (target !== state.index) dispatch({ type: 'goto', index: target });
+    const target = spineStepFor(TOUR_DEPTHS, state.index, travel.current);
+    if (travel.current === 'forward' && target < 0) dispatch({ type: 'stop' });
+    else if (target >= 0 && target !== state.index) dispatch({ type: 'goto', index: target });
+    // A backward search that runs off the front (target < 0) leaves the reader on
+    // the detail step rather than stopping the tour; the next Forward recovers.
   }, [state.active, state.mode, state.paused, state.index, step.depth]);
 
   // ── presenter mode: the tour drives itself ───────────────────────────────
@@ -282,6 +299,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       if (elapsed >= dwell) {
         // Advance to the next spine step, not the next index, so presenter never
         // rests on a detail step's dwell.
+        travel.current = 'forward';
         const target = nextSpineIndex(TOUR_DEPTHS, state.index + 1);
         if (target >= TOUR_STEPS.length) dispatch({ type: 'stop' });
         else dispatch({ type: 'goto', index: target });
@@ -327,9 +345,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
       if (inFormControl(document.activeElement)) return; // the slider owns its arrows
       if (e.key === 'ArrowRight') {
         e.preventDefault();
+        travel.current = 'forward';
         dispatch({ type: 'next' });
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
+        travel.current = 'back';
         dispatch({ type: 'back' });
       } else if (e.key === ' ' && state.mode === 'presenter') {
         e.preventDefault();

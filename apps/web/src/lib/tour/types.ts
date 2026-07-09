@@ -102,6 +102,29 @@ export function nextSpineIndex(depths: readonly TourDepth[], from: number): numb
   return depths.length;
 }
 
+/**
+ * The spine index presenter should rest on when it lands on `from`, honoring the
+ * direction it was travelling. Forward skips ahead to the next spine step; a Back
+ * press skips backward to the previous one, so Back is never a dead control that
+ * bounces the reader onto the step they just left. Returns `-1` when a backward
+ * search runs off the front (the caller keeps the reader where they are). Pure.
+ */
+export function spineStepFor(
+  depths: readonly TourDepth[],
+  from: number,
+  dir: 'forward' | 'back',
+): number {
+  if (depths[from] === 'spine') return from;
+  if (dir === 'forward') {
+    const i = nextSpineIndex(depths, from);
+    return i < depths.length ? i : -1;
+  }
+  for (let i = from; i >= 0; i--) {
+    if (depths[i] === 'spine') return i;
+  }
+  return -1;
+}
+
 export interface TourState {
   active: boolean;
   mode: TourMode;
