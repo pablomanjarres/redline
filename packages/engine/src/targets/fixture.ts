@@ -1,6 +1,7 @@
-import type { FieldSpec, ComputeResult, ScenarioId } from '@redline/contracts';
+import type { FieldSpec, ComputeResult, ScenarioId, DatasetInventory } from '@redline/contracts';
 import type { ComputeInput, ComputeTarget } from '../compute-target.js';
 import { fixtureCompute, fixtureFields } from '../fixtures/index.js';
+import { INVENTORIES } from '../inventories.js';
 
 /**
  * The deterministic fixture target. Reproduces the locked demo numbers with no
@@ -11,6 +12,10 @@ import { fixtureCompute, fixtureFields } from '../fixtures/index.js';
 export class FixtureTarget implements ComputeTarget {
   readonly id = 'fixture' as const;
   readonly available = true;
+
+  async inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
+    return INVENTORIES[input.scenarioId];
+  }
 
   async inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]> {
     return fixtureFields(input.scenarioId);
