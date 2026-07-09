@@ -129,6 +129,9 @@ importers:
         specifier: workspace:*
         version: link:../contracts
     devDependencies:
+      '@redline/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.4

@@ -11,7 +11,11 @@ export type { Reasoner } from './reasoner.js';
 export {
   SYSTEM_PROMPT,
   FIELD_SYSTEM_PROMPT,
+  CLAIMS_SYSTEM_PROMPT,
   buildNarrativePrompt,
   buildFieldProposalPrompt,
+  buildClaimExtractionPrompt,
+  buildClaimMappingPrompt,
 } from './prompts.js';
 export type { PromptPair } from './prompts.js';
+export { parseClaimsReply, parseClaimReply } from './claims.js';

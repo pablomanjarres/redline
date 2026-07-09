@@ -1,12 +1,21 @@
 import { FieldProposalResponse, Narrative } from '@redline/contracts';
 import type {
+  ClaimExtractionRequest,
+  ClaimMappingRequest,
+  ExtractedClaim,
   FieldProposalRequest,
   FieldSpec,
   NarrativeRequest,
 } from '@redline/contracts';
 import * as anthropic from './anthropic.js';
 import * as bedrock from './bedrock.js';
-import { buildFieldProposalPrompt, buildNarrativePrompt } from './prompts.js';
+import {
+  buildClaimExtractionPrompt,
+  buildClaimMappingPrompt,
+  buildFieldProposalPrompt,
+  buildNarrativePrompt,
+} from './prompts.js';
+import { parseClaimReply, parseClaimsReply } from './claims.js';
 
 /**
  * Thrown whenever the reasoner cannot produce a validated result: no backend
@@ -26,10 +35,16 @@ export interface Reasoner {
   readonly available: boolean;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
+  /** Extract the auditable claims from the inspected analysis (spec section 4). */
+  extractClaims(req: ClaimExtractionRequest): Promise<ExtractedClaim[]>;
+  /** Map one user-typed claim to its checks and params (spec section 7). */
+  mapClaim(req: ClaimMappingRequest): Promise<ExtractedClaim>;
 }
 
 const NARRATE_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
+// Claim lists are longer than a single narrative, so they get more headroom.
+const CLAIMS_MAX_TOKENS = 8192;
 
 type Backend = 'anthropic' | 'bedrock';
 
@@ -112,6 +127,39 @@ export function createReasoner(): Reasoner {
         throw asUnavailable('proposeFields', err);
       }
     },
+
+    async extractClaims(req: ClaimExtractionRequest): Promise<ExtractedClaim[]> {
+      const backend = selectBackend();
+      if (!backend) {
+        throw new ReasonerUnavailable(
+          'No reasoning backend configured; use the curated claims',
+        );
+      }
+      try {
+        const { system, user } = buildClaimExtractionPrompt(req);
+        const text = await invoke(backend, system, user, CLAIMS_MAX_TOKENS);
+        // The backstop runs immediately after Zod validation, inside parseClaimsReply.
+        return parseClaimsReply(text, req.inventory);
+      } catch (err) {
+        throw asUnavailable('extractClaims', err);
+      }
+    },
+
+    async mapClaim(req: ClaimMappingRequest): Promise<ExtractedClaim> {
+      const backend = selectBackend();
+      if (!backend) {
+        throw new ReasonerUnavailable(
+          'No reasoning backend configured; use manual claim entry',
+        );
+      }
+      try {
+        const { system, user } = buildClaimMappingPrompt(req);
+        const text = await invoke(backend, system, user, CLAIMS_MAX_TOKENS);
+        return parseClaimReply(text, req.inventory);
+      } catch (err) {
+        throw asUnavailable('mapClaim', err);
+      }
+    },
   };
 }
 
@@ -134,7 +182,7 @@ function enforceHonesty(req: NarrativeRequest, narrative: Narrative): Narrative 
 }
 
 /** Recover a JSON object from a model reply, tolerating fences and stray prose. */
-function extractJson(text: string): unknown {
+export function extractJson(text: string): unknown {
   const trimmed = text.trim();
   const candidates: string[] = [trimmed];
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
