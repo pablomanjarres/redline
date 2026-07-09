@@ -30,16 +30,17 @@ paths and no hardcoded secrets, or portability breaks.
 redline/
   apps/
     web/                     Next.js 16 App Router (React 19). Deploys to Vercel.
-      src/app/page.tsx       Intake / scenario landing.
+      src/app/page.tsx       Intake: the .h5ad drop and the two optional attach points.
       src/app/(app)/         The workbench shell (Sidebar + TopBar).
         fields/              Foundation: the design-resolution panel.
+        claims/              Claim Review: the extracted claims, confirmed or corrected.
         workbench/           The four-check overview (one card per pillar).
         checks/[id]/         One pillar panel with its knobs and chart.
         report/              The assembled audit across all four checks.
         environment/         The compute-target surface (fixture / local / cloudrun / endpoint).
-      src/app/api/audit/     Route handlers: /fields and /check.
+      src/app/api/audit/     Route handlers: /fields, /inspect, /claims, /claims/map, /check.
       src/state/session.tsx  Client session store (React context + localStorage).
-      src/components/         shell, intake, fields, workbench, check, charts, report.
+      src/components/         shell, intake, fields, claims, workbench, check, charts, report.
       src/lib/                api client, formatting.
   packages/
     contracts/               @redline/contracts: the Zod shapes every surface speaks. Built.
@@ -58,19 +59,27 @@ to the same Zod shapes.
 
 ## The request path
 
-Both built-in scenarios flow the same way: intake, then field resolution, then four
-checks, then a report. Nothing downstream runs until the design is confirmed.
+Both built-in scenarios flow the same way: intake, then field resolution, then claim
+extraction, then the four checks, then a report. Nothing downstream runs until the design
+is confirmed, and nothing runs in the Workbench until the claim list is confirmed. The
+front door (intake and claim extraction) is covered in `intake-and-claims.md`.
 
 ```
   page.tsx (intake)
-        |  loadScenario('marson')
+        |  loadScenario('marson'); optional notebook / prose
         v
   /fields  --POST /api/audit/fields-->  getComputeTarget().inferFields()
         |                                  (fixture returns the scenario fields;
         |                                   real target reads the .h5ad's obs columns)
-        |  confirmFields()  (the scientist confirms or corrects each role)
+        |  confirmFields()  (the scientist confirms each role; then inspect + extract)
         v
-  /workbench + /checks/[id]
+  /claims  --POST /api/audit/inspect-->  getComputeTarget().inspect()   -> DatasetInventory
+        |  --POST /api/audit/claims -->  createReasoner().extractClaims() -> ExtractedClaim[]
+        |        (no backend -> curatedClaimsFor(), labeled; the honesty backstop always runs)
+        |  --POST /api/audit/claims/map-> createReasoner().mapClaim()     (manual entry)
+        |  confirmClaims()  (the scientist ratifies; writes routedChecks)
+        v
+  /workbench + /checks/[id]   (runs only the routed checks)
         |  runCheck(id)  --POST /api/audit/check-->
         |        getComputeTarget().computeCheck()   -> ComputeResult (numbers + chart + verdict)
         |        createReasoner().narrate()          -> Narrative     (failure mode + citation + rewrite)
@@ -118,6 +127,7 @@ interface ComputeTarget {
   readonly id: 'fixture' | 'local' | 'cloudrun' | 'endpoint';
   readonly available: boolean;
   inferFields(input: { scenarioId }): Promise<FieldSpec[]>;
+  inspect(input: { scenarioId }): Promise<DatasetInventory>;   // the thin inspection step
   computeCheck(input: ComputeInput): Promise<ComputeResult>;
 }
 getComputeTarget(): ComputeTarget;   // reads REDLINE_COMPUTE_TARGET, default 'fixture'
@@ -136,6 +146,12 @@ env is not wired reports `available: false`, the app stays on `fixture`, and the
 control for that target renders disabled and clearly labeled. Redline never presents a
 dead control as live. See `honesty-rules.md` for why this is a hard rule and not a
 nicety.
+
+`inspect()` runs on the same seam. It returns a `DatasetInventory` (the `obs` columns,
+the `uns` stored results, the cluster fields, whether raw counts are present) read from
+metadata alone. It never loads the expression matrix `X`, so the front door stays cheap
+even on a multi-gigabyte object. That inventory is what the claim-extraction agent reads;
+see `intake-and-claims.md`.
 
 This is the same dispatch seam that lets a scientist run the heavy jobs on
 infrastructure they control while their data stays on their side, which mirrors how

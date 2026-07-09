@@ -29,11 +29,11 @@ drops into Claude Science.
 apps/web            Next.js 16 App Router (React 19). The demo workbench. Deploys to Vercel.
 packages/contracts  @redline/contracts: the Zod shapes every surface speaks. Built. Import, don't edit.
 packages/ui         @redline/ui: tokens (C, FONT, stateColor, stateLabel) + primitives. Built. Import, don't edit.
-packages/engine     @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS.
-packages/reasoning  @redline/reasoning: Claude via AWS Bedrock + curated fallback.
-services/rigor      Python engine (scanpy / decoupler / PyDESeq2 / numpy): MCP server + GCP Cloud Run job.
+packages/engine     @redline/engine: the ComputeTarget seam (inferFields + inspect + computeCheck), fixtures, inventories, per-scenario claims, DEFAULT_CONFIG, SCENARIOS.
+packages/reasoning  @redline/reasoning: Claude (first-party API or Bedrock) + curated fallback; narrate, proposeFields, extractClaims, mapClaim.
+services/rigor      Python engine (scanpy / decoupler / PyDESeq2 / numpy) + the thin inspect step: MCP server + GCP Cloud Run job.
 services/skill      The same engine packaged as a Claude Skill.
-docs/               Architecture, honesty rules, dataset, storyboard, deploy. Read first.
+docs/               Architecture, the front door (intake + claims), honesty rules, dataset, storyboard, deploy. Read first.
 ```
 
 The `docs/` index:
@@ -41,6 +41,7 @@ The `docs/` index:
 | Want to | Read |
 |---|---|
 | Understand the system | `docs/architecture.md` |
+| Get the analysis in and extract auditable claims (the front door) | `docs/intake-and-claims.md` |
 | Not break an honesty invariant | `docs/honesty-rules.md` |
 | Know the hero dataset and its framing rule | `docs/dataset.md` |
 | Run the three-minute demo | `docs/demo-storyboard.md` |
