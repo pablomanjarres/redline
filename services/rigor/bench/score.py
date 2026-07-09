@@ -119,7 +119,7 @@ def _headline_sentence(r: dict, b: dict) -> str:
 def render_report(results: dict, meta: dict) -> str:
     h = results["headline"]
     lines = [
-        "# Redline detection benchmark — results",
+        "# Redline detection benchmark: results",
         "",
         f"**{h['sentence']}**",
         "",
