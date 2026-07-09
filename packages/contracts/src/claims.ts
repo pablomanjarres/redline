@@ -123,9 +123,12 @@ const VALID_CHECK_IDS: ReadonlySet<number> = new Set([1, 2, 3, 4]);
 
 /**
  * Param keys whose values are `obs` column NAMES. Extraction must put exact
- * column names here so this guard can verify them. Cluster labels (a state
- * name) and genes live under other keys and are checked separately, so they are
- * intentionally not in this list.
+ * column names here so this guard can verify them.
+ *
+ * Genes live under the gene param keys and are checked (rule 5). Cluster labels
+ * live under `cluster` and are checked by rule 8, but only when the inventory can
+ * prove it: `obs.sample` is a sample, so a label absent from it is not necessarily
+ * fabricated. Rule 8 says when it is.
  */
 const COLUMN_PARAM_KEYS = ['grouping', 'unit', 'nuisance', 'interest'] as const;
 
@@ -143,6 +146,33 @@ function asStrings(v: unknown): string[] {
   if (typeof v === 'string') return v === '' ? [] : [v];
   if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string' && x !== '');
   return [];
+}
+
+/** The obs column a route's `cluster` label is drawn from, if the route names one. */
+function routeClusterLabel(params: unknown): { column: string; label: string } | null {
+  if (typeof params !== 'object' || params === null) return null;
+  const p = params as Record<string, unknown>;
+  const label = p.cluster;
+  const column = p.grouping;
+  if (typeof label !== 'string' || typeof column !== 'string') return null;
+  if (label.trim() === '' || column.trim() === '') return null;
+  return { column, label };
+}
+
+/**
+ * Can the inventory DISPROVE this cluster label?
+ *
+ * `obs.sample` is a sample, not an enumeration, so a label missing from it proves
+ * nothing in general. It proves something exactly when the sample is complete:
+ * when the column's level count is known and the sample holds at least that many
+ * distinct values. Only then is a missing label a fabrication.
+ */
+function labelIsProvablyAbsent(inv: DatasetInventory, column: string, label: string): boolean {
+  const col = inv.obs.find((c) => c.name === column);
+  if (!col || col.levels === null) return false;
+  const distinct = new Set(col.sample);
+  if (distinct.size < col.levels) return false; // the sample is partial; we cannot tell
+  return !distinct.has(label);
 }
 
 function routeColumnRefs(params: unknown): string[] {
@@ -299,10 +329,34 @@ export function enforceClaimHonesty(
     // Rule 4: drop impossible routes, then de-duplicate by check id.
     routes = routes.filter((r) => VALID_CHECK_IDS.has(r.check));
     routes = routes.filter((r) => routeColumnRefs(r.params).every((c) => inventoryHasField(inv, c)));
+
+    // Rule 8: a cluster label the inventory can DISPROVE is a fabricated audit
+    // target. Auditing "the Ketamine-Responder-9000 state" against a dataset whose
+    // grouping column has no such level would run a check on nothing.
+    const fabricatedLabels: string[] = [];
+    routes = routes.filter((r) => {
+      const ref = routeClusterLabel(r.params);
+      if (!ref) return true;
+      if (labelIsProvablyAbsent(inv, ref.column, ref.label)) {
+        fabricatedLabels.push(`${ref.label} (in ${ref.column})`);
+        return false;
+      }
+      return true;
+    });
     routes = dedupeRoutesByCheck(routes);
 
     let confidence = claim.confidence;
     let ambiguousRouting = claim.ambiguousRouting;
+
+    if (fabricatedLabels.length > 0) {
+      confidence = 'low';
+      ambiguousRouting = appendNote(
+        ambiguousRouting,
+        `Routes on cluster label(s) the grouping column does not contain (${fabricatedLabels.join(
+          ', ',
+        )}). Confirm the routing before auditing.`,
+      );
+    }
 
     // Rule 5: an unknown gene demotes the claim and surfaces the uncertainty.
     if (unknownGenes.length > 0) {
@@ -333,6 +387,26 @@ export function enforceClaimHonesty(
       ambiguousRouting = appendNote(
         ambiguousRouting,
         `Every proposed check was dropped because ${why}, so nothing routes to a check. Confirm the routing or remove the claim before auditing.`,
+      );
+    }
+
+    // Rule 9: an active claim that rests on nothing AND audits nothing.
+    //
+    // A claim with no routes is legitimate on its own (rule 6 deliberately stays
+    // quiet: nothing was pruned, so there is nothing to surface). A claim with no
+    // evidenceRefs is legitimate on its own too. Together they describe a sentence
+    // the model wrote with no citation into the data and no check that could test
+    // it, presented to the scientist at whatever confidence it asserted. That is
+    // the one shape nothing else catches.
+    const restsOnNothing =
+      claim.evidenceRefs.obsColumns.length === 0 &&
+      claim.evidenceRefs.unsKeys.length === 0 &&
+      claim.evidenceRefs.genes.length === 0;
+    if (isActive && !arrivedWithRoutes && routes.length === 0 && restsOnNothing) {
+      confidence = 'low';
+      ambiguousRouting = appendNote(
+        ambiguousRouting,
+        'This claim cites nothing in the dataset and routes to no check, so nothing audits it. Ground it, route it, or set it aside.',
       );
     }
 
