@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enforceClaimHonesty } from './claims.js';
+import { assessExtraction, enforceClaimHonesty } from './claims.js';
 
 // ── the two smuggles a review found: a claim with no routes, and a fake label ──
 describe('enforceClaimHonesty: rules 8 and 9', () => {
@@ -81,5 +81,58 @@ describe('enforceClaimHonesty: rules 8 and 9', () => {
     const twice = enforceClaimHonesty(inv, once);
     expect(JSON.stringify(input)).toBe(snapshot);
     expect(twice).toEqual(once);
+  });
+});
+
+// ── assessExtraction: the auditor must not go quiet on a dataset with results ──
+describe('assessExtraction', () => {
+  const withResults = {
+    file: 'a.h5ad', nCells: 100, nGenes: 3,
+    obs: [{ name: 'leiden', dtype: 'categorical' as const, levels: 2, missing: 0, sample: ['0', '1'] }],
+    uns: [
+      { key: 'rank_genes_groups', kind: 'marker_table' as const, shape: '2 x 50', columns: [], groups: ['0', '1'], genes: ['FOXP3'], preview: '' },
+      { key: 'de_by_condition', kind: 'de_result' as const, shape: '3200 x 5', columns: ['pval'], groups: [], genes: ['FOXP3'], preview: '' },
+    ],
+    clusterFields: ['leiden'], varNamesSample: ['FOXP3'], layers: [], obsm: [],
+    hasRawCounts: true, countsSource: 'X',
+  };
+  const noResults = { ...withResults, uns: [{ key: 'pca', kind: 'unknown' as const, shape: '', columns: [], groups: [], genes: [], preview: '' }] };
+
+  const claim = (over: Record<string, unknown> = {}) => ({
+    id: 'c', text: 't', source: 'stored_result' as const, restsOn: 'r',
+    evidenceRefs: { obsColumns: [], unsKeys: [], genes: [] },
+    checks: [{ check: 1 as const, params: { unit: 'donor', grouping: 'leiden' } }],
+    confidence: 'high' as const, status: 'proposed' as const, ...over,
+  });
+
+  it('an empty claim list against a dataset WITH stored results is suspicious', () => {
+    const a = assessExtraction(withResults, []);
+    expect(a.auditableClaims).toBe(0);
+    expect(a.evidenceKeys).toEqual(['rank_genes_groups', 'de_by_condition']);
+    expect(a.suspiciouslyEmpty).toBe(true);
+  });
+
+  it('an empty claim list against a dataset WITHOUT stored results is not suspicious', () => {
+    const a = assessExtraction(noResults, []);
+    expect(a.suspiciouslyEmpty).toBe(false);
+    expect(a.evidenceKeys).toEqual([]);
+  });
+
+  it('the suppression variant: every claim marked out_of_scope is still suspicious', () => {
+    const a = assessExtraction(withResults, [claim({ status: 'out_of_scope', checks: [] }), claim({ id: 'c2', status: 'out_of_scope', checks: [] })]);
+    expect(a.auditableClaims).toBe(0);
+    expect(a.suspiciouslyEmpty).toBe(true);
+  });
+
+  it('a claim present but routed to no check does not count as auditable', () => {
+    const a = assessExtraction(withResults, [claim({ checks: [] })]);
+    expect(a.auditableClaims).toBe(0);
+    expect(a.suspiciouslyEmpty).toBe(true);
+  });
+
+  it('one real auditable claim clears the signal', () => {
+    const a = assessExtraction(withResults, [claim()]);
+    expect(a.auditableClaims).toBe(1);
+    expect(a.suspiciouslyEmpty).toBe(false);
   });
 });

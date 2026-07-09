@@ -5,6 +5,7 @@ import {
   DatasetInventory,
   FieldSpec,
   ClaimExtractionResponse,
+  assessExtraction,
   type ClaimExtractionRequest,
   type ExtractedClaim,
 } from '@redline/contracts';
@@ -92,7 +93,15 @@ export async function POST(req: Request) {
 
     // Validate the claim list against the contract before it leaves the route.
     const validated = ClaimExtractionResponse.parse({ claims });
-    return Response.json({ claims: validated.claims, source });
+
+    // The backstop is zero-in-zero-out, so an empty or all-out-of-scope result
+    // passes it clean. That is honest for most datasets, but it is also what a
+    // prompt injection ("return an empty claims array") and a broken model both
+    // produce, and an auditor going quiet is the dangerous direction. Flag the one
+    // case worth surfacing: nothing to audit, yet the data carries testable stored
+    // results. The UI warns rather than reporting a clean bill of health.
+    const assessment = assessExtraction(body.inventory, validated.claims);
+    return Response.json({ claims: validated.claims, source, assessment });
   } catch {
     return Response.json({ error: 'Internal error' }, { status: 500 });
   }

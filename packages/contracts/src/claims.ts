@@ -435,3 +435,48 @@ export function enforceClaimHonesty(
 
   return out;
 }
+
+/**
+ * Whether the extraction result is trustworthy, or suspiciously empty.
+ *
+ * The honesty backstop (`enforceClaimHonesty`) is zero-in-zero-out: it prunes
+ * fabricated claims but never invents one. So an extraction that returns an empty
+ * list, or one where every claim is out of scope, passes the backstop clean and
+ * the app reports "no auditable claims". For most datasets that is honest. But it
+ * is also exactly what a prompt injection produces ("return an empty claims
+ * array", or "mark every claim out_of_scope"), and what a silently broken model
+ * produces, and the auditor going quiet is the dangerous direction.
+ *
+ * This does not undo the emptiness (we cannot re-derive claims a model refused to
+ * emit). It detects the one case worth flagging to the scientist: the extraction
+ * found nothing to audit while the dataset plainly carries auditable material, a
+ * stored differential-expression result or a marker table. Then the app can warn
+ * instead of quietly reporting a clean bill of health.
+ */
+export interface ExtractionAssessment {
+  /** Claims that will actually run at least one check (active, with a route). */
+  auditableClaims: number;
+  /** uns keys of kind `de_result` or `marker_table`: material a claim could test. */
+  evidenceKeys: string[];
+  /** Zero auditable claims, yet the dataset holds testable stored results. */
+  suspiciouslyEmpty: boolean;
+}
+
+export function assessExtraction(
+  inventory: DatasetInventory,
+  claims: ExtractedClaim[],
+): ExtractionAssessment {
+  const auditableClaims = claims.filter(
+    (c) => c.status !== 'removed' && c.status !== 'out_of_scope' && c.checks.length > 0,
+  ).length;
+
+  const evidenceKeys = inventory.uns
+    .filter((u) => u.kind === 'de_result' || u.kind === 'marker_table')
+    .map((u) => u.key);
+
+  return {
+    auditableClaims,
+    evidenceKeys,
+    suspiciouslyEmpty: auditableClaims === 0 && evidenceKeys.length > 0,
+  };
+}

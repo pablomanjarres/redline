@@ -21,6 +21,7 @@ import {
   mergeRouteParams,
   mergeRoutedConfig,
   claimTextForCheck,
+  prepareRuns,
   type RunDescriptor,
 } from './routing.js';
 
@@ -553,5 +554,29 @@ describe("a claim's identifying params reach the check that audits it", () => {
     const run = { ...runFor('marson-effector-state', 3), params: { cluster: 'Effector', pseudotime: 'x' } };
     const { unmapped } = configForRunWithOutcome(MARSON_DEFAULTS, run);
     expect(unmapped).toEqual(['pseudotime']);
+  });
+});
+
+describe('prepareRuns (the F2 fix, end to end)', () => {
+  it('two claims routed to one check yield two runs, each with its own params', () => {
+    const claims = [
+      claim({ id: 'treg', text: 'Activated Treg-like state is discrete', checks: [{ check: 3, params: { track: 'Activated Treg-like' } }] }),
+      claim({ id: 'eff', text: 'Effector state is discrete', checks: [{ check: 3, params: { track: 'Effector' } }] }),
+    ];
+    const runs = prepareRuns(MARSON_DEFAULTS, claims);
+    const check3 = runs.filter((r) => r.checkId === 3);
+    expect(check3).toHaveLength(2);
+    expect(check3.map((r) => r.claimId).sort()).toEqual(['eff', 'treg']);
+    // Each run carries its own track, not one shared owner's.
+    const byClaim = Object.fromEntries(check3.map((r) => [r.claimId, (r.config as { track?: string }).track]));
+    expect(byClaim.treg).toBe('Activated Treg-like');
+    expect(byClaim.eff).toBe('Effector');
+    // Keys are unique and stable.
+    expect(new Set(runs.map((r) => r.key)).size).toBe(runs.length);
+  });
+
+  it('an empty claim list yields no runs', () => {
+    expect(prepareRuns(MARSON_DEFAULTS, [])).toEqual([]);
+    expect(prepareRuns(MARSON_DEFAULTS, null)).toEqual([]);
   });
 });
