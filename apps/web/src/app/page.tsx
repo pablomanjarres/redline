@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation';
 import type { ScenarioId } from '@redline/contracts';
 import { useSession } from '@/state/session';
 import { TourLauncher } from '@/components/tour/TourLauncher';
-import { fmt } from '@/lib/format';
+import { DatasetSlab } from '@/components/intake/DatasetSlab';
+import { AnalysisSlab } from '@/components/intake/AnalysisSlab';
 
 /**
  * Intake. Its own full-screen chrome (the pipeline shell begins at design
- * resolution). The scientist brings in the data they analyzed and the analysis
- * they ran, picks a built-in scenario, then begins the audit. Nothing is tested
- * here; the first real work happens once fields are confirmed.
+ * resolution). One clear job: get the analysis in. A required drop for the
+ * dataset, and two optional attach points (a notebook / script, and pasted
+ * claims / prose) that feed the extraction agent. A single primary action opens
+ * design resolution. Nothing is tested here; the first real work happens once
+ * fields are confirmed, then Redline reads the analysis and proposes the claims.
  */
 const SCENARIOS: { id: ScenarioId; label: string }[] = [
   { id: 'marson', label: 'Marson' },
@@ -19,7 +22,8 @@ const SCENARIOS: { id: ScenarioId; label: string }[] = [
 ];
 
 export default function IntakePage() {
-  const { scenarioId, dataset, claims, loadScenario, resolveFields } = useSession();
+  const { scenarioId, dataset, notebook, prose, loadScenario, resolveFields, setNotebook, setProse } =
+    useSession();
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -36,13 +40,6 @@ export default function IntakePage() {
       setPending(false);
     }
   }
-
-  const stats = [
-    { v: fmt(dataset.cells), l: 'cells' },
-    { v: fmt(dataset.genes), l: 'genes' },
-    { v: `${dataset.replicates}`, l: dataset.replicateLabel },
-    { v: `${dataset.fieldCount}`, l: 'fields' },
-  ];
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -82,59 +79,10 @@ export default function IntakePage() {
           Drop in the data you analyzed and the analysis you ran. Redline re-runs the load-bearing statistics itself, then marks the false discoveries on your own figures, before they become a paper.
         </p>
 
-        {/* two slabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 40 }}>
-          {/* dataset */}
-          <div data-tour="intake.dataset" style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ font: '700 11px/1 var(--mono)', color: 'var(--red)' }}>01</span>
-              <span style={{ font: '700 12px/1 var(--sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink)' }}>Dataset</span>
-            </div>
-            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--panel-2)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 14px' }}>
-              <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 7, background: 'var(--void)', border: '1px solid var(--edge-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 9px/1 var(--mono)', color: 'var(--signal)' }}>h5ad</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ font: '500 12.5px/1.2 var(--mono)', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataset.file}</div>
-                <div style={{ marginTop: 3, font: '400 11px/1 var(--mono)', color: 'var(--ink-4)' }}>{dataset.sizeGB} GB · loaded</div>
-              </div>
-              <span data-tour="intake.upload" title={computeTargetAvailable ? '' : 'connect a compute target to audit your own data'} style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: computeTargetAvailable ? 'pointer' : 'not-allowed' }}>
-                {computeTargetAvailable ? 'Upload .h5ad' : 'connect a compute\ntarget for your own'}
-              </span>
-            </div>
-            <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: '14px 26px' }}>
-              {stats.map((s) => (
-                <div key={s.l}>
-                  <div style={{ font: '700 20px/1 var(--mono)', color: 'var(--ink)' }}>{s.v}</div>
-                  <div style={{ marginTop: 5, font: '400 9.5px/1 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* analysis */}
-          <div data-tour="intake.analysis" style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ font: '700 11px/1 var(--mono)', color: 'var(--red)' }}>02</span>
-              <span style={{ font: '700 12px/1 var(--sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink)' }}>Analysis</span>
-            </div>
-            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--panel-2)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 14px' }}>
-              <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 7, background: 'var(--void)', border: '1px solid var(--edge-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '600 8px/1 var(--mono)', color: 'var(--signal)' }}>ipynb</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ font: '500 12.5px/1.2 var(--mono)', color: 'var(--ink)' }}>de_analysis.ipynb</div>
-                <div style={{ marginTop: 3, font: '400 11px/1 var(--mono)', color: 'var(--ink-4)' }}>31 cells · read</div>
-              </div>
-            </div>
-            <div style={{ marginTop: 16, font: '400 10px/1 var(--mono)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
-              {claims.length} load-bearing claims to audit
-            </div>
-            <div style={{ marginTop: 11, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {claims.map((c) => (
-                <div key={c.id} style={{ display: 'flex', gap: 9, font: '400 12px/1.4 var(--sans)', color: 'var(--ink-2)' }}>
-                  <span style={{ font: '600 10px/1.5 var(--mono)', color: 'var(--red)', flex: 'none' }}>0{c.check}</span>
-                  <span>“{c.text}”</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* two slabs: the required dataset, and the optional analysis attach points */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 40, alignItems: 'start' }}>
+          <DatasetSlab dataset={dataset} computeTargetAvailable={computeTargetAvailable} />
+          <AnalysisSlab notebook={notebook} prose={prose} onNotebook={setNotebook} onProse={setProse} />
         </div>
 
         {/* begin */}
@@ -142,10 +90,10 @@ export default function IntakePage() {
           <button data-tour="intake.begin" type="button" onClick={onBegin} disabled={pending}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 10, font: '800 13px/1 var(--sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--surface)', background: 'var(--signal)', padding: '16px 26px', borderRadius: 10, border: 'none', cursor: pending ? 'default' : 'pointer', opacity: pending ? 0.7 : 1, boxShadow: '0 10px 24px -8px rgba(37,99,235,.45)' }}>
             {pending ? 'Resolving fields' : 'Begin audit'}
-            <span style={{ fontSize: 15 }}>→</span>
+            <span aria-hidden style={{ fontSize: 15 }}>→</span>
           </button>
           <span style={{ font: '400 12px/1.5 var(--sans)', color: 'var(--ink-4)', maxWidth: 320 }}>
-            First you confirm what each field means. Nothing is tested until you do.
+            First you confirm what each field means. Then Redline reads your analysis and proposes the claims. Nothing is tested until you confirm them.
           </span>
         </div>
       </div>
