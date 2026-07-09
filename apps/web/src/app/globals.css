@@ -2,11 +2,38 @@
    and the rl-* keyframes all live in @redline/ui/tokens.css (imported first in
    the root layout). Keep this file to what tokens.css does not cover. */
 
-/* The keyboard focus ring below reads --accent, which tokens.css never defined,
-   so the rule was invalid at computed-value time and every focus ring fell back
-   to currentColor. Bind it to the interaction blue. */
+/* ── The guided tour ──────────────────────────────────────────────────────
+   The scrim darkens everything except the control the reader should touch. It
+   is built from tokens.css custom properties, so it tracks the palette and
+   never carries a literal color. The halo is the only motion the tour adds. */
 :root {
+  --rl-tour-scrim: color-mix(in srgb, var(--ink) 74%, transparent);
+
+  /* The keyboard focus ring below reads --accent, which tokens.css never
+     defined, so the rule was invalid at computed-value time and every focus
+     ring fell back to currentColor. Bind it to the interaction blue. */
   --accent: var(--signal);
+}
+
+@keyframes rl-tour-halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--red-line),
+      0 0 22px -2px color-mix(in srgb, var(--red) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--red-line),
+      0 0 34px 2px color-mix(in srgb, var(--red) 70%, transparent);
+  }
+}
+
+/* The tour never lands on paper. */
+@media print {
+  .rl-tour-root {
+    display: none !important;
+  }
 }
 
 /* Reduced-motion global guard. Complements the session store, which reveals
