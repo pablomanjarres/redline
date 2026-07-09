@@ -245,11 +245,11 @@ describe('golden-path unmapped ledger on MARSON_DEFAULTS', () => {
 
 describe('ROUTE_PARAM_ALIASES maps the Check-3 cluster param onto the track knob', () => {
   // A base whose Check-3 default track is NOT 'Effector', so a change is visible.
+  // Spread the full defaults (all eight checks) and override only Check 3, so a
+  // future check widening cannot leave this literal short a key.
   const base: CheckConfigMap = {
-    1: { unit: 'donor_id', grouping: 'condition', alpha: 0.05 },
-    2: { split: 0.3, grouping: 'leiden' },
-    3: { min: 0.2, max: 2.0, step: 0.2, track: 'Naive', scrub: 0.9 },
-    4: { interest: 'condition', nuisance: ['lane'] },
+    ...MARSON_DEFAULTS,
+    3: { ...MARSON_DEFAULTS[3], track: 'Naive' },
   };
   const claims = [
     claim({ id: 'x', checks: [{ check: 3, params: { cluster: 'Effector' } }] }),
@@ -438,12 +438,9 @@ describe('a user_added claim contributes its routes', () => {
 // ── mergeRoutedConfig layers, it never replaces (deprecated owner path) ──────
 
 describe('mergeRoutedConfig layers route params without dropping untouched knobs', () => {
-  const base: CheckConfigMap = {
-    1: { unit: 'donor_id', grouping: 'condition', alpha: 0.05 },
-    2: { split: 0.3, grouping: 'leiden' },
-    3: { min: 0.2, max: 2.0, step: 0.2, track: 'Effector', scrub: 0.9 },
-    4: { interest: 'condition', nuisance: ['lane'] },
-  };
+  // Full defaults (all eight checks); Check 3's default track is already
+  // 'Effector' in MARSON_DEFAULTS, so no override is needed.
+  const base: CheckConfigMap = { ...MARSON_DEFAULTS };
 
   it('a claim mentioning only Check 1 unit leaves grouping and alpha intact', () => {
     const claims = [claim({ checks: [{ check: 1, params: { unit: 'guide_batch' } }] })];
