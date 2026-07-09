@@ -71,3 +71,6 @@
 [1murllib3[0m==2.7.0
 [1mwrapt[0m==2.2.2
 [1mzarr[0m==3.2.1
+igraph==1.0.0
+leidenalg==0.12.0
+pydeseq2==0.5.4
