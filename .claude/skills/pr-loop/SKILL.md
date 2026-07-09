@@ -28,11 +28,23 @@ PR_LOOP_MERGE=0           # default OFF. Merging writes to the outside world.
 
 ## Before you touch anything
 
-Invoke **superpowers:using-git-worktrees**. Review and fix in an isolated
-worktree, never in the user's checkout. Then read, in order: `CLAUDE.md`,
-`docs/honesty-rules.md`, `docs/architecture.md`, and whatever doc the PR touches.
-The honesty rules are the acceptance criteria. A PR that passes CI and violates
-them is not mergeable.
+Invoke **superpowers:using-git-worktrees**. Review and fix in an isolated worktree.
+
+**Create your own. Never adopt an existing one.** A sibling worktree may belong to
+a human, or hold a half-resolved merge, or carry uncommitted work. Running
+`git reset --hard` or `git checkout` in it destroys that silently.
+
+```bash
+git worktree add -b review/pr-<n> ../redline-pr-<n> origin/<head-branch>
+```
+
+If you must touch an existing worktree, read `git status` **first** and stop if it
+is not clean. `needs merge` in the output means a merge is in progress and someone
+was resolving it. That is not yours to discard.
+
+Then read, in order: `CLAUDE.md`, `docs/honesty-rules.md`, `docs/architecture.md`,
+and whatever doc the PR touches. The honesty rules are the acceptance criteria. A
+PR that passes CI and violates them is not mergeable.
 
 ## The pass
 
