@@ -233,6 +233,25 @@ def compute_result(
     return _jsonable(result)
 
 
+def inspect_dataset(h5ad: str) -> dict[str, Any]:
+    """Thin inspection of an ``.h5ad`` (spec section 3): the obs columns and their
+    types, the stored ``uns`` results (marker tables, DE results) with their genes
+    and shape, the cluster label fields, and whether raw counts are present.
+
+    Reuses the single-slot AnnData cache and the stdout diversion (``inspect`` is
+    the intake step, so it runs before the checks and shares the same loaded
+    object), and never loads the full expression matrix. Returns the
+    ``DatasetInventory`` as a JSON-safe dict. ``inspect_h5ad`` is imported lazily
+    so importing this module stays light for the Cloud Run and contract paths."""
+    from redline.inspect import inspect_h5ad
+
+    path = os.path.abspath(os.path.expanduser(str(h5ad)))
+    with _quiet_stdout():
+        adata = load_adata(h5ad)
+        inventory = inspect_h5ad(adata, file=os.path.basename(path))
+    return _jsonable(inventory)
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def _read_spec(spec_path: str | None) -> dict[str, Any]:
     if spec_path and spec_path != "-":
@@ -275,6 +294,18 @@ def main(argv: list[str] | None = None) -> int:
     if not h5ad:
         print("redline-job: job spec is missing 'h5ad'.", file=sys.stderr)
         return 2
+
+    # The intake 'inspect' op reads the object's metadata (no check, no checkId).
+    if spec.get("op") == "inspect":
+        try:
+            inventory = inspect_dataset(h5ad)
+        except Exception as exc:  # surface a clean failure; never emit partial JSON
+            print(f"redline-job: {type(exc).__name__}: {exc}", file=sys.stderr)
+            return 1
+        sys.stdout.write(to_json(inventory) + "\n")
+        sys.stdout.flush()
+        return 0
+
     try:
         check_id = int(check_id)
     except (TypeError, ValueError):
