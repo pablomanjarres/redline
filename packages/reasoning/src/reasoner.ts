@@ -70,9 +70,28 @@ async function invoke(
 }
 
 const REASON_RETRIES = 3;
+/** A model call that hangs must not block the request forever. The SDKs do not
+ *  bound this themselves, and a hung Bedrock invoke stalled a whole audit. */
+const REASON_TIMEOUT_MS = Number(process.env.REDLINE_REASONING_TIMEOUT_MS ?? 60000);
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms}ms`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
 }
 
 /**
@@ -122,7 +141,7 @@ export function createReasoner(): Reasoner {
       try {
         return await withRetry(async () => {
           const { system, user } = buildNarrativePrompt(req);
-          const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
+          const text = await withTimeout(invoke(backend, system, user, NARRATE_MAX_TOKENS), REASON_TIMEOUT_MS, 'narrate');
           return enforceHonesty(req, Narrative.parse(extractJson(text)));
         });
       } catch (err) {
@@ -140,7 +159,7 @@ export function createReasoner(): Reasoner {
       try {
         return await withRetry(async () => {
           const { system, user } = buildFieldProposalPrompt(req);
-          const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
+          const text = await withTimeout(invoke(backend, system, user, FIELDS_MAX_TOKENS), REASON_TIMEOUT_MS, 'proposeFields');
           return FieldProposalResponse.parse(extractJson(text)).fields;
         });
       } catch (err) {
