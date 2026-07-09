@@ -21,7 +21,9 @@ DTYPES = ("categorical", "numeric", "identifier")
 ROLES = ("unit", "grouping", "observation", "nuisance", "covariate", "derived", "ignore")
 CONFIDENCES = ("high", "medium", "low")
 CHECK_STATES = ("flagged", "clean", "flag_only", "hard_stop")
-CHECK_IDS = (1, 2, 3, 4)
+# 1..4 are the founding pillars, 5..8 the rigor checks on the same interface.
+CHECK_IDS = (1, 2, 3, 4, 5, 6, 7, 8)
+FEASIBILITIES = ("fixable_now", "needs_new_data", "unsalvageable")
 # Mirror packages/contracts/src/inventory.ts (UnsEntry.kind).
 UNS_KINDS = ("de_result", "marker_table", "unknown")
 
@@ -30,6 +32,11 @@ FLAGGED = "flagged"
 CLEAN = "clean"
 FLAG_ONLY = "flag_only"
 HARD_STOP = "hard_stop"
+
+# Convenience constants for the three feasibility verdicts.
+FIXABLE_NOW = "fixable_now"
+NEEDS_NEW_DATA = "needs_new_data"
+UNSALVAGEABLE = "unsalvageable"
 
 Json = dict[str, Any]
 
@@ -167,12 +174,51 @@ class FragilityStep:
     present: bool
     clusters: int
     presence: Optional[float] = None  # fraction of repeated runs present here, 0..1
+    silhouette: Optional[float] = None
 
     def to_json(self) -> Json:
         d: Json = {"r": round(float(self.r), 4), "present": bool(self.present), "clusters": int(self.clusters)}
         if self.presence is not None:
             d["presence"] = round(float(self.presence), 4)
+        if self.silhouette is not None:
+            d["silhouette"] = round(float(self.silhouette), 4)
         return d
+
+
+@dataclass
+class VolcanoPoint:
+    gene: str
+    log2fc: float
+    neg_log10_p: float
+    sig: bool
+    claimed: Optional[bool] = None
+
+    def to_json(self) -> Json:
+        d: Json = {
+            "gene": str(self.gene),
+            "log2fc": round(float(self.log2fc), 4),
+            "negLog10P": round(float(self.neg_log10_p), 4),
+            "sig": bool(self.sig),
+        }
+        if self.claimed is not None:
+            d["claimed"] = bool(self.claimed)
+        return d
+
+
+@dataclass
+class FdrGene:
+    gene: str
+    p: float
+    q: float
+    survives: bool
+
+    def to_json(self) -> Json:
+        return {
+            "gene": str(self.gene),
+            "p": float(self.p),
+            "q": float(self.q),
+            "survives": bool(self.survives),
+        }
 
 
 @dataclass
@@ -251,6 +297,8 @@ def fragility_chart(
     track: str,
     stability: float,
     stability_dist: Optional[Json] = None,
+    chosen: Optional[float] = None,
+    supported: Optional[tuple[float, float]] = None,
 ) -> Json:
     d: Json = {
         "kind": "fragility",
@@ -261,6 +309,10 @@ def fragility_chart(
     }
     if stability_dist is not None:
         d["stabilityDist"] = stability_dist
+    if chosen is not None:
+        d["chosen"] = round(float(chosen), 4)
+    if supported is not None:
+        d["supported"] = [round(float(supported[0]), 4), round(float(supported[1]), 4)]
     return d
 
 
@@ -270,6 +322,45 @@ def confound_chart(grid: ConfoundGrid, cramers_v: Optional[float], verified: boo
         "grid": grid.to_json(),
         "cramersV": (None if cramers_v is None else round(float(cramers_v), 4)),
         "verified": bool(verified),
+    }
+
+
+def volcano_chart(
+    points: Sequence[VolcanoPoint],
+    alpha: float,
+    fc_threshold: float,
+    n_sig: int,
+    label: str,
+) -> Json:
+    """The corrected downstream artifact for a differential-expression finding."""
+    return {
+        "kind": "volcano",
+        "points": [p.to_json() for p in points],
+        "alpha": float(alpha),
+        "fcThreshold": float(fc_threshold),
+        "nSig": int(n_sig),
+        "label": str(label),
+    }
+
+
+def fdr_chart(
+    tests: int,
+    alpha: float,
+    raw_hits: int,
+    adjusted_hits: int,
+    method: str,
+    top: Sequence[FdrGene],
+) -> Json:
+    if method not in ("bh", "by"):
+        raise ValueError(f"method must be 'bh' or 'by', got {method!r}")
+    return {
+        "kind": "fdr",
+        "tests": int(tests),
+        "alpha": float(alpha),
+        "rawHits": int(raw_hits),
+        "adjustedHits": int(adjusted_hits),
+        "method": method,
+        "top": [g.to_json() for g in top],
     }
 
 
@@ -318,6 +409,173 @@ def compute_result(
 ) -> ComputeResult:
     """The ComputeResult builder the pillars and the MCP/job layers use."""
     return ComputeResult.build(check_id, state, headline, list(stats), chart)
+
+
+# ── The correction half of a finding ─────────────────────────────────────────
+# Mirrors packages/contracts/src/correction.ts. The one guardrail: everything
+# Redline asserts, recommends, or corrects is shown, reproducible, and cited.
+
+
+@dataclass
+class MethodRef:
+    """The paper behind a correction. A fix is never asserted without one."""
+
+    authors: str
+    year: int
+    venue: str
+    note: str
+    url: Optional[str] = None
+
+    def to_json(self) -> Json:
+        d: Json = {
+            "authors": str(self.authors),
+            "year": int(self.year),
+            "venue": str(self.venue),
+            "note": str(self.note),
+        }
+        if self.url:
+            d["url"] = str(self.url)
+        return d
+
+
+@dataclass
+class Recommendation:
+    """One concrete next action.
+
+    ``feasibility`` is decided here, by the deterministic engine, and never by
+    the model. That is what stops an honest "unsalvageable" from being talked up
+    into a fix that does not exist.
+    """
+
+    action: str
+    rationale: str
+    changes: str
+    feasibility: str
+    citation: Optional[MethodRef] = None
+
+    def __post_init__(self) -> None:
+        if self.feasibility not in FEASIBILITIES:
+            raise ValueError(f"feasibility must be one of {FEASIBILITIES}, got {self.feasibility!r}")
+
+    def to_json(self) -> Json:
+        d: Json = {
+            "action": str(self.action),
+            "rationale": str(self.rationale),
+            "changes": str(self.changes),
+            "feasibility": self.feasibility,
+        }
+        if self.citation is not None:
+            d["citation"] = self.citation.to_json()
+        return d
+
+
+@dataclass
+class CorrectedCode:
+    """A runnable script that reproduces the honest re-analysis.
+
+    No model writes any part of it. The whole script, comments included, is a
+    hand-written template, and the only thing injected is ``params``. The script
+    inlines the engine's own computation kernel verbatim, so what it prints is
+    what Redline reported. ``params`` records what was injected, so the harness
+    can prove the script is parameterized rather than hardcoded to the canonical
+    case.
+    """
+
+    filename: str
+    inline: str
+    entrypoint: str
+    params: Json
+    language: str = "python"
+
+    def to_json(self) -> Json:
+        return {
+            "language": self.language,
+            "filename": str(self.filename),
+            "inline": str(self.inline),
+            "entrypoint": str(self.entrypoint),
+            "params": {str(k): v for k, v in self.params.items()},
+        }
+
+
+@dataclass
+class PreviewArtifact:
+    """The corrected downstream result, rendered beside what was claimed.
+
+    The honesty invariant is structural, matching the Zod refinement on the TS
+    side: an unsalvageable finding carries ``after=None`` and nothing else is
+    constructible. A fabricated clean result on a dead-end design raises here.
+    """
+
+    method_label: str
+    unsalvageable: bool
+    before: Json
+    after: Optional[Json] = None
+    caveat: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.unsalvageable and self.after is not None:
+            raise ValueError(
+                "An unsalvageable finding must not carry a corrected artifact. "
+                "Set after=None and say so plainly."
+            )
+        if not self.unsalvageable and self.after is None:
+            raise ValueError(
+                "A salvageable finding must carry the corrected artifact. "
+                "Set unsalvageable=True when there is no valid fix."
+            )
+
+    def to_json(self) -> Json:
+        d: Json = {
+            "methodLabel": str(self.method_label),
+            "unsalvageable": bool(self.unsalvageable),
+            "before": jsonify(self.before),
+            "after": (None if self.after is None else jsonify(self.after)),
+        }
+        if self.caveat:
+            d["caveat"] = str(self.caveat)
+        return d
+
+
+@dataclass
+class Knob:
+    """A parameter this check exposes to the UI panel."""
+
+    key: str
+    label: str
+    kind: str
+    min: Optional[float] = None
+    max: Optional[float] = None
+    step: Optional[float] = None
+    options: Optional[Sequence[str]] = None
+
+    def to_json(self) -> Json:
+        d: Json = {"key": str(self.key), "label": str(self.label), "kind": str(self.kind)}
+        for name in ("min", "max", "step"):
+            v = getattr(self, name)
+            if v is not None:
+                d[name] = float(v)
+        if self.options is not None:
+            d["options"] = [str(o) for o in self.options]
+        return d
+
+
+@dataclass
+class Correction:
+    """The optional correction payload attached to a ComputeResult."""
+
+    corrected_code: Optional[CorrectedCode] = None
+    recommendations: Optional[Sequence[Recommendation]] = None
+    preview: Optional[PreviewArtifact] = None
+
+    def to_json(self) -> Json:
+        d: Json = {}
+        if self.corrected_code is not None:
+            d["correctedCode"] = self.corrected_code.to_json()
+        if self.recommendations is not None:
+            d["recommendations"] = [r.to_json() for r in self.recommendations]
+        if self.preview is not None:
+            d["preview"] = self.preview.to_json()
+        return d
 
 
 # ── FieldSpec (foundation output) ─────────────────────────────────────────────

@@ -2,28 +2,28 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { CheckId } from '@redline/contracts';
+import { CHECK_IDS, CHECK_REGISTRY } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
 import { useSession } from '@/state/session';
 
 /**
  * The pipeline: a horizontal rail of stations (design resolution, claim review,
- * the four checks, the report) with a verdict light on each. This IS the
- * navigation, in place of a sidebar of links. The rail line runs behind the
- * nodes so the audit reads as one flow left to right: 00, 00b, 01, 02, 03, 04,
- * report. Claims sits at 00b (between design 00 and check 01) because the check
- * numbers 01-04 are canonical ids shown across the whole app, so renumbering
- * them to make room would desync that mental model.
+ * every registered check, the corrected bundle, the report) with a verdict light
+ * on each. This IS the navigation, in place of a sidebar of links. The rail line
+ * runs behind the nodes so the audit reads as one flow left to right: 00, 00b,
+ * the check ids, Corrected, Report. Claims sits at 00b (between design 00 and
+ * check 01) because the check numbers are canonical ids shown across the whole
+ * app, so renumbering them to make room would desync that mental model. With the
+ * rigor checks the rail can grow long, so it scrolls horizontally on a narrow
+ * viewport rather than cramming.
  *
  * Each station gates the one after it. Confirming the design opens Claims;
- * confirming the claim list opens the four checks and the report. Nothing
- * downstream of Claims is reachable until claimsConfirmed, and after that a
- * check no confirmed claim routes to stays locked as well, because it has
- * nothing to audit (its board tile says the same). A station whose target has
- * nothing real to show stays locked instead of posing as a live control.
+ * confirming the claim list opens the checks and the report. Nothing downstream
+ * of Claims is reachable until claimsConfirmed, and after that a check no
+ * confirmed claim routes to stays locked as well, because it has nothing to
+ * audit (its board tile says the same). A station whose target has nothing real
+ * to show stays locked instead of posing as a live control.
  */
-const IDS: CheckId[] = [1, 2, 3, 4];
-
 export function Pipeline() {
   const path = usePathname();
   const { results, running, fieldsConfirmed, claimsConfirmed, routedChecks } = useSession();
@@ -48,18 +48,29 @@ export function Pipeline() {
     pulse: false,
     locked: !fieldsConfirmed,
   });
-  IDS.forEach((id) => {
+  CHECK_IDS.forEach((id) => {
     const r = results[id];
     const run = running[id];
     stations.push({
       href: `/checks/${id}`,
-      n: `0${id}`,
-      label: ['Pseudoreplication', 'Double dipping', 'Fragility', 'Confounding'][id - 1]!,
+      n: id < 10 ? `0${id}` : String(id),
+      label: CHECK_REGISTRY[id].name,
       active: path === `/checks/${id}`,
       light: run ? '#2563EB' : r ? signalColor(r.state) : 'var(--ink-4)',
       pulse: run,
       locked: !claimsConfirmed || !routedSet.has(id),
     });
+  });
+  // The corrected bundle sits between the checks and the report: the honest
+  // rewrite of every flagged finding, reachable once the design is confirmed.
+  stations.push({
+    href: '/corrected',
+    n: '',
+    label: 'Corrected',
+    active: path === '/corrected',
+    light: 'var(--ink-4)',
+    pulse: false,
+    locked: !fieldsConfirmed,
   });
   stations.push({
     href: '/report',

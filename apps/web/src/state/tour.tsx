@@ -33,12 +33,16 @@ import { TOUR_STEPS } from '@/lib/tour/steps';
 import { anchorSelector } from '@/lib/tour/anchors';
 import {
   INITIAL_TOUR_STATE,
+  nextSpineIndex,
   tourReducer,
   type TourEnsure,
   type TourMode,
   type TourState,
   type TourStep,
 } from '@/lib/tour/types';
+
+/** The depth of each step, in order. Presenter mode plays the spine and skips detail. */
+const TOUR_DEPTHS = TOUR_STEPS.map((s) => s.depth);
 
 const SEEN_KEY = 'redline_tour_v1';
 /** Presenter mode redraws the progress rule at this cadence. */
@@ -251,9 +255,22 @@ export function TourProvider({ children }: { children: ReactNode }) {
     };
   }, [state.active, state.index, step.advance, step.advanceEvent, step.target]);
 
+  // ── presenter plays the spine, skipping detail steps ──────────────────────
+  // Presenter mode is the hands-free judge track: it plays `spine` steps and
+  // skips `detail`, so the whole arc lands inside two minutes. Guided mode (the
+  // reader driving with Next) still visits every step. When presenter lands on a
+  // detail step, from a resume or a manual arrow, it jumps to the next spine one.
+  useEffect(() => {
+    if (!state.active || state.mode !== 'presenter' || state.paused) return;
+    if (step.depth !== 'detail') return;
+    const target = nextSpineIndex(TOUR_DEPTHS, state.index);
+    if (target >= TOUR_STEPS.length) dispatch({ type: 'stop' });
+    else if (target !== state.index) dispatch({ type: 'goto', index: target });
+  }, [state.active, state.mode, state.paused, state.index, step.depth]);
+
   // ── presenter mode: the tour drives itself ───────────────────────────────
   useEffect(() => {
-    if (!state.active || state.mode !== 'presenter' || state.paused) {
+    if (!state.active || state.mode !== 'presenter' || state.paused || step.depth !== 'spine') {
       setProgress(0);
       return;
     }
@@ -262,13 +279,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const id = setInterval(() => {
       const elapsed = performance.now() - startedAt;
       setProgress(Math.min(1, elapsed / dwell));
-      if (elapsed >= dwell) dispatch({ type: 'next' });
+      if (elapsed >= dwell) {
+        // Advance to the next spine step, not the next index, so presenter never
+        // rests on a detail step's dwell.
+        const target = nextSpineIndex(TOUR_DEPTHS, state.index + 1);
+        if (target >= TOUR_STEPS.length) dispatch({ type: 'stop' });
+        else dispatch({ type: 'goto', index: target });
+      }
     }, TICK_MS);
     return () => {
       clearInterval(id);
       setProgress(0);
     };
-  }, [state.active, state.mode, state.paused, state.index, step.dwellMs]);
+  }, [state.active, state.mode, state.paused, state.index, step.depth, step.dwellMs]);
 
   // ── presenter mode sweeps the resolution scrub, so the state appears and vanishes ─
   useEffect(() => {

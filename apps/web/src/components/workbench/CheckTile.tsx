@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { CheckId } from '@redline/contracts';
+import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { MiniChart } from '@/components/charts';
-import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
  * One station on the audit board: a whole-tile link into a check's stage. Dark
@@ -25,7 +25,7 @@ import { CHECK_META } from '@/components/check/CheckStage';
  */
 export function CheckTile({ checkId }: { checkId: CheckId }) {
   const { results, running, routedChecks, claimForCheck } = useSession();
-  const meta = CHECK_META[checkId];
+  const meta = checkMeta(checkId);
   const routed = routedChecks.includes(checkId);
 
   // No confirmed claim routes here: an honest empty state, never a verdict.
@@ -164,7 +164,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
       <div style={{ padding: '19px 21px 21px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* header: number · name · sub · verdict badge */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
-          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>0{checkId}</span>
+          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>{String(checkId).padStart(2, '0')}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '700 17px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{meta.name}</div>
             <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>

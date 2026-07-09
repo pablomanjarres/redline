@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { FieldSpec } from './fields.js';
 import { Narrative } from './checks.js';
-import { CheckId, CheckState } from './primitives.js';
+import { Feasibility, Recommendation } from './correction.js';
+import { CheckId, CheckState, MethodRef } from './primitives.js';
 
 /**
  * Input to the reasoning layer for one finding. The compute layer has already
@@ -20,6 +21,35 @@ export type NarrativeRequest = z.infer<typeof NarrativeRequest>;
 
 export const NarrativeResponse = Narrative;
 export type NarrativeResponse = z.infer<typeof NarrativeResponse>;
+
+/**
+ * Input to the reasoning layer for the recommend step (Capability 2, the prose
+ * half). The deterministic engine has already decided every `feasibility`, one
+ * per recommendation slot, and passes them in `feasibilities`. The model fills
+ * in the prose (action, rationale, changes) and echoes each feasibility back
+ * unchanged; it never decides whether a finding is fixable. `fields` is the list
+ * of resolved field names for this dataset, so every action can name them and
+ * the generality test can prove the recommendation is not canned. `method` is
+ * the citation the finding already carries.
+ */
+export const RecommendationRequest = z.object({
+  checkId: CheckId,
+  state: CheckState,
+  claim: z.string(),
+  datasetTitle: z.string(),
+  evidence: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+  /** The engine's verdict for each recommendation slot, in order. */
+  feasibilities: z.array(Feasibility),
+  /** The resolved field names of this dataset, so actions can name them. */
+  fields: z.array(z.string()),
+  method: MethodRef,
+});
+export type RecommendationRequest = z.infer<typeof RecommendationRequest>;
+
+export const RecommendationResponse = z.object({
+  recommendations: z.array(Recommendation),
+});
+export type RecommendationResponse = z.infer<typeof RecommendationResponse>;
 
 /**
  * Input to the reasoning layer for the foundation step: raw column summaries in,

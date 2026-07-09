@@ -8,10 +8,16 @@ Job spec shape (matches the TS ``ComputeInput`` the web app sends)::
 
     {"h5ad": "...", "checkId": 1, "config": {...}, "fields": [ ... ]}
 
+``checkId`` is any registered check (1..8, from ``redline.contracts.CHECK_IDS``).
 ``fields`` is optional; when it is absent the runner resolves the obs columns
-first via the foundation step. Only the final ``ComputeResult`` JSON is written
-to stdout (one line, no trailing noise), so a caller can ``JSON.parse`` stdout
-directly. Everything else (warnings, engine chatter) is routed to stderr.
+first via the foundation step. Only the final JSON is written to stdout (one
+line, no trailing noise), so a caller can ``JSON.parse`` stdout directly.
+Everything else (warnings, engine chatter) is routed to stderr.
+
+The value on stdout is the flat ``EngineResult``: the ``ComputeResult`` keys
+(``checkId``, ``state``, ``headline``, ``stats``, ``chart``) plus, when the check
+produced them, the additive correction keys ``correctedCode``,
+``recommendations``, and ``preview``. A clean verdict carries no correction keys.
 
 This module also holds the shared engine bridge used by ``mcp_server`` so the
 load-AnnData / resolve-engine / JSON-normalize logic lives in exactly one place
@@ -287,8 +293,8 @@ def compute_result(
     check_id: int, h5ad: str, config: Any, fields: Any | None = None
 ) -> dict[str, Any]:
     """Load the data, resolve fields if the caller did not supply them, run the
-    check, and return the ``ComputeResult`` as a JSON-safe dict, stamped with the
-    compute provenance the verification harness reads to prove a real job ran
+    check, and return the flat ``EngineResult`` as a JSON-safe dict, stamped with
+    the compute provenance the verification harness reads to prove a real job ran
     (a fresh nonce and a nonzero elapsed time distinguish a live compute from a
     cached swap)."""
     import os as _os
@@ -345,6 +351,16 @@ def inspect_dataset(h5ad: str) -> dict[str, Any]:
     return _jsonable(inventory)
 
 
+def run_audit(h5ad: str, analysis: Any | None = None) -> dict[str, Any]:
+    """Load the data and run the registry-driven audit (foundation + every
+    applicable check + the assembled summary), as a JSON-safe dict."""
+    with _quiet_stdout():
+        source = _prepare_source(h5ad)
+        audit_fn = importlib.import_module("redline.audit").audit
+        result = audit_fn(source, analysis)
+    return _jsonable(result)
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def _read_spec(spec_path: str | None) -> dict[str, Any]:
     if spec_path and spec_path != "-":
@@ -399,13 +415,16 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.flush()
         return 0
 
+    from redline.contracts import CHECK_IDS
+
+    _ids = ", ".join(str(i) for i in CHECK_IDS)
     try:
         check_id = int(check_id)
     except (TypeError, ValueError):
-        print("redline-job: job spec 'checkId' must be one of 1, 2, 3, 4.", file=sys.stderr)
+        print(f"redline-job: job spec 'checkId' must be one of {_ids}.", file=sys.stderr)
         return 2
-    if check_id not in (1, 2, 3, 4):
-        print("redline-job: job spec 'checkId' must be one of 1, 2, 3, 4.", file=sys.stderr)
+    if check_id not in CHECK_IDS:
+        print(f"redline-job: job spec 'checkId' must be one of {_ids}.", file=sys.stderr)
         return 2
 
     try:

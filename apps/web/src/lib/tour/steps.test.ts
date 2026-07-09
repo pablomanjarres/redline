@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { THREADED_ANCHORS, TOUR_ANCHORS, type TourAnchor } from './anchors';
 import { TOUR_STEPS } from './steps';
-import { INITIAL_TOUR_STATE, tourReducer, type TourState } from './types';
+import { INITIAL_TOUR_STATE, nextSpineIndex, tourReducer, type TourState } from './types';
 
 /**
  * The tour is prose that ships in the product, so it is bound by the repo's
@@ -182,10 +182,16 @@ describe('tour copy stays inside its layout budget', () => {
 describe('the tour script is structurally sound', () => {
   it('has a workable length', () => {
     expect(TOUR_STEPS.length).toBeGreaterThanOrEqual(13);
-    // The tour grew from 19 to 23 steps when Intake and Claim Review shipped:
-    // four steps now cover the extracted claim card, its routing chips, the
-    // out-of-scope group, and the confirm gate that runs the workbench.
-    expect(TOUR_STEPS.length).toBeLessThanOrEqual(23);
+    // Intake and claim review added four steps, the correction layer three more
+    // and the /corrected bundle. The full guided script is capped here; the
+    // presenter spine has its own, tighter budget (see the depth suite below),
+    // which is what actually keeps a hands-free run inside two minutes.
+    expect(TOUR_STEPS.length).toBeLessThanOrEqual(27);
+  });
+
+  it('every step declares a depth', () => {
+    const bad = TOUR_STEPS.filter((s) => s.depth !== 'spine' && s.depth !== 'detail');
+    expect(bad.map((s) => s.id)).toEqual([]);
   });
 
   it('has unique step ids', () => {
@@ -207,9 +213,10 @@ describe('the tour script is structurally sound', () => {
   });
 
   it('only routes to real app routes', () => {
-    // `/claims` is the Claim Review screen, the second interactive surface added
-    // when Intake and claim extraction shipped.
-    const routes = /^\/(fields|claims|workbench|report|environment|checks\/[1-4])?$/;
+    // `/claims` is the claim-review screen (intake and claim extraction).
+    // `/corrected` is the corrected-analysis bundle (the correction layer).
+    // `checks/[1-8]` because the rigor checks took the registry from four to eight.
+    const routes = /^\/(fields|claims|workbench|report|corrected|environment|checks\/[1-8])?$/;
     const bad = TOUR_STEPS.filter((s) => !routes.test(s.route));
     expect(bad.map((s) => `${s.id} -> ${s.route}`)).toEqual([]);
   });
@@ -252,6 +259,51 @@ describe('the tour script is structurally sound', () => {
   it('states the naive-foil framing before it shows a single number', () => {
     const opener = TOUR_STEPS[0]!;
     expect(`${opener.what} ${opener.why ?? ''}`).toMatch(/rigorous/i);
+  });
+
+  it('walks the corrected-analysis bundle', () => {
+    // The correction layer's whole thesis is that Redline hands back a fixed
+    // pipeline, not only a critique. A tour that flagged errors and never
+    // showed the artifact would undersell the feature it is demoing.
+    const corrected = TOUR_STEPS.find((s) => s.route === '/corrected');
+    expect(corrected, 'a step must visit /corrected').toBeTruthy();
+    expect(`${corrected!.what} ${corrected!.why ?? ''}`).toMatch(/run|script|pipeline|notebook/i);
+  });
+
+  it('never hard-codes a check count that the registry can outgrow', () => {
+    // "four load-bearing checks" was true at four checks and false at eight.
+    // The registry is the only place that counts checks; the tour describes
+    // them without numbering them, so a new rigor check cannot make it lie.
+    const countWord = /\b(four|five|six|seven|eight)\b[^.]{0,24}\bcheck/i;
+    const bad = COPY.filter((c) => countWord.test(c.text));
+    expect(bad.map((b) => `${b.where}: ${b.text}`)).toEqual([]);
+  });
+});
+
+describe('the presenter spine stays inside its budget', () => {
+  // Presenter mode plays the `spine` and skips the `detail`, so the arc a judge
+  // watches hands-free is the spine, not the whole script. This is the budget
+  // the last three feature branches each spent a little of; it is enforced here
+  // so the next one has to make room rather than quietly run long.
+  const spine = TOUR_STEPS.filter((s) => s.depth === 'spine');
+
+  it('covers the whole arc: welcome, a flag, the clean beat, the correction, the report, the engine', () => {
+    const routes = new Set(spine.map((s) => s.route));
+    expect(spine[0]!.id).toBe('welcome');
+    for (const r of ['/checks/1', '/checks/3', '/corrected', '/report', '/environment']) {
+      expect(routes.has(r), `spine must visit ${r}`).toBe(true);
+    }
+    // The clean beat is the trust-building moment; it must be on the spine.
+    expect(spine.some((s) => s.id === 'clean-beat')).toBe(true);
+  });
+
+  it('runs under two minutes at its per-step dwell', () => {
+    const ms = spine.reduce((t, s) => t + s.dwellMs, 0);
+    expect(ms).toBeLessThanOrEqual(120_000);
+  });
+
+  it('closes on the engine surface even with detail steps hidden', () => {
+    expect(spine[spine.length - 1]!.route).toBe('/environment');
   });
 });
 
@@ -329,5 +381,42 @@ describe('the tour reducer', () => {
     expect(stopped.active).toBe(false);
     expect(stopped.index).toBe(0);
     expect(stopped.mode).toBe('presenter');
+  });
+});
+
+describe('nextSpineIndex (the presenter skip)', () => {
+  const d = ['spine', 'detail', 'detail', 'spine', 'detail'] as const;
+
+  it('returns the index itself when it is already a spine step', () => {
+    expect(nextSpineIndex(d, 0)).toBe(0);
+    expect(nextSpineIndex(d, 3)).toBe(3);
+  });
+
+  it('skips forward over detail steps', () => {
+    expect(nextSpineIndex(d, 1)).toBe(3);
+    expect(nextSpineIndex(d, 2)).toBe(3);
+  });
+
+  it('returns length past the end when nothing ahead is spine', () => {
+    expect(nextSpineIndex(d, 4)).toBe(d.length);
+    expect(nextSpineIndex(d, 99)).toBe(d.length);
+  });
+
+  it('drives the real script from welcome through the whole spine to the engine', () => {
+    // Walk the way presenter does: land on 0, then jump by nextSpineIndex(i+1).
+    const depths = TOUR_STEPS.map((s) => s.depth);
+    const visited: number[] = [];
+    let i = nextSpineIndex(depths, 0);
+    while (i < TOUR_STEPS.length) {
+      visited.push(i);
+      i = nextSpineIndex(depths, i + 1);
+    }
+    const ids = visited.map((n) => TOUR_STEPS[n]!.id);
+    expect(ids[0]).toBe('welcome');
+    expect(ids).toContain('clean-beat');
+    expect(ids).toContain('corrected-bundle');
+    expect(TOUR_STEPS[visited[visited.length - 1]!]!.route).toBe('/environment');
+    // Presenter never rests on a detail step.
+    expect(visited.every((n) => TOUR_STEPS[n]!.depth === 'spine')).toBe(true);
   });
 });

@@ -24,17 +24,15 @@ import {
   pdf,
 } from '@react-pdf/renderer';
 import type { AuditReport, Chart, CheckResult, DatasetMeta, StatReadout } from '@redline/contracts';
+import { CHECK_COUNT, CHECK_REGISTRY } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { ciLabel, fmt } from './format';
 
-// Canonical check names — mirrors CHECK_META in components/check/CheckStage.tsx,
-// inlined here so this module stays free of the client-only chart tree.
-const CHECK_NAMES: Record<number, string> = {
-  1: 'Pseudoreplication',
-  2: 'Double dipping',
-  3: 'Fragility',
-  4: 'Confounding',
-};
+// Canonical check names come from the single registry in @redline/contracts, so
+// the PDF never drifts from the rest of the app. This module still draws its own
+// react-pdf SVG figures (it stays free of the client-only chart tree).
+const checkName = (id: number): string =>
+  (CHECK_REGISTRY as Record<number, { name: string } | undefined>)[id]?.name ?? `Check ${id}`;
 
 // Light document palette (kept in lockstep with @redline/ui `C`).
 const P = {
@@ -217,6 +215,43 @@ function Figure({ chart, fg }: { chart: Chart; fg: string }) {
     );
   }
 
+  // Volcano (corrected DE preview for checks 1, 6, 8): a scatter with a dashed
+  // significance rule and a dashed zero-fold line. Survivors and claimed genes
+  // in the verdict color, the rest in recessive gridline gray.
+  if (chart.kind === 'volcano') {
+    const left = 26, right = 190, base = 96, topY = 24;
+    const maxAbs = Math.max(1, ...chart.points.map((p) => Math.abs(p.log2fc)), chart.fcThreshold * 1.2);
+    const maxY = Math.max(1, ...chart.points.map((p) => p.negLog10P), Math.abs(Math.log10(chart.alpha)) * 1.2);
+    const X = (fc: number) => left + ((fc + maxAbs) / (2 * maxAbs)) * (right - left);
+    const Y = (v: number) => base - (Math.min(v, maxY) / maxY) * (base - topY);
+    const aY = Y(Math.abs(Math.log10(chart.alpha)));
+    return (
+      <Svg {...svgProps}>
+        <Line x1={left} y1={base} x2={right} y2={base} stroke="#D3DBE5" strokeWidth={1} />
+        <Line x1={X(0)} y1={topY} x2={X(0)} y2={base} stroke="#E6EAF0" strokeWidth={1} strokeDasharray="3 3" />
+        <Line x1={left} y1={aY} x2={right} y2={aY} stroke="#9AA6B8" strokeWidth={1} strokeDasharray="3 3" />
+        {chart.points.slice(0, 80).map((p, i) => (
+          <Circle key={i} cx={X(p.log2fc)} cy={Y(p.negLog10P)} r={p.sig || p.claimed ? 2.6 : 1.6}
+            fill={p.sig ? fg : p.claimed ? '#10131A' : '#D3DBE5'} />
+        ))}
+      </Svg>
+    );
+  }
+
+  // FDR (check 5): the raw-hit bar beside the surviving-hit bar.
+  if (chart.kind === 'fdr') {
+    const base = 96, topY = 22;
+    const maxV = Math.max(chart.rawHits, 1);
+    const h = (v: number) => Math.max(4, (v / maxV) * (base - topY));
+    return (
+      <Svg {...svgProps}>
+        <Line x1={38} y1={base} x2={172} y2={base} stroke="#D3DBE5" strokeWidth={1} />
+        <Rect x={70} y={base - h(chart.rawHits)} width={28} height={h(chart.rawHits)} rx={3} fill={fg} />
+        <Rect x={116} y={base - h(chart.adjustedHits)} width={28} height={h(chart.adjustedHits)} rx={3} fill="#10131A" />
+      </Svg>
+    );
+  }
+
   return null;
 }
 
@@ -371,14 +406,14 @@ function StatTable({ stats }: { stats: StatReadout[] }) {
 function CheckCard({ result }: { result: CheckResult }) {
   const { checkId, state, headline, stats, error, original, corrected, missing, citation } = result;
   const t = tint(state);
-  const num = `0${checkId}`;
+  const num = String(checkId).padStart(2, '0');
   const ref = `${citation.authors} (${citation.year}) · ${citation.venue}`;
 
   return (
     <View style={[S.card, { borderLeftColor: t.fg }]} wrap={false}>
       <View style={S.cardHead}>
         <Text style={S.num}>{num}</Text>
-        <Text style={S.name}>{CHECK_NAMES[checkId] ?? `Check ${checkId}`}</Text>
+        <Text style={S.name}>{checkName(checkId)}</Text>
         <Text style={[S.chip, { color: t.fg, borderColor: t.fg, backgroundColor: t.bg }]}>{stateLabel(state)}</Text>
       </View>
 
@@ -456,7 +491,7 @@ function ReportDocument({
           <Text style={S.metaFile}>{dataset.file}</Text>
         </Text>
         <Text style={[S.meta, { marginTop: 2 }]}>
-          Generated {generatedAt} · {report.results.length} of 4 checks run
+          Generated {generatedAt} · {report.results.length} of {CHECK_COUNT} checks run
         </Text>
         <View style={S.rule} />
 
@@ -479,7 +514,7 @@ function ReportDocument({
           report.results.map((r) => <CheckCard key={r.checkId} result={r} />)
         ) : (
           <Text style={{ color: P.ink4, fontFamily: 'Courier', fontSize: 10 }}>
-            No checks have run yet. Confirm the design and run the four checks to populate this report.
+            {`No checks have run yet. Confirm the design and run all ${CHECK_COUNT} checks to populate this report.`}
           </Text>
         )}
 

@@ -76,7 +76,7 @@ not fabricate a re-run from unsuitable data.
 
 ---
 
-## The four checks: when to run, and how to read what comes back
+## The founding four checks: when to run, and how to read what comes back
 
 Each check returns a `ComputeResult`: `{ checkId, state, headline, stats[], chart{} }`.
 
@@ -193,8 +193,9 @@ grid means perfect alignment. `verified` is whether the check actually ran.
 
 ## How to write the report
 
-Redline is an auditor, not a corrector. For every check, write three things, and
-nothing more than the numbers support:
+Redline corrects, and shows its work. Everything it asserts, recommends, or
+corrects is shown, reproducible, and cited. For every check, write three things,
+and nothing more than the numbers support:
 
 1. **Name the failure mode** in plain language ("Fake significance from
    non-independent data (pseudoreplication)").
@@ -233,10 +234,14 @@ the specific citation with its finding; use that when present.
 
 ## Honesty rules (never break these)
 
-- **Auditor, not corrector.** You surface and quantify problems. You assert a
-  single corrected result only for Pillar 1 (pseudobulk), where the field agrees
-  on the fix. Everywhere else you report evidence and sensitivity. Overclaiming a
-  correction is a defensibility risk in front of expert judges.
+- **Correct, and show your work.** You may assert a corrected result, recommend a
+  next action, and preview the corrected analysis. The rule that keeps this
+  defensible: everything you assert is shown, reproducible, and cited. The
+  corrected code runs. The preview is the output of that code. The recommendation
+  names the method and its limits.
+- **No fabricated fixes.** Where there is no valid fix (a full confound, n=1, an
+  unsalvageable design), say so plainly and show no corrected result anywhere.
+  Honest "this cannot be fixed from this data" beats a fake correction.
 - **Never cry wolf.** A passed check reports clean, confidently. A tool that always
   finds a problem is untrustworthy. Some of the correct answers are "this is
   clean", and you deliver those with the same conviction as a flag.

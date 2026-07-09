@@ -45,6 +45,10 @@ function inferScenario(id: CheckId, cfg: unknown): ScenarioId {
     if (c.nuisance.includes('seq_batch')) return 'ketamine';
     if (c.nuisance.includes('lane')) return 'marson';
   }
+  if (id === 6) {
+    if (c.covariate === 'sex') return 'ketamine';
+    if (c.covariate === 'phase') return 'marson';
+  }
   return DEFAULT_SCENARIO;
 }
 

@@ -1,38 +1,17 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
+import type { CheckId, CheckResult } from '@redline/contracts';
+import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
-import { ConfoundChart, DistributionStrip, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { DistributionStrip, renderChart } from '@/components/charts';
 import { ciLabel } from '@/lib/format';
 import { InstrumentRail } from '@/components/check/InstrumentRail';
 import { ReasoningConsole } from '@/components/check/ReasoningConsole';
 import { VerdictReadout } from '@/components/check/VerdictReadout';
-
-export const CHECK_META: Record<CheckId, { name: string; sub: string }> = {
-  1: { name: 'Pseudoreplication', sub: 'Non-independent data inflating a p-value' },
-  2: { name: 'Double dipping', sub: "Clusters that don't replicate out of sample" },
-  3: { name: 'Fragility', sub: 'A result that hinges on an arbitrary parameter' },
-  4: { name: 'Confounding', sub: "Two variables that can't be separated" },
-};
-
-function figure(result: CheckResult, cfg3: Check3Config): ReactNode {
-  const chart = result.chart;
-  switch (chart.kind) {
-    case 'significance':
-    case 'hardstop':
-      return <SignificanceChart chart={chart} />;
-    case 'groups':
-      return <GroupsChart chart={chart} />;
-    case 'fragility':
-      return <FragilityChart chart={chart} cfg={cfg3} />;
-    case 'confound':
-      return <ConfoundChart chart={chart} />;
-    default:
-      return null;
-  }
-}
+import { CorrectedCodeBlock } from '@/components/check/CorrectedCodeBlock';
+import { Recommendations } from '@/components/check/Recommendations';
+import { BeforeAfter } from '@/components/check/BeforeAfter';
 
 /** Slug a stat label into a stable kebab-case test id: lowercase, runs of
  *  non-alphanumerics collapse to a single dash, no leading/trailing dash.
@@ -58,12 +37,14 @@ function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
 }
 
 /** The audit stage for one check: figure on a lightbox plate (the hero), the
- *  verdict, and the instrument + console rail. */
+ *  verdict, the corrected code, the recommendations, the before/after preview,
+ *  and the instrument + console rail. */
 export function CheckStage({ checkId }: { checkId: CheckId }) {
   const { results, running, reasoning, reveal, cfg, claimForCheck, runCheck } = useSession();
   const result = results[checkId];
   const isRunning = running[checkId];
-  const meta = CHECK_META[checkId];
+  const meta = checkMeta(checkId);
+  const num = checkId < 10 ? `0${checkId}` : String(checkId);
   const claim = claimForCheck(checkId) ?? '';
   const revealed = (reasoning[checkId] ?? []).slice(0, reveal[checkId] ?? 0);
   const state = isRunning ? 'running' : result ? result.state : 'ready';
@@ -76,7 +57,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--red)' }}>CHECK 0{checkId}</span>
+            <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--red)' }}>CHECK {num}</span>
             <span style={{ width: 5, height: 5, borderRadius: 5, background: 'var(--edge-hi)' }} />
             <span style={{ font: '500 10px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
               {meta.sub}
@@ -148,7 +129,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </div>
             <div style={{ padding: '22px 24px 24px', minHeight: 360, display: 'flex', alignItems: 'center' }}>
               {showFigure ? (
-                <div style={{ width: '100%' }}>{figure(result!, cfg[3])}</div>
+                <div style={{ width: '100%' }}>{renderChart(result!.chart, cfg[3])}</div>
               ) : (
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -179,6 +160,13 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
               <VerdictReadout result={result!} checkId={checkId} />
             </div>
           )}
+
+          {/* The correction layer: the code that reproduces the honest analysis,
+              what to do next, and the corrected result rendered beside the claim.
+              Each renders only when the finding carries that half. */}
+          {showFigure && <CorrectedCodeBlock code={result!.correctedCode} />}
+          {showFigure && <Recommendations items={result!.recommendations} />}
+          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg[3]} />}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

@@ -40,6 +40,8 @@ export interface TourStep {
   id: string;
   /** Short chapter label above the headline. */
   chapter: string;
+  /** `spine` plays in both modes. `detail` plays only when the reader drives. */
+  depth: TourDepth;
   /** The pathname this step lives on. The tour navigates here when it enters the step. */
   route: string;
   /** The anchor to spotlight. `null` renders a centered card with no cutout. */
@@ -66,8 +68,39 @@ export interface TourStep {
   sweepScrub?: boolean;
 }
 
+/**
+ * How deep a step sits in the script.
+ *
+ * - `spine`  the narrative. What Redline catches, that it says clean when the
+ *            analysis is clean, that it hands back a corrected pipeline, and
+ *            that the same engine is an MCP server and a Claude Skill. Presenter
+ *            mode plays these and only these, so a judge watching hands free
+ *            gets the whole arc inside two minutes.
+ * - `detail` mechanics a scientist wants when they are driving: the optional
+ *            attach points, the routing chips, the reasoning console. Guided mode
+ *            plays everything.
+ *
+ * Every step declares one. The alternative, a script that grows a step per
+ * feature and slowly stops being two minutes long, is how this tour got to
+ * twenty six steps across three parallel branches.
+ */
+export type TourDepth = 'spine' | 'detail';
+
 /** Guided: the reader drives. Presenter: the tour drives itself, hands free. */
 export type TourMode = 'guided' | 'presenter';
+
+/**
+ * The next index presenter mode should rest on, at or after `from`, skipping
+ * `detail` steps. Returns `depths.length` when nothing at or after `from` is a
+ * spine step, which the caller reads as "the run is over". Pure, so the presenter
+ * skip is unit tested without a DOM.
+ */
+export function nextSpineIndex(depths: readonly TourDepth[], from: number): number {
+  for (let i = Math.max(0, from); i < depths.length; i++) {
+    if (depths[i] === 'spine') return i;
+  }
+  return depths.length;
+}
 
 export interface TourState {
   active: boolean;

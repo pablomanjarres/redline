@@ -49,6 +49,9 @@ export const TOUR_ANCHORS = [
   'check.figure',
   'check.stats',
   'check.verdict',
+  'check.code',
+  'check.recommend',
+  'check.beforeafter',
   'check.instruments',
   'check.reasoning',
   'check1.unit',
@@ -61,6 +64,10 @@ export const TOUR_ANCHORS = [
   'report.band',
   'report.row.1',
   'report.export',
+
+  // the corrected-analysis bundle (/corrected)
+  'corrected.bundle',
+  'corrected.download',
 
   // the engine (/environment)
   'env.terminal',

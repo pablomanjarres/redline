@@ -18,38 +18,54 @@ import type { TourStep } from './types';
  * `ensure` makes a step real before the reader looks at it. A reader who opens
  * the tour from a cold `/checks/3` still sees a figure, because the step runs the
  * same session action the UI would have run.
+ *
+ * `depth` is the reason this script is still two minutes long. Intake and claim
+ * extraction added four steps, the correction layer added three more and a whole
+ * route, and each branch was right to. Presenter mode plays the `spine` and skips
+ * the `detail`, so the arc a judge needs stays inside its budget while a scientist
+ * driving the tour still gets every mechanic. `steps.test.ts` holds the spine to a
+ * two minute runtime, so the next feature cannot quietly spend it.
+ *
+ * The script names no check count. There are eight registered checks today and
+ * there were four last week; a number written here goes stale the moment
+ * `packages/contracts/src/registry.ts` grows a row. The gate forbids it.
  */
 export const TOUR_STEPS: TourStep[] = [
-  // ── The case ──────────────────────────────────────────────────────────────
+  // ── Redline ───────────────────────────────────────────────────────────────
   {
     id: 'welcome',
     chapter: 'Redline',
+    depth: 'spine',
     route: '/',
     target: null,
     headline: 'Break your own analysis first.',
     what: 'You are looking at a real single-cell dataset from Gladstone and the four conclusions a scientist drew from it. Redline re-runs the statistics behind that naive analysis and marks what does not hold up.',
-    why: "The authors of this dataset did their work rigorously. Redline audits the version a less-experienced hand would run, and helps everyone reach that same standard.",
+    why: 'The authors of this dataset did their work rigorously. Redline audits the version a less-experienced hand would run, and helps everyone reach that same standard.',
     advance: 'next',
-    dwellMs: 7000,
+    dwellMs: 6000,
     ensure: { kind: 'loadScenario', scenarioId: 'marson' },
     primaryCta: 'Walk me through it',
     secondaryCta: 'Play it for me',
     tertiaryCta: 'Skip',
   },
+
+  // ── The case ──────────────────────────────────────────────────────────────
   {
     id: 'dataset',
     chapter: 'The case',
+    depth: 'spine',
     route: '/',
     target: 'intake.dataset',
-    headline: 'The data under audit.',
-    what: 'The .h5ad the scientist analyzed: CD4+ T cells, IL2RA knockdown versus non-targeting. About 52,000 cells, about 3,200 genes, across 4 donors.',
+    headline: 'The data, and the claims.',
+    what: 'The .h5ad the scientist analyzed: CD4+ T cells, IL2RA knockdown versus non-targeting, about 52,000 cells across 4 donors. The notebook drew four load-bearing conclusions from it.',
     why: 'Hold two numbers side by side. About 52,000 cells, and 4 donors. The gap between them is where the first check starts.',
     advance: 'next',
-    dwellMs: 6000,
+    dwellMs: 5500,
   },
   {
     id: 'analysis',
     chapter: 'The case',
+    depth: 'detail',
     route: '/',
     target: 'intake.analysis',
     headline: 'Two optional attach points.',
@@ -61,6 +77,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'upload',
     chapter: 'The case',
+    depth: 'detail',
     route: '/',
     target: 'intake.upload',
     headline: 'An honest dead control.',
@@ -73,6 +90,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'begin',
     chapter: 'The case',
+    depth: 'spine',
     route: '/',
     target: 'intake.begin',
     headline: 'Start the audit.',
@@ -87,18 +105,20 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'fields-matrix',
     chapter: 'Foundation',
+    depth: 'spine',
     route: '/fields',
     target: 'fields.matrix',
     headline: 'The design, read by Claude.',
     what: 'Claude read all 9 columns and proposed a role for each: the biological replicate, the comparison, the technical nuisances. Every proposal carries a confidence and one line of reasoning.',
     why: 'Every check runs on a field role, never on a column name. Get a role wrong and every result downstream is wrong, so this gate comes first.',
     advance: 'next',
-    dwellMs: 7000,
+    dwellMs: 6500,
     ensure: { kind: 'resolveFields' },
   },
   {
     id: 'unit-row',
     chapter: 'Foundation',
+    depth: 'detail',
     route: '/fields',
     target: 'fields.unit-row',
     headline: 'The replicate that counts.',
@@ -111,32 +131,35 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'confirm',
     chapter: 'Foundation',
+    depth: 'spine',
     route: '/fields',
     target: 'fields.confirm',
     headline: 'Confirm the design to continue.',
     what: 'Press Confirm. Redline locks these roles, inspects the file, and reads your analysis to propose the claims it can test. Until you confirm the design, the claim step and every check stay locked.',
-    why: 'The design decides which statistics are valid. Redline settles it with you first, then reads the analysis for the claims, before it computes a single check.',
+    why: 'The scientist owns the experimental design. Redline owns the statistics that follow from it, and it computes nothing until the design is signed off.',
     advance: 'click',
     dwellMs: 5000,
     ensure: { kind: 'resolveFields' },
   },
 
-  // ── Claim Review: the claims Redline extracted ────────────────────────────
+  // ── Claim review: the claims Redline extracted ────────────────────────────
   {
     id: 'claims-card',
-    chapter: 'Claim Review',
+    chapter: 'Claim review',
+    depth: 'spine',
     route: '/claims',
     target: 'claims.card.1',
     headline: 'The first extracted claim.',
     what: 'This card is one claim Redline read from your analysis: the sentence, what it rests on (the stored FOXP3 result), and how sure it is. You confirm it, edit it, or remove it.',
     why: 'Redline extracts the claims your analysis already makes and proposes them here. Nothing is added to pad the list, and you ratify each one before any check runs.',
     advance: 'next',
-    dwellMs: 7000,
+    dwellMs: 6500,
     ensure: { kind: 'confirmFields' },
   },
   {
     id: 'claims-routing',
-    chapter: 'Claim Review',
+    chapter: 'Claim review',
+    depth: 'detail',
     route: '/claims',
     target: 'claims.routing.1',
     headline: 'Each claim, routed to its checks.',
@@ -148,19 +171,21 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'claims-scope',
-    chapter: 'Claim Review',
+    chapter: 'Claim review',
+    depth: 'spine',
     route: '/claims',
     target: 'claims.out-of-scope',
     headline: 'Out of scope, and labeled.',
-    what: 'Redline read a pseudotime trajectory claim it cannot test. Its four checks do not cover trajectory validation, so it lists the claim here, marks it out of scope, and does not audit it.',
+    what: 'Redline read a pseudotime trajectory claim it cannot test. Its checks do not cover trajectory validation, so it lists the claim here, marks it out of scope, and does not audit it.',
     why: 'A silent drop would hide what went untested. Redline shows the claims it set aside and why, so nothing looks audited that never was.',
     advance: 'next',
-    dwellMs: 6500,
+    dwellMs: 6000,
     ensure: { kind: 'confirmFields' },
   },
   {
     id: 'claims-confirm',
-    chapter: 'Claim Review',
+    chapter: 'Claim review',
+    depth: 'detail',
     route: '/claims',
     target: 'claims.confirm',
     headline: 'Confirm the list. Now it runs.',
@@ -175,33 +200,36 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'board',
     chapter: 'The board',
+    depth: 'spine',
     route: '/workbench',
     target: 'workbench.board',
-    headline: 'Four independent checks.',
-    what: 'The audit board. Four checks run as separate modules: pseudoreplication, double dipping, clustering fragility, and confounding. Each has its own inputs, verdict, and method paper.',
+    headline: 'One board, every check.',
+    what: 'The audit board. Each check runs as its own module against the same interface, the founding pillars alongside the rigor checks, and each carries its own inputs, verdict, and method paper.',
     why: 'Ask a model to review an analysis in prose and it catches fewer than half of these errors. Redline executes the diagnostic instead of reading the code.',
     advance: 'next',
-    dwellMs: 7000,
+    dwellMs: 6500,
     ensure: { kind: 'confirmClaims' },
   },
 
-  // ── Catch 1: pseudoreplication ────────────────────────────────────────────
+  // ── Check 1: pseudoreplication, then its correction ───────────────────────
   {
     id: 'check1-figure',
     chapter: 'Check 1 · Pseudoreplication',
+    depth: 'spine',
     route: '/checks/1',
     target: 'check.figure',
     headline: 'The p-value that deflates.',
     what: "The scientist's figure, re-tested. The naive cell-level test reads 6.2e-11 across 51,842 cells. Aggregate to one profile per donor, re-run, and the honest p-value is 0.21.",
-    why: 'Cells from one donor track together, so counting them as independent inflates the result. Pseudobulk to the 4 donors and the effect is gone. This is the one check that asserts a correction.',
+    why: 'Cells from one donor track together, so counting them as independent inflates the result. Pseudobulk to the 4 donors and the effect is gone.',
     cite: 'Squair et al., 2021, Nature Communications',
     advance: 'next',
-    dwellMs: 8000,
+    dwellMs: 7500,
     ensure: { kind: 'runCheck', checkId: 1 },
   },
   {
     id: 'check1-verdict',
     chapter: 'Check 1 · Pseudoreplication',
+    depth: 'spine',
     route: '/checks/1',
     target: 'check.verdict',
     headline: 'The claim, struck through.',
@@ -209,12 +237,13 @@ export const TOUR_STEPS: TourStep[] = [
     why: 'A flag on its own is homework. A rewrite you can paste into the manuscript is the thing a scientist actually needed.',
     cite: 'Squair et al., 2021, Nature Communications',
     advance: 'next',
-    dwellMs: 7500,
+    dwellMs: 7000,
     ensure: { kind: 'runCheck', checkId: 1 },
   },
   {
     id: 'check1-reasoning',
     chapter: 'Check 1 · Pseudoreplication',
+    depth: 'detail',
     route: '/checks/1',
     target: 'check.reasoning',
     headline: 'The reasoning is the product.',
@@ -224,11 +253,52 @@ export const TOUR_STEPS: TourStep[] = [
     dwellMs: 7000,
     ensure: { kind: 'runCheck', checkId: 1 },
   },
+  {
+    id: 'check1-recommend',
+    chapter: 'Check 1 · The correction',
+    depth: 'spine',
+    route: '/checks/1',
+    target: 'check.recommend',
+    headline: 'What to do about it.',
+    what: 'Each recommendation names the concrete step, why it follows from these numbers, and what it would change. A tag says whether you can fix it now, need more data, or cannot rescue the claim.',
+    why: 'The feasibility tag is decided by the engine, never the model, so an honest dead end is never talked up into a fix that does not exist.',
+    advance: 'next',
+    dwellMs: 6500,
+    ensure: { kind: 'runCheck', checkId: 1 },
+  },
+  {
+    id: 'check1-code',
+    chapter: 'Check 1 · The correction',
+    depth: 'detail',
+    route: '/checks/1',
+    target: 'check.code',
+    headline: 'The fix, as code you can run.',
+    what: 'Redline hands back the corrected analysis as a script. It reads the h5ad, aggregates to the 4 donors, re-tests with PyDESeq2, and prints the honest p-value. Download it and it runs.',
+    why: 'A flag tells you something broke. A script you can run tells you what the result should have been, and lets you check the work yourself.',
+    cite: 'Squair et al., 2021, Nature Communications',
+    advance: 'next',
+    dwellMs: 8000,
+    ensure: { kind: 'runCheck', checkId: 1 },
+  },
+  {
+    id: 'check1-beforeafter',
+    chapter: 'Check 1 · The correction',
+    depth: 'spine',
+    route: '/checks/1',
+    target: 'check.beforeafter',
+    headline: 'Before and after, one toggle.',
+    what: 'Toggle between the result the scientist claimed and the analysis they should have had. The after figure is the true output of the corrected code, computed on the 4 donors.',
+    why: 'When a claim cannot be rescued, the honest view shows the dead end in plain words and no fake figure, because inventing a clean result is the overclaim Redline exists to catch.',
+    advance: 'next',
+    dwellMs: 7500,
+    ensure: { kind: 'runCheck', checkId: 1 },
+  },
 
-  // ── Catch 2: double dipping ───────────────────────────────────────────────
+  // ── Check 2: double dipping ───────────────────────────────────────────────
   {
     id: 'check2-split',
     chapter: 'Check 2 · Double dipping',
+    depth: 'spine',
     route: '/checks/2',
     target: 'check2.split',
     headline: 'The state that collapses.',
@@ -236,14 +306,15 @@ export const TOUR_STEPS: TourStep[] = [
     why: 'Discovery AUC 0.90 falls to 0.57 on held-out cells, near chance, and 0 of 4 markers hold. Redline reports this as evidence and names ClusterDE as the stronger method.',
     cite: 'Gao, Bien and Witten, 2022, J. Amer. Stat. Assoc.',
     advance: 'next',
-    dwellMs: 8000,
+    dwellMs: 7500,
     ensure: { kind: 'runCheck', checkId: 2 },
   },
 
-  // ── Catch 3: fragility, then the clean beat ───────────────────────────────
+  // ── Check 3: fragility, then the clean beat ───────────────────────────────
   {
     id: 'check3-scrub',
     chapter: 'Check 3 · Fragility',
+    depth: 'spine',
     route: '/checks/3',
     target: 'check3.scrub',
     headline: 'Drag it. The state blinks.',
@@ -252,13 +323,14 @@ export const TOUR_STEPS: TourStep[] = [
     cite: 'Luecken and Theis, 2019, Molecular Systems Biology',
     advance: 'click',
     advanceEvent: 'change',
-    dwellMs: 8000,
+    dwellMs: 7500,
     ensure: { kind: 'setCheck3Track', track: 'Effector' },
     sweepScrub: true,
   },
   {
     id: 'clean-beat',
     chapter: 'Check 3 · The clean beat',
+    depth: 'spine',
     route: '/checks/3',
     target: 'check3.track',
     headline: 'Now watch it report clean.',
@@ -266,14 +338,15 @@ export const TOUR_STEPS: TourStep[] = [
     why: 'A tool that always finds a problem is a tool nobody trusts. When a claim holds, Redline says so plainly, at the same confidence it gives a flag.',
     cite: 'Luecken and Theis, 2019, Molecular Systems Biology',
     advance: 'next',
-    dwellMs: 8000,
+    dwellMs: 7500,
     ensure: { kind: 'setCheck3Track', track: 'Naive' },
   },
 
-  // ── Catch 4: confounding ──────────────────────────────────────────────────
+  // ── Check 4: confounding ──────────────────────────────────────────────────
   {
     id: 'check4-confound',
     chapter: 'Check 4 · Confounding',
+    depth: 'detail',
     route: '/checks/4',
     target: 'check4.nuisance',
     headline: "A confound you can't separate.",
@@ -285,41 +358,47 @@ export const TOUR_STEPS: TourStep[] = [
     ensure: { kind: 'runCheck', checkId: 4 },
   },
 
-  // ── The report ────────────────────────────────────────────────────────────
+  // ── The corrected analysis ────────────────────────────────────────────────
   {
-    id: 'report',
-    chapter: 'The report',
-    route: '/report',
-    target: 'report.band',
-    headline: 'Three flagged, one clean.',
-    what: 'The assembled report. Three claims flagged as fragile or invalid, one verified as real, a citation behind every call, and each conclusion rewritten in language that survives review.',
-    why: 'Four conclusions in, one plain report out: what is wrong, why it matters, the paper that fixes it, and a rewrite you can defend. Before it becomes a paper.',
+    id: 'corrected-bundle',
+    chapter: 'The corrected analysis',
+    depth: 'spine',
+    route: '/corrected',
+    target: 'corrected.bundle',
+    headline: 'The fixed pipeline, ready to run.',
+    what: 'Every flagged finding, re-analyzed as a script that runs. Take one .py, the consolidated notebook, or the README that records what was wrong and how to run each fix.',
+    why: 'A critique ends at the flag, and the scientist still has to do the work. This is the artifact that outlasts the week: the analysis they should have run.',
     advance: 'next',
     dwellMs: 7000,
     ensure: { kind: 'confirmClaims' },
   },
 
-  // ── One engine, every surface ─────────────────────────────────────────────
+  // ── The report ────────────────────────────────────────────────────────────
   {
-    id: 'engine-code',
-    chapter: 'One engine',
-    route: '/environment',
-    target: 'env.terminal',
-    headline: 'The same checks, as code.',
-    what: 'The identical engine runs headless: from redline import audit. It returns the same findings, and report.assert_clean() raises, so a fragile result can fail a build.',
-    why: 'This is the part that outlasts the demo. The rigor you just watched runs in a notebook cell, a pipeline step, or a gate on every commit.',
+    id: 'report',
+    chapter: 'The report',
+    depth: 'spine',
+    route: '/report',
+    target: 'report.band',
+    headline: 'Every claim, and where it stands.',
+    what: 'The assembled report. Each confirmed claim carries its verdict, the numbers behind it, a citation for every call, and a rewrite in language that survives review.',
+    why: 'Conclusions in, one plain report out: what is wrong, why it matters, the paper that fixes it, and a rewrite you can defend. Before it becomes a paper.',
     advance: 'next',
-    dwellMs: 7000,
+    dwellMs: 6500,
+    ensure: { kind: 'confirmClaims' },
   },
+
+  // ── One engine, every surface (the closer) ────────────────────────────────
   {
     id: 'engine-surfaces',
     chapter: 'One engine',
+    depth: 'spine',
     route: '/environment',
     target: 'env.surfaces',
-    headline: 'MCP server and Claude Skill.',
-    what: "The same engine ships as an MCP server and a Claude Skill, so it drops into Claude Science and Claude Code, and runs on a scientist's own data in their own workflow.",
+    headline: 'The same engine, everywhere.',
+    what: "The same checks run headless: from redline import audit, and assert_clean() can fail a build. It also ships as an MCP server and a Claude Skill that drops into Claude Science and Claude Code, on a scientist's own data.",
     why: 'A scientist runs this on their own analysis tomorrow. Break your own analysis before Reviewer 2 does.',
     advance: 'next',
-    dwellMs: 8000,
+    dwellMs: 7500,
   },
 ];

@@ -3,11 +3,11 @@ import type {
   CheckId,
   Scenario,
   CheckConfigMap,
-  ComputeResult,
+  EngineResult,
   Narrative,
   FieldSpec,
 } from '@redline/contracts';
-import { toCompute, toNarrative, type FullCheck } from './shared.js';
+import { toCompute, toCorrection, toNarrative, type FullCheck } from './shared.js';
 import { ketamineScenario, ketamineFull, ketamineReasoning, KETAMINE_DEFAULTS } from './ketamine.js';
 import { marsonScenario, marsonFull, marsonReasoning, MARSON_DEFAULTS } from './marson.js';
 import {
@@ -84,13 +84,17 @@ export function fixtureFull(scenarioId: ScenarioId, checkId: CheckId, cfg: unkno
   return REGISTRY[scenarioId].full(checkId, cfg);
 }
 
-/** The compute half only (what a ComputeTarget returns). */
+/**
+ * The engine half (what a ComputeTarget returns): the statistics plus whatever
+ * correction the check produced. A clean finding carries no correction keys.
+ */
 export function fixtureCompute(
   scenarioId: ScenarioId,
   checkId: CheckId,
   cfg: unknown,
-): ComputeResult {
-  return toCompute(REGISTRY[scenarioId].full(checkId, cfg));
+): EngineResult {
+  const full = REGISTRY[scenarioId].full(checkId, cfg);
+  return { ...toCompute(full), ...toCorrection(full) };
 }
 
 /** The prose half only (what curatedNarrative returns). */

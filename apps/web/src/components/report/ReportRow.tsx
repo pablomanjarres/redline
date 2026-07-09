@@ -1,7 +1,7 @@
 import type { CheckResult } from '@redline/contracts';
+import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { DistributionStrip, MiniChart } from '@/components/charts';
-import { CHECK_META } from '@/components/check/CheckStage';
 import { ciLabel } from '@/lib/format';
 
 /**
@@ -15,8 +15,8 @@ import { ciLabel } from '@/lib/format';
 export function ReportRow({ result }: { result: CheckResult }) {
   const { checkId, state, error, original, corrected, missing, citation } = result;
   const light = signalColor(state);
-  const meta = CHECK_META[checkId];
-  const num = `0${checkId}`;
+  const meta = checkMeta(checkId);
+  const num = checkId < 10 ? `0${checkId}` : String(checkId);
 
   return (
     <article
