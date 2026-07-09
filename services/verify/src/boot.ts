@@ -87,10 +87,16 @@ export function bootApp(): Booted {
       }
     }
   };
+  // Tear the server down however this process dies. Without the signal handlers
+  // a SIGTERM leaves an orphaned server holding the port and orphaned Python
+  // engine children, each of which loads the whole scientific stack. Those
+  // accumulate across runs and starve the machine.
   process.on('exit', stop);
-  process.on('SIGINT', () => {
-    stop();
-    process.exit(130);
-  });
+  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+    process.on(sig, () => {
+      stop();
+      process.exit(sig === 'SIGINT' ? 130 : 143);
+    });
+  }
   return { stop };
 }
