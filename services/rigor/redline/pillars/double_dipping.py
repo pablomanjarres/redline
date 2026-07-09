@@ -29,7 +29,7 @@ from ..contracts import (
     groups_chart,
     stat,
 )
-from . import cfg_get, obs_series, rng, safe_auc
+from . import cfg_get, lognorm, obs_series, rng, safe_auc
 
 _MARKER_KEYS = ("markers", "marker_genes", "genes")
 _SURVIVE_AUC = 0.60  # a marker "survives" if it still separates the group out of sample
@@ -115,7 +115,10 @@ def _recluster_train(
     held-out half the markers are validated on. Both backends target `k` groups,
     so the verdict does not depend on which one is installed.
     """
-    log = np.log1p(train)
+    # Depth-normalize before log: the discovery clustering must not partition by
+    # sequencing depth. Marker AUCs below stay on raw log1p, which is rank-based
+    # per gene and unchanged by this.
+    log = lognorm(train)
     k = int(max(2, k))
     rs = _seed_int(seed)
     try:
