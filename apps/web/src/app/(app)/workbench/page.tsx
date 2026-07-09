@@ -32,6 +32,7 @@ export default function WorkbenchPage() {
           </p>
         </div>
         <button
+          data-tour="workbench.rerun"
           onClick={() => runAll()}
           style={{
             flex: 'none',
@@ -51,7 +52,7 @@ export default function WorkbenchPage() {
       </div>
 
       {/* audit board */}
-      <div style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
+      <div data-tour="workbench.board" style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
         {IDS.map((id) => (
           <CheckTile key={id} checkId={id} />
         ))}

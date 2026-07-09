@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSession } from '@/state/session';
+import { TourLauncher } from '@/components/tour/TourLauncher';
 import { fmt } from '@/lib/format';
 
 /**
@@ -72,8 +73,9 @@ export function Masthead() {
       </div>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18 }}>
+        <TourLauncher compact />
         {fieldsConfirmed ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div data-tour="shell.tally" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {tally.map((t) => (
               <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ font: '700 14px/1 var(--mono)', color: t.n > 0 ? t.c : 'var(--ink-4)' }}>{t.n}</span>
@@ -87,6 +89,7 @@ export function Masthead() {
           </span>
         )}
         <Link
+          data-tour="shell.report"
           href="/report"
           style={{
             font: '700 11px/1 var(--sans)',
