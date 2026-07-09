@@ -1,7 +1,7 @@
 import type { CheckResult } from '@redline/contracts';
+import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { MiniChart } from '@/components/charts';
-import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
  * One finding on the audit sheet, in the dark instrument language. A
@@ -14,8 +14,8 @@ import { CHECK_META } from '@/components/check/CheckStage';
 export function ReportRow({ result }: { result: CheckResult }) {
   const { checkId, state, error, original, corrected, missing, citation } = result;
   const light = signalColor(state);
-  const meta = CHECK_META[checkId];
-  const num = `0${checkId}`;
+  const meta = checkMeta(checkId);
+  const num = checkId < 10 ? `0${checkId}` : String(checkId);
 
   return (
     <article
