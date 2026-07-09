@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { CheckId } from '@redline/contracts';
+import type { CheckId, CheckResult } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
 import { useSession } from '@/state/session';
 
@@ -21,13 +21,27 @@ import { useSession } from '@/state/session';
  * check no confirmed claim routes to stays locked as well, because it has
  * nothing to audit (its board tile says the same). A station whose target has
  * nothing real to show stays locked instead of posing as a live control.
+ *
+ * The four check stations here are the CANONICAL 01-04 checks, kept as fixed
+ * navigation. With the (claim, check) run model a check can hold several runs, so
+ * a station opens the FIRST run of its check (the deep board lives at /workbench);
+ * its light aggregates that check's runs (running if any run is running, flagged
+ * if any flagged, else clean when all its runs are clean).
  */
 const IDS: CheckId[] = [1, 2, 3, 4];
 
 export function Pipeline() {
   const path = usePathname();
-  const { results, running, fieldsConfirmed, claimsConfirmed, routedChecks } = useSession();
-  const routedSet = new Set(routedChecks);
+  const { runs, results, running, fieldsConfirmed, claimsConfirmed } = useSession();
+
+  // Runs grouped by check, so a station can open its check's first run and
+  // aggregate that check's verdict light.
+  const runsByCheck = new Map<CheckId, typeof runs>();
+  for (const r of runs) {
+    const list = runsByCheck.get(r.checkId) ?? [];
+    list.push(r);
+    runsByCheck.set(r.checkId, list);
+  }
 
   const stations: { href: string; n: string; label: string; active: boolean; light: string; pulse: boolean; locked: boolean }[] = [];
   stations.push({
@@ -48,17 +62,32 @@ export function Pipeline() {
     pulse: false,
     locked: !fieldsConfirmed,
   });
+  // The run whose stage is currently open (the [id] segment is a RunKey), decoded
+  // so it matches a run's key regardless of URL encoding.
+  const currentRunKey = path.startsWith('/checks/') ? decodeURIComponent(path.slice('/checks/'.length)) : null;
+
   IDS.forEach((id) => {
-    const r = results[id];
-    const run = running[id];
+    const checkRuns = runsByCheck.get(id) ?? [];
+    const anyRunning = checkRuns.some((r) => running[r.key]);
+    const done = checkRuns
+      .map((r) => results[r.key])
+      .filter((x): x is CheckResult => x != null);
+    const firstKey = checkRuns[0]?.key;
+    // Aggregate light: blue while any run runs, else the first non-clean verdict's
+    // color (a flag on any of a check's runs surfaces), else green when all clean.
+    let light = 'var(--ink-4)';
+    if (anyRunning) light = '#2563EB';
+    else if (done.length > 0) light = signalColor((done.find((x) => x.state !== 'clean') ?? done[0]!).state);
     stations.push({
-      href: `/checks/${id}`,
+      href: firstKey ? `/checks/${encodeURIComponent(firstKey)}` : path,
       n: `0${id}`,
       label: ['Pseudoreplication', 'Double dipping', 'Fragility', 'Confounding'][id - 1]!,
-      active: path === `/checks/${id}`,
-      light: run ? '#2563EB' : r ? signalColor(r.state) : 'var(--ink-4)',
-      pulse: run,
-      locked: !claimsConfirmed || !routedSet.has(id),
+      active:
+        currentRunKey != null &&
+        (currentRunKey === String(id) || checkRuns.some((r) => r.key === currentRunKey)),
+      light,
+      pulse: anyRunning,
+      locked: !claimsConfirmed || checkRuns.length === 0,
     });
   });
   stations.push({

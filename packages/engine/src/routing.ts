@@ -367,7 +367,9 @@ export function prepareRuns(
 ): PreparedRun[] {
   return runsFrom(claims).map((run) => {
     const { config, unmapped } = configForRunWithOutcome(base, run);
-    return { ...run, config, unmapped };
+    // Tag each unmapped key with this run's check, matching PreparedRun's
+    // (check, key) ledger shape (the same shape mergeRoutedConfigWithOutcome uses).
+    return { ...run, config, unmapped: unmapped.map((key) => ({ check: run.checkId, key })) };
   });
 }
 

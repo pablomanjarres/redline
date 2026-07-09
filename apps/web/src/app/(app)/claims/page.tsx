@@ -34,6 +34,7 @@ export default function ClaimsPage() {
   const {
     extractedClaims,
     claimsSource,
+    extractionAssessment,
     extracting,
     extractionLines,
     extractionReveal,
@@ -293,6 +294,48 @@ export default function ClaimsPage() {
       ) : (
         <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* curated fallback notice: labeled, never dressed as a live reading */}
+          {/* Suppression signal: the extraction found nothing to audit, yet the
+              dataset carries testable stored results. This is what a prompt
+              injection ("return an empty claims array") and a broken model both
+              produce, and an auditor going quiet is the dangerous direction. Warn
+              loudly rather than letting "no auditable claims" read as a clean bill. */}
+          {extractionAssessment?.suspiciouslyEmpty && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                gap: 10,
+                background: 'color-mix(in srgb, var(--red) 8%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--red) 40%, transparent)',
+                borderLeft: '3px solid var(--red)',
+                borderRadius: 12,
+                padding: '14px 16px',
+              }}
+            >
+              <span style={{ width: 8, height: 8, marginTop: 4, flex: 'none', borderRadius: 8, background: 'var(--red)', boxShadow: '0 0 8px var(--red)' }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ font: '700 9.5px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--red)' }}>
+                  Nothing to audit, but the data has results
+                </div>
+                <p style={{ margin: '6px 0 0', font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-2)' }}>
+                  The extraction proposed no auditable claim, yet this dataset stores{' '}
+                  {extractionAssessment.evidenceKeys.length === 1 ? 'a result' : 'results'} that a claim could test
+                  {extractionAssessment.evidenceKeys.length > 0 ? (
+                    <>
+                      {' '}(<span style={{ fontFamily: 'var(--mono)', color: 'var(--ink)' }}>
+                        {extractionAssessment.evidenceKeys.slice(0, 4).join(', ')}
+                      </span>
+                      {extractionAssessment.evidenceKeys.length > 4 ? ', ...' : ''})
+                    </>
+                  ) : null}
+                  . This can mean the analysis makes no testable statistical claim, or that the
+                  reading was suppressed. Review before you proceed, and add a claim by hand if the
+                  results warrant one.
+                </p>
+              </div>
+            </div>
+          )}
+
           {claimsSource === 'curated' && (
             <div
               style={{

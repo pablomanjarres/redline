@@ -15,7 +15,7 @@ import { ReportRow } from '@/components/report/ReportRow';
  * it.
  */
 export default function ReportPage() {
-  const { report, dataset } = useSession();
+  const { report, reportFindings, dataset } = useSession();
   const [exporting, setExporting] = useState(false);
 
   // Generate a real, downloadable PDF report (not a print of the dark app
@@ -26,7 +26,7 @@ export default function ReportPage() {
     setExporting(true);
     try {
       const { downloadReportPdf } = await import('@/lib/report-pdf');
-      await downloadReportPdf(report, dataset);
+      await downloadReportPdf(report, dataset, reportFindings);
     } catch (err) {
       console.error('Report PDF export failed', err);
       if (typeof window !== 'undefined') window.alert('Could not generate the PDF. Please try again.');
@@ -111,11 +111,12 @@ export default function ReportPage() {
         <p style={{ margin: 0, flex: 1, minWidth: 240, font: '500 16px/1.5 var(--sans)', color: 'var(--ink)' }}>{report.verdict}</p>
       </section>
 
-      {/* per-check findings */}
-      {report.results.length > 0 ? (
+      {/* per-run findings: one row per run that produced a result, each titled with
+          the claim it audited so two findings on the same check read apart */}
+      {reportFindings.length > 0 ? (
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {report.results.map((r) => (
-            <ReportRow key={r.checkId} result={r} />
+          {reportFindings.map((f) => (
+            <ReportRow key={f.key} result={f.result} claimText={f.claimText} runKey={f.key} />
           ))}
         </div>
       ) : (
