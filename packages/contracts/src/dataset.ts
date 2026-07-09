@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { FieldSpec } from './fields.js';
 import { CheckId } from './primitives.js';
+import { DatasetInventory } from './inventory.js';
+import { ExtractedClaim } from './claims.js';
 
 export const DatasetMeta = z.object({
   file: z.string(),
@@ -39,5 +41,11 @@ export const Scenario = z.object({
   dataset: DatasetMeta,
   claims: z.array(Claim),
   fields: z.array(FieldSpec),
+  /** The thin inspection of this scenario's `.h5ad` (spec section 3). Optional
+   * so existing fixtures and Scenario.parse() callers keep working. */
+  inventory: DatasetInventory.optional(),
+  /** Claims the extraction agent proposed for this scenario (spec section 5).
+   * Optional for the same reason; the legacy `claims` field is unchanged. */
+  extractedClaims: z.array(ExtractedClaim).optional(),
 });
 export type Scenario = z.infer<typeof Scenario>;
