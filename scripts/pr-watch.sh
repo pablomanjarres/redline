@@ -79,13 +79,21 @@ command -v gh >/dev/null || { alert "gh not on PATH"; exit 2; }
 gh auth status >/dev/null 2>&1 || { alert "gh is not authenticated"; exit 2; }
 
 # ── list open PRs. -q keeps jq out of the failure path ───────────────────────
+# Distinguish "gh failed" from "genuinely zero PRs". Conflating them (gh ... ||
+# true) is how a monitor hides its own outage: a locked keyring or a rate limit
+# reads as the happy path forever, which is the exact anti-pattern the loops
+# playbook warns against. Capture the exit code, and alert on a real failure.
 if [[ -n "$ONCE" ]]; then
   OPEN="$ONCE"
 else
-  OPEN="$(gh pr list --state open --limit 50 --json number -q '.[].number' 2>/dev/null || true)"
+  if ! OPEN="$(gh pr list --state open --limit 50 --json number -q '.[].number' 2>/dev/null)"; then
+    alert "gh pr list failed (auth, network, or rate limit); cannot see open PRs"
+    exit 2
+  fi
 fi
 
-# The watched thing disappearing is not an error: no open PRs is the happy path.
+# The watched thing disappearing is not an error: zero open PRs is the happy path,
+# and it is now genuinely distinct from a gh failure (which exited 2 above).
 if [[ -z "${OPEN// /}" ]]; then
   log "no open PRs"
   : > "$HEARTBEAT"
