@@ -205,8 +205,10 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
         ]
         return compute_result(4, FLAGGED, head, stats, confound_chart(grid, v, verified=True))
 
-    # Separable. Optionally confirm the effect survives a multi-factor refit.
-    survives = _refit_survives(adata, interest_name, name, interest_vec, nuis_vec)
+    # Separable. Optionally confirm the effect survives a multi-factor refit,
+    # aggregated to the replicate unit. Never refit over cells: that is the very
+    # pseudoreplication Pillar 1 exists to catch.
+    survives = _refit_survives(adata, interest_name, name, interest_vec, nuis_vec, fields)
     head = f"'{interest_name}' can be separated from '{name}'; the comparison is identifiable."
     stats = [
         stat("Cramer's V", f"{v:.2f}", good=True),
@@ -219,34 +221,74 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
     return compute_result(4, CLEAN, head, stats, confound_chart(grid, v, verified=True))
 
 
-def _refit_survives(
-    adata: Any, interest_name: str, nuis_name: str, interest_vec, nuis_vec
-) -> Optional[bool]:
-    """Best-effort multi-factor PyDESeq2 refit ``~ interest + nuisance``.
+def _unit_column(fields: Any) -> Optional[str]:
+    """The obs column the foundation step resolved as the replicate unit."""
+    for f in fields or []:
+        role = f.get("role") if isinstance(f, dict) else getattr(f, "role", None)
+        if str(role) == "unit":
+            fid = f.get("id") if isinstance(f, dict) else getattr(f, "id", None)
+            return str(fid) if fid else None
+    return None
 
-    Returns True/False when a refit could run, or None when PyDESeq2 / counts are
-    unavailable. Import is lazy so the base install and the contract tests do not
-    need the heavy statistical stack.
+
+def _refit_survives(
+    adata: Any, interest_name: str, nuis_name: str, interest_vec, nuis_vec, fields: Any = None
+) -> Optional[bool]:
+    """Best-effort multi-factor PyDESeq2 refit ``~ interest + nuisance``, on
+    pseudobulk over the replicate unit.
+
+    Returns True/False when a refit could run, or None when PyDESeq2, the counts,
+    or the replicate unit are unavailable. Import is lazy so the base install and
+    the contract tests do not need the heavy statistical stack.
+
+    The refit **must** aggregate to the unit first. Fitting over cells treats each
+    cell as an independent replicate, which is the pseudoreplication Pillar 1
+    exists to catch, and a rigor tool does not get to commit the error it audits.
+    It was also intractable: 1140 cells took 213s, over the engine's own timeout,
+    where the pseudobulk fit takes about a second.
     """
     from .. import gating
 
     counts, _ = gating.counts_array(adata)
     if counts is None:
         return None
+    unit_col = _unit_column(fields)
+    if not unit_col:
+        # No resolved replicate unit: report nothing rather than pseudoreplicate.
+        return None
     try:
         import pandas as pd
         from pydeseq2.dds import DeseqDataSet
         from pydeseq2.ds import DeseqStats
 
+        units = np.asarray([str(x) for x in obs_series(adata, unit_col)])
+        interest = np.asarray([str(x) for x in interest_vec])
+        nuis = np.asarray([str(x) for x in nuis_vec])
+
         var_names = [str(v) for v in getattr(adata, "var_names", range(counts.shape[1]))]
+        cells = pd.DataFrame(np.rint(np.clip(counts, 0, None)).astype(int), columns=var_names)
+        key = pd.Series([f"{u}|{i}|{n}" for u, i, n in zip(units, interest, nuis)], name="sample")
+
+        # Sum counts within each (unit, interest, nuisance) sample. This is what
+        # decoupler's get_pseudobulk(mode="sum") computes, without the dependency.
+        counts_df = cells.groupby(key, sort=True).sum()
         meta = pd.DataFrame(
-            {interest_name: [str(x) for x in interest_vec], nuis_name: [str(x) for x in nuis_vec]}
+            {
+                interest_name: [s.split("|")[1] for s in counts_df.index],
+                nuis_name: [s.split("|")[2] for s in counts_df.index],
+            },
+            index=counts_df.index,
         )
-        counts_df = pd.DataFrame(np.rint(counts).astype(int), columns=var_names)
         counts_df = counts_df.loc[:, counts_df.sum(axis=0) > 0]
+
+        # A design needs at least two levels of each factor and more samples than
+        # coefficients, otherwise the fit is meaningless rather than merely noisy.
+        if counts_df.shape[0] < 4 or meta[interest_name].nunique() < 2 or meta[nuis_name].nunique() < 2:
+            return None
+
         dds = DeseqDataSet(counts=counts_df, metadata=meta, design_factors=[interest_name, nuis_name])
         dds.deseq2()
-        levels = list(dict.fromkeys([str(x) for x in interest_vec]))
+        levels = list(dict.fromkeys(interest.tolist()))
         st = DeseqStats(dds, contrast=[interest_name, levels[-1], levels[0]])
         st.summary()
         res = st.results_df

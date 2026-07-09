@@ -172,6 +172,18 @@ def interval(samples: Sequence[float], level: float = 0.95, cap: int = 200) -> O
         shown = ordered
     return interval_json(median, lo, hi, float(level), int(arr.size), shown.tolist())
 
+def lognorm(counts: np.ndarray) -> np.ndarray:
+    """Library-size normalize to counts per 10k, then log1p.
+
+    The standard scRNA-seq reference space (`scanpy.pp.normalize_total` then
+    `log1p`). Clustering on raw `log1p(counts)` lets sequencing depth drive the
+    embedding: cells cluster by how deeply they were sequenced rather than by
+    what they express, which makes a continuum look like a stable population.
+    """
+    C = np.asarray(counts, dtype=np.float64)
+    lib = C.sum(axis=1, keepdims=True)
+    return np.log1p(C / np.clip(lib, 1.0, None) * 1e4)
+
 
 def safe_auc(scores: Sequence[float], labels: Sequence[int]) -> float:
     """ROC AUC of ``scores`` separating a binary ``labels`` vector.
