@@ -72,7 +72,7 @@ async function invoke(
 const REASON_RETRIES = 3;
 /** A model call that hangs must not block the request forever. The SDKs do not
  *  bound this themselves, and a hung Bedrock invoke stalled a whole audit. */
-const REASON_TIMEOUT_MS = Number(process.env.REDLINE_REASONING_TIMEOUT_MS ?? 60000);
+const REASON_TIMEOUT_MS = Number(process.env.REDLINE_REASONING_TIMEOUT_MS ?? 25000);
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
