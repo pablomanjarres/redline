@@ -29,10 +29,26 @@ export function parseClaimsReply(
 }
 
 /**
- * Parse a manual-mapping reply into one honesty-checked claim. Throws when the
- * backstop rejects the mapped claim (it cited an obs column or uns key the data
- * does not contain); the caller turns that into a ReasonerUnavailable so the app
- * can fall back rather than audit a fabricated target.
+ * The backstop rejected the mapped claim: it cited an obs column or uns key the
+ * data does not contain.
+ *
+ * This is a DETERMINISTIC verdict about a model reply, not a transient failure.
+ * Retrying it re-rolls the model until it happens to produce something the
+ * backstop accepts, which is sampling until the honesty check passes. The retry
+ * wrapper must not retry this.
+ */
+export class ClaimRejected extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ClaimRejected';
+  }
+}
+
+/**
+ * Parse a manual-mapping reply into one honesty-checked claim. Throws
+ * `ClaimRejected` when the backstop rejects the mapped claim; the caller turns
+ * that into a ReasonerUnavailable so the app can fall back rather than audit a
+ * fabricated target.
  */
 export function parseClaimReply(
   text: string,
@@ -41,7 +57,7 @@ export function parseClaimReply(
   const { claim } = ClaimMappingResponse.parse(extractJson(text));
   const [enforced] = enforceClaimHonesty(inventory, [claim]);
   if (!enforced) {
-    throw new Error(
+    throw new ClaimRejected(
       'the mapped claim referenced data not present in the inventory and cannot be audited',
     );
   }

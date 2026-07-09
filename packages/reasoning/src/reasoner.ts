@@ -16,7 +16,7 @@ import {
   buildFieldProposalPrompt,
   buildNarrativePrompt,
 } from './prompts.js';
-import { parseClaimReply, parseClaimsReply } from './claims.js';
+import { ClaimRejected, parseClaimReply, parseClaimsReply } from './claims.js';
 import { buildCriticPrompt } from './critic-prompts.js';
 
 /**
@@ -58,6 +58,8 @@ const NARRATE_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
 // Claim lists are longer than a single narrative, so they get more headroom.
 const CLAIMS_MAX_TOKENS = 8192;
+/** Routing a claim to a check is a decision, not prose. Same run, same routing. */
+const CLAIMS_TEMPERATURE = 0;
 const CRITIQUE_MAX_TOKENS = 1024;
 /** The critic decides whether a flag reaches the scientist. Sampled at the model
  *  default it is a coin flip on the borderline cases, so the same real catch can
@@ -145,18 +147,28 @@ function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
  * model on the primary path instead of silently dropping to the curated
  * fallback, which matters because the fallback is a different, static source.
  */
-async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  shouldRetry: (err: unknown) => boolean = () => true,
+): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < REASON_RETRIES; attempt += 1) {
     try {
       return await fn();
     } catch (err) {
       lastErr = err;
+      // A deterministic verdict about the reply (the honesty backstop rejected it)
+      // must not be retried. Re-rolling until the check passes is sampling until
+      // the honesty check is satisfied, which defeats the check.
+      if (!shouldRetry(err)) break;
       if (attempt < REASON_RETRIES - 1) await sleep(400 * 2 ** attempt);
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
+
+/** Transport and malformed replies are transient. A rejected claim is not. */
+const retryUnlessRejected = (err: unknown): boolean => !(err instanceof ClaimRejected);
 
 /**
  * Build a reasoner backed by Claude — the first-party Claude API or AWS Bedrock,
@@ -249,7 +261,7 @@ export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
         // the deadline apply here too. A hung extraction stalls the whole intake.
         return await withRetry(async () => {
           const { system, user } = buildClaimExtractionPrompt(req);
-          const text = await withTimeout(send(system, user, CLAIMS_MAX_TOKENS), REASON_TIMEOUT_MS, 'extractClaims');
+          const text = await withTimeout(send(system, user, CLAIMS_MAX_TOKENS, CLAIMS_TEMPERATURE), REASON_TIMEOUT_MS, 'extractClaims');
           // The backstop runs immediately after Zod validation, inside parseClaimsReply.
           return parseClaimsReply(text, req.inventory);
         });
@@ -267,9 +279,9 @@ export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
       try {
         return await withRetry(async () => {
           const { system, user } = buildClaimMappingPrompt(req);
-          const text = await withTimeout(send(system, user, CLAIMS_MAX_TOKENS), REASON_TIMEOUT_MS, 'mapClaim');
+          const text = await withTimeout(send(system, user, CLAIMS_MAX_TOKENS, CLAIMS_TEMPERATURE), REASON_TIMEOUT_MS, 'mapClaim');
           return parseClaimReply(text, req.inventory);
-        });
+        }, retryUnlessRejected);
       } catch (err) {
         throw asUnavailable('mapClaim', err);
       }
