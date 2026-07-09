@@ -127,10 +127,12 @@ Pure SVG React, drawing with literal hex from `C` (tokens). Recreate the design 
 but typed and reading the contracts' chart union:
 
 ```ts
-<SignificanceChart chart={SignificanceChart | HardStopChart} />   // check 1
+<SignificanceChart chart={SignificanceChart | HardStopChart} />   // checks 1, 6, 8
 <GroupsChart chart={GroupsChart} />                                // check 2
-<FragilityChart chart={FragilityChart} cfg={Check3Config} />       // check 3 (scrub playhead)
+<FragilityChart chart={FragilityChart} cfg={Check3Config} />       // checks 3, 7 (scrub playhead)
 <ConfoundChart chart={ConfoundChart} />                            // check 4
+<FdrChart chart={FdrChart} />                                      // check 5
+<VolcanoChart chart={VolcanoChart} />                              // the corrected artifact, preview only
 <MiniChart checkId={CheckId} result={CheckResult} />               // card thumbnail
 ```
 
