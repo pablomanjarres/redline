@@ -168,7 +168,7 @@ It runs the same way every time. It only ever drops or edits a claim; it never a
 Call it on every model output (the parse layer in `packages/reasoning/src/claims.ts`
 already does).
 
-Its five rules, each with the spec line it enforces:
+Its seven rules, each with the spec line it enforces:
 
 1. **Zero in, zero out.** It maps over the input in order and only ever drops or edits a
    claim. It never adds, pads, reorders, or fills the list. Enforces spec section 8 ("No
@@ -197,6 +197,26 @@ Its five rules, each with the spec line it enforces:
    resolved silently. Enforces spec section 8 ("Low-confidence claim, surfaced with its
    low confidence marked" and "Ambiguous routing, present the options") and section 11
    invariant d ("Surface uncertainty rather than resolving it silently").
+
+6. **A claim that loses every route is surfaced, not silently emptied.** An active claim
+   (its status is neither `out_of_scope` nor `removed`) that arrived with routes but lost
+   all of them to rule 4 is kept, its confidence dropped to `low`, and `ambiguousRouting`
+   set with a plain note naming the `obs` columns whose absence dropped the routes. It is
+   not deleted and it is not relabeled `out_of_scope`, because the scientist may still be
+   making the claim, so the uncertainty goes to them instead of being resolved silently. A
+   claim that legitimately arrived with an empty `checks` array (it was never routed
+   anywhere) is left untouched; only a claim that had routes and lost them all is surfaced.
+   Enforces spec section 8 ("Ambiguous routing, present the options") and section 11
+   invariant d ("Surface uncertainty rather than resolving it silently").
+
+7. **Output ids are unique and non-empty.** The Claim Review screen patches, removes, and
+   React-keys a claim by its `id`, so two claims sharing an id would edit or remove both at
+   once and collide keys. The gate keeps the first claim's id and gives any later collision
+   a deterministic suffixed id (`${id}-2`, `${id}-3`, and so on). A claim that arrives with
+   an empty or whitespace-only id is backfilled from its input position (`claim-<index>`)
+   and then de-collided the same way. There is no randomness and no clock, so the
+   assignment is stable across runs and idempotent: a second pass leaves an already-unique,
+   non-empty id as it is. Enforces spec section 5 (each claim carries a stable id).
 
 The gene predicate is case-insensitive (`inventoryKnowsGene`), because gene symbols vary
 in case across tools. The column predicate is case-sensitive (`inventoryHasField`),
