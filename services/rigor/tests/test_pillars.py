@@ -220,9 +220,21 @@ def test_audit_end_to_end_shape():
     adata = build_toy()
     out = audit(adata)
     assert len(out["fields"]) == len(adata.obs.columns)
-    assert len(out["results"]) == 4
-    for i, res in enumerate(out["results"], start=1):
-        assert res["checkId"] == i
+    # audit offers the claim to every registered check and runs the applicable
+    # ones, so results is the registry's footprint, not a fixed four. Assert the
+    # invariants that still carry weight: every result is a registered check, the
+    # founding four are among them, and the ids are unique and ascending.
+    from redline import modules
+
+    registry_ids = set(modules.REGISTRY.keys())
+    results = out["results"]
+    ids = [res["checkId"] for res in results]
+    assert ids, "audit ran no checks"
+    assert set(ids) <= registry_ids
+    assert {1, 2, 3, 4} <= set(ids)
+    assert len(ids) == len(set(ids))
+    assert ids == sorted(ids)
+    for res in results:
         assert res["state"] in CHECK_STATES
         assert "kind" in res["chart"]
     report = out["report"]
