@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..contracts import CLEAN, FLAGGED
 from .groundtruth import intended_verdicts, tracks
 from .planner import FoilPlan
 
@@ -46,10 +47,12 @@ def _corrected(pillar: int, result: dict) -> dict:
             "stability": chart.get("stability"),
             "presentRange": chart.get("present"),
         }
+    state = result.get("state")
     return {
         "method": "design-matrix separability (Cramer's V and rank)",
         "cramersV": chart.get("cramersV"),
-        "separable": chart.get("separable"),
+        # The pillar encodes separability in the state, never in the chart.
+        "separable": (state == CLEAN) if state in (FLAGGED, CLEAN) else None,
     }
 
 
