@@ -36,7 +36,7 @@ QC is a solved, commoditized layer, and a generic reviewer reads a finished manu
 ## Two rules Redline never breaks
 
 - **Auditor, not corrector.** Redline surfaces and quantifies fragility. It does not hand back one authoritative "corrected" result, because for most of these problems the field has no agreed-on fix, and overclaiming a correction is the exact error it exists to catch. Pseudoreplication is the single exception, where the corrected method is accepted and Redline asserts it.
-- **Never cry wolf.** When a check passes, Redline says so plainly and confidently. It never manufactures a flag to have something to show. A clean analysis is a real answer, and a passed check renders as **Verified** in green, stated with the same confidence Redline gives a flag. A tool that always finds a problem is a tool nobody trusts.
+- **Never cry wolf.** When a check passes, Redline says so plainly and confidently. It never manufactures a flag to have something to show. A clean analysis is a real answer, and a passed check renders as **Verified** in green, stated with the same confidence Redline gives a flag. A tool that always finds a problem is a tool nobody trusts. We measured this: on a 46-case benchmark of planted errors and clean controls, Redline catches 100% of the planted errors at a **0% false-positive rate**, while a single Claude call given the same analysis write-up catches 100% at **74%**. See `services/rigor/bench`.
 
 ## How it works
 
@@ -82,6 +82,7 @@ Every finding is numbers plus narrative: a `ComputeResult` (the verdict, the sta
 | `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. Deploys to Vercel. | built |
 | `services/rigor` | The real statistics in Python (scanpy, decoupler, PyDESeq2, numpy), exposed as an MCP server and runnable as a GCP Cloud Run job. | built |
 | `services/skill` | The rigor engine packaged as a Claude Skill (`SKILL.md` plus scripts), so the same core loads natively into Claude Science. | built |
+| `services/rigor/bench` | The detection benchmark: 46 labeled cases with planted statistical errors and clean controls, an independent ground-truth labeler, and the Redline-vs-single-Claude-call comparison. Reproduces from committed transcripts (`--replay` / `--score-only`). | built |
 
 ## The reference dataset
 
