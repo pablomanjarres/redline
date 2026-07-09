@@ -1,0 +1,19 @@
+{
+  "name": "@redline/verify",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Redline self-verification harness — drives the live app per case, compares displayed values to the independent oracle, and grades each check WIRED / STATIC / BROKEN / TEMPLATED / MISSING.",
+  "scripts": {
+    "verify": "tsx src/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@redline/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3"
+  }
+}

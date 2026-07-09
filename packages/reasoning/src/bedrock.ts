@@ -38,6 +38,9 @@ export interface InvokeArgs {
   system: string;
   user: string;
   maxTokens: number;
+  /** Omit to use the model default. Pin to 0 for a judgment that must not vary
+   *  between runs (the critic gate). */
+  temperature?: number;
 }
 
 /**
@@ -46,12 +49,13 @@ export interface InvokeArgs {
  * the caller turns that into a ReasonerUnavailable so the app can fall back.
  */
 export async function invokeMessages(args: InvokeArgs): Promise<string> {
-  const body = {
+  const body: Record<string, unknown> = {
     anthropic_version: ANTHROPIC_BEDROCK_VERSION,
     max_tokens: args.maxTokens,
     system: args.system,
     messages: [{ role: 'user', content: args.user }],
   };
+  if (args.temperature !== undefined) body.temperature = args.temperature;
   const command = new InvokeModelCommand({
     modelId: args.modelId,
     contentType: 'application/json',

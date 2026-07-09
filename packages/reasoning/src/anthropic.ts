@@ -40,6 +40,8 @@ export interface InvokeArgs {
   system: string;
   user: string;
   maxTokens: number;
+  /** Omit for the model default; 0 pins a judgment that must not vary. */
+  temperature?: number;
 }
 
 /**
@@ -51,6 +53,7 @@ export async function invokeMessages(args: InvokeArgs): Promise<string> {
   const response = await getClient().messages.create({
     model: getModelId(),
     max_tokens: args.maxTokens,
+    ...(args.temperature !== undefined ? { temperature: args.temperature } : {}),
     system: args.system,
     messages: [{ role: 'user', content: args.user }],
   });

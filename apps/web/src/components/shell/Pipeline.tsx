@@ -70,6 +70,17 @@ export function Pipeline() {
     pulse: false,
     locked: !claimsConfirmed,
   });
+  // The self-verification surface: an internal QA station, always reachable, set
+  // apart from the audit flow by its signal-blue light.
+  stations.push({
+    href: '/verifications',
+    n: '',
+    label: 'Verify',
+    active: path === '/verifications',
+    light: 'var(--signal)',
+    pulse: false,
+    locked: false,
+  });
 
   return (
     <nav

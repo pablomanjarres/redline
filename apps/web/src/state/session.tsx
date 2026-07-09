@@ -217,6 +217,9 @@ function freshCore(scenarioId: ScenarioId): CoreState {
     prose: '',
     addingClaim: false,
     addClaimError: null,
+    // Each scenario loads with its own knob defaults (the tracked group, the unit,
+    // the nuisance column differ per dataset). defaultConfigFor reads
+    // SCENARIO_DEFAULTS, which is total over every ScenarioId.
     cfg: cloneConfig(defaultConfigFor(scenarioId)),
     routedChecks: [],
     results: zeroResults(),

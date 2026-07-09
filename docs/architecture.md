@@ -38,15 +38,18 @@ redline/
         checks/[id]/         One pillar panel with its knobs and chart.
         report/              The assembled audit across all four checks.
         environment/         The compute-target surface (fixture / local / cloudrun / endpoint).
-      src/app/api/audit/     Route handlers: /fields, /inspect, /claims, /claims/map, /check.
+        verifications/       The self-verification surface: the actor-critic run record.
+      src/app/api/audit/     Route handlers: /fields, /inspect, /claims, /claims/map, and /check
+                             (the /check path runs the critic).
       src/state/session.tsx  Client session store (React context + localStorage).
       src/components/         shell, intake, fields, claims, workbench, check, charts, report.
       src/lib/                api client, formatting.
   packages/
     contracts/               @redline/contracts: the Zod shapes every surface speaks. Built.
     ui/                      @redline/ui: tokens (palette C, FONT, stateColor, stateLabel) + primitives. Built.
-    engine/                  @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS.
-    reasoning/               @redline/reasoning: Claude via Bedrock + curated fallback.
+    engine/                  @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS, the critic gate.
+    reasoning/               @redline/reasoning: Claude via Bedrock + curated fallback. narrate, proposeFields, critique.
+    critic-verify/           @redline/critic-verify: the actor-critic acceptance harness (Add-on 1).
   services/
     rigor/                   Python engine (scanpy / decoupler / PyDESeq2 / numpy): MCP server + Cloud Run job.
     skill/                   The same engine packaged as a Claude Skill for Claude Science.
@@ -82,7 +85,10 @@ front door (intake and claim extraction) is covered in `intake-and-claims.md`.
   /workbench + /checks/[id]   (runs only the routed checks)
         |  runCheck(id)  --POST /api/audit/check-->
         |        getComputeTarget().computeCheck()   -> ComputeResult (numbers + chart + verdict)
-        |        createReasoner().narrate()          -> Narrative     (failure mode + citation + rewrite)
+        |        if verdict is flagged and a backend is wired:
+        |          createReasoner().critique()       -> CriticJudgment (confirm | downgrade | veto)
+        |          applyCriticGate()                 -> effective verdict + CriticAssessment
+        |        createReasoner().narrate()          -> Narrative     (for the effective verdict)
         |        merge                                -> CheckResult
         v
   /report   AuditReport derived from the four CheckResults
@@ -112,9 +118,24 @@ and it isolates the one part that calls a model.
   `error` and `original` are `null` and `corrected` carries the confident clean
   statement.
 
-`CheckResult = ComputeResult.merge(Narrative)` is what the UI renders per pillar. The
-`state` enum (`flagged`, `clean`, `flag_only`, `hard_stop`) is the verdict the whole
-system agrees on; `ready` and `running` are UI-only transient states and are
+Between the numbers and the prose sits the **actor-critic pass** (Add-on 1, see
+`docs/build/ADDON-1-ACTOR-CRITIC.md`). A candidate finding (a `flagged`
+`ComputeResult`) is never shown on one pass. When a backend is wired,
+`createReasoner().critique()` makes an independent, adversarial Claude call that
+returns a `CriticJudgment` (`confirm | downgrade | veto`), and `applyCriticGate` maps
+it to the effective verdict: confirm keeps the flag, downgrade lowers it to a soft
+advisory, veto flips it to clean. A parse failure fails safe toward showing the
+finding, marked critic-unverified. `CheckResult` carries the resulting
+`CriticAssessment` and the pre-critic `computeState`, and the finding card shows the
+critic line. This makes never-cry-wolf a mechanism: the acceptance harness
+(`@redline/critic-verify`, surfaced at `/verifications`) proves the critic vetoes
+over-fired flags on the clean foil and downgrades an underpowered split, not only
+confirms.
+
+`CheckResult = ComputeResult.merge(Narrative)` (plus the critic fields) is what the UI
+renders per pillar. The `state` enum (`flagged`, `clean`, `flag_only`, `hard_stop`) is
+the effective verdict the whole system agrees on; `ready` and `running` are UI-only
+transient states and are
 deliberately not part of the engine's return contract.
 
 ## The ComputeTarget seam

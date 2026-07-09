@@ -14,7 +14,15 @@ export class FixtureTarget implements ComputeTarget {
   readonly available = true;
 
   async inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
-    return INVENTORIES[input.scenarioId];
+    const inventory = INVENTORIES[input.scenarioId];
+    if (!inventory) {
+      // The foil scenarios have no locked fixture. They are inspected for real by
+      // the Python engine on `local`. Refusing is the honest answer here.
+      throw new Error(
+        `scenario '${input.scenarioId}' has no fixture inventory; run it on REDLINE_COMPUTE_TARGET=local`,
+      );
+    }
+    return inventory;
   }
 
   async inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]> {
@@ -22,7 +30,8 @@ export class FixtureTarget implements ComputeTarget {
   }
 
   async computeCheck(input: ComputeInput): Promise<ComputeResult> {
-    return fixtureCompute(input.scenarioId, input.checkId, input.config);
+    const result = await fixtureCompute(input.scenarioId, input.checkId, input.config);
+    return { ...result, provenance: { target: 'fixture' } };
   }
 }
 

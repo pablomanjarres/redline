@@ -187,6 +187,16 @@ def _jsonable(obj: Any) -> Any:
             return _jsonable(dump(by_alias=True))
         except TypeError:
             return _jsonable(dump())
+    # Prefer a contract object's own to_json(): it emits the exact camelCase wire
+    # shape and OMITS None optionals (edited, sample, discAUC, ...). A bare
+    # asdict() would emit those as JSON null, which the Zod contracts reject
+    # because optional there means absent, not null.
+    to_json_meth = getattr(obj, "to_json", None)
+    if callable(to_json_meth) and not isinstance(obj, type):
+        try:
+            return _jsonable(to_json_meth())
+        except TypeError:
+            pass
     if is_dataclass(obj) and not isinstance(obj, type):
         return _jsonable(asdict(obj))
     if isinstance(obj, dict):
@@ -221,16 +231,54 @@ def resolve_fields(h5ad: str) -> list[Any]:
     return _jsonable(fields)
 
 
+_CHECK_METHOD = {
+    1: "pseudobulk DE",
+    2: "count-split held-out AUC",
+    3: "resolution sweep",
+    4: "design-matrix rank",
+}
+
+
+def _method_label(check_id: int, out: dict[str, Any]) -> str:
+    """A concrete label for the real method that ran, for compute provenance.
+    Prefer an engine-reported method surfaced in the stats (for example
+    'PyDESeq2 pseudobulk' or a KMeans/Leiden note), else a per-check default."""
+    if isinstance(out, dict):
+        for stat in out.get("stats", []) or []:
+            value = str(stat.get("value", "")) if isinstance(stat, dict) else ""
+            for key in ("PyDESeq2", "Welch", "Leiden", "KMeans"):
+                if key in value:
+                    return value
+    return _CHECK_METHOD.get(int(check_id), "compute")
+
+
 def compute_result(
     check_id: int, h5ad: str, config: Any, fields: Any | None = None
 ) -> dict[str, Any]:
     """Load the data, resolve fields if the caller did not supply them, run the
-    check, and return the ``ComputeResult`` as a JSON-safe dict."""
+    check, and return the ``ComputeResult`` as a JSON-safe dict, stamped with the
+    compute provenance the verification harness reads to prove a real job ran
+    (a fresh nonce and a nonzero elapsed time distinguish a live compute from a
+    cached swap)."""
+    import os as _os
+    import time as _time
+    import uuid as _uuid
+
+    t0 = _time.perf_counter()
     with _quiet_stdout():
         source = _prepare_source(h5ad)
         resolved = fields if fields is not None else _engine_resolve_fields()(source)
         result = _engine_run_check()(int(check_id), source, config, resolved)
-    return _jsonable(result)
+    out = _jsonable(result)
+    if isinstance(out, dict):
+        out["provenance"] = {
+            "target": _os.environ.get("REDLINE_ENGINE_TARGET", "local"),
+            "engine": "python",
+            "ran": _method_label(int(check_id), out),
+            "nonce": _uuid.uuid4().hex,
+            "elapsedMs": round((_time.perf_counter() - t0) * 1000.0, 1),
+        }
+    return out
 
 
 def inspect_dataset(h5ad: str) -> dict[str, Any]:
