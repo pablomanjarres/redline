@@ -11,7 +11,8 @@ is what lets all four correction capabilities hang off a single seam:
     recommend   ->  concrete next actions, grounded in this finding's numbers.
 
 `detect` and `prove` are deterministic. `correct` fills a hand-written template
-from `prove`'s parameters, so the executable skeleton is never model-written.
+from `prove`'s parameters. No model writes any part of the emitted script, and
+the script inlines the same kernel `prove` calls, so the two cannot disagree.
 `recommend` decides feasibility deterministically here; only the prose around it
 is model-written, upstream in the reasoning layer.
 
@@ -248,10 +249,10 @@ class CheckModule(ABC):
         heavier render is wanted; it must still be the output of the same
         computation the emitted code performs.
 
-        Returns None for `flag_only`, where nothing was proven and so nothing
-        may be shown.
+        Returns None for `clean` (nothing to correct) and for `flag_only`
+        (nothing was proven, so nothing may be shown).
         """
-        if evidence.state == FLAG_ONLY:
+        if evidence.state in (CLEAN, FLAG_ONLY):
             return None
         return PreviewArtifact(
             method_label=self.method_label,
@@ -270,8 +271,11 @@ class CheckModule(ABC):
     def run(self, claim: Claim, adata: Any, design: Design) -> tuple[Json, Json]:
         """detect, then prove, then correct/recommend/preview.
 
-        Returns `(computeResult, correction)` as JSON. A Clean verdict carries no
-        correction payload, because a passing check has nothing to correct.
+        Returns `(computeResult, correction)` as JSON. A clean verdict carries no
+        correction payload, because a passing check has nothing to correct. That
+        holds whichever path produced the verdict: a check may pass at `detect`
+        (the diagnostic never fired) or at `prove` (the honest re-analysis found
+        the claim holds), and both are clean.
         """
         found = self.detect(claim, adata, design)
         if isinstance(found, Clean):
@@ -280,6 +284,9 @@ class CheckModule(ABC):
 
         evidence = self.prove(found, adata, design)
         result = compute_result(self.id, evidence.state, evidence.headline, evidence.stats, evidence.chart)
+        if evidence.state == CLEAN:
+            return result.to_json(), {}
+
         correction = Correction(
             corrected_code=self.correct(evidence, adata, design),
             recommendations=self.recommend(evidence, design),
