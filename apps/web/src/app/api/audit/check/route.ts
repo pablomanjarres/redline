@@ -6,12 +6,17 @@ import {
   Check2Config,
   Check3Config,
   Check4Config,
+  Check5Config,
+  Check6Config,
+  Check7Config,
+  Check8Config,
   FieldSpec,
   CheckResult,
   type Chart,
-  type ComputeResult,
+  type EngineResult,
   type Narrative,
   type NarrativeRequest,
+  type Recommendation,
 } from '@redline/contracts';
 import { curatedNarrative, SCENARIOS } from '@redline/engine';
 import { getComputeTarget } from '@redline/engine/server';
@@ -19,11 +24,20 @@ import { createReasoner } from '@redline/reasoning';
 
 export const runtime = 'nodejs';
 
-/** Request body: a scenario, a pillar, its knob config, and the resolved fields. */
+/** Request body: a scenario, a check, its knob config, and the resolved fields. */
 const CheckRequest = z.object({
   scenarioId: ScenarioId,
   checkId: CheckId,
-  config: z.union([Check1Config, Check2Config, Check3Config, Check4Config]),
+  config: z.union([
+    Check1Config,
+    Check2Config,
+    Check3Config,
+    Check4Config,
+    Check5Config,
+    Check6Config,
+    Check7Config,
+    Check8Config,
+  ]),
   fields: z.array(FieldSpec),
 });
 
@@ -87,11 +101,29 @@ function chartEvidence(chart: Chart): Record<string, string | number | boolean> 
       if (chart.cramersV !== null) e.cramersV = chart.cramersV;
       return e;
     }
+    case 'volcano':
+      return {
+        chartKind: chart.kind,
+        label: chart.label,
+        alpha: chart.alpha,
+        fcThreshold: chart.fcThreshold,
+        nSig: chart.nSig,
+        pointCount: chart.points.length,
+      };
+    case 'fdr':
+      return {
+        chartKind: chart.kind,
+        tests: chart.tests,
+        alpha: chart.alpha,
+        rawHits: chart.rawHits,
+        adjustedHits: chart.adjustedHits,
+        method: chart.method,
+      };
   }
 }
 
 /** Assemble the reasoning-layer request from the scenario claim + computed numbers. */
-function buildRequest(scenarioId: ScenarioId, compute: ComputeResult): NarrativeRequest {
+function buildRequest(scenarioId: ScenarioId, compute: EngineResult): NarrativeRequest {
   const scenario = SCENARIOS[scenarioId];
   const claim = scenario.claims.find((c) => c.check === compute.checkId)?.text ?? '';
   const statsEvidence: Record<string, string> = Object.fromEntries(
@@ -124,7 +156,10 @@ export async function POST(req: Request) {
 
   try {
     const target = getComputeTarget();
-    const compute = await target.computeCheck(body);
+    // The compute target now returns statistics AND the optional correction
+    // (corrected code, recommendations, before/after preview). Both flow to the
+    // client untouched; a model failure below can never drop them.
+    const compute: EngineResult = await target.computeCheck(body);
 
     // When a reasoning backend is wired — the Claude API for the public path, or
     // Bedrock for the internal demo — Claude narrates the finding from the
@@ -142,7 +177,35 @@ export async function POST(req: Request) {
       }
     }
 
-    const result = CheckResult.parse({ ...compute, ...narrative });
+    // The engine's own recommendations carry the DETERMINISTIC feasibilities
+    // (fixable_now / needs_new_data / unsalvageable), decided by the compute
+    // layer and never by the model. When a reasoner is wired, ask it only to
+    // improve the prose, handing it those fixed feasibilities. On any failure,
+    // keep the engine's curated recommendations. A model failure never drops the
+    // correction payload.
+    let recommendations: Recommendation[] | undefined = compute.recommendations;
+    if (reasoner.available && recommendations && recommendations.length > 0) {
+      try {
+        const prose = await reasoner.recommend({
+          ...buildRequest(body.scenarioId, compute),
+          // The feasibility slots the engine already decided. The model fills in
+          // prose against them and cannot change them; `enforceRecommendationHonesty`
+          // overwrites whatever it returns.
+          feasibilities: recommendations.map((r) => r.feasibility),
+          fields: body.fields.map((f) => f.id),
+          method: recommendations[0]?.citation ?? narrative.citation,
+        });
+        if (prose.length > 0) recommendations = prose;
+      } catch {
+        recommendations = compute.recommendations;
+      }
+    }
+
+    const result = CheckResult.parse({
+      ...compute,
+      ...narrative,
+      ...(recommendations ? { recommendations } : {}),
+    });
     return Response.json(result);
   } catch {
     return Response.json({ error: 'Internal error' }, { status: 500 });
