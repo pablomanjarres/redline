@@ -43,12 +43,15 @@ export type Recommendation = z.infer<typeof Recommendation>;
 // ── Corrected analysis as runnable code (Capability 1) ───────────────────────
 
 /**
- * A runnable script that reproduces Redline's honest re-analysis. The
- * executable skeleton comes from a hand-written, per-check template; only the
- * comments and the explanation are model-written. `params` records exactly what
- * was injected into the template, which is what makes the Case B generality
- * test checkable: the same check on a different dataset must inject that
- * dataset's field names, not the canonical case's.
+ * A runnable script that reproduces Redline's honest re-analysis. No model
+ * writes any part of it. The whole script, comments included, is a hand-written
+ * per-check template, and the only thing injected is `params`. The script also
+ * inlines the engine's own computation kernel verbatim, so the number it prints
+ * is the number Redline reported, by construction rather than by discipline.
+ *
+ * `params` records exactly what was injected, which is what makes the Case B
+ * generality test checkable: the same check on a different dataset must inject
+ * that dataset's field names, not the canonical case's.
  */
 export const CorrectedCode = z.object({
   language: z.literal('python'),
