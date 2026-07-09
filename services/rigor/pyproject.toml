@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "redline-rigor"
 version = "0.1.0"
-description = "Redline rigor engine — the four statistical checks on single-cell RNA-seq, importable as `redline`, runnable as an MCP server or a Cloud Run job."
+description = "Redline rigor engine: a registry of statistical checks on single-cell RNA-seq, importable as `redline`, runnable as an MCP server or a Cloud Run job."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -24,6 +24,14 @@ stats = [
   "scanpy>=1.10",
   "decoupler>=1.8",
   "pydeseq2>=0.4",
+  "statsmodels>=0.14",
+  # scanpy imports these lazily inside `sc.tl.leiden`. Without them the leiden
+  # call raises, the clustering path falls back to KMeans, and every check that
+  # sweeps a resolution silently measures a different algorithm than the one the
+  # method paper describes. Declaring them is what keeps the engine honest about
+  # what it ran.
+  "leidenalg>=0.10",
+  "igraph>=0.11",
 ]
 mcp = ["mcp>=1.2"]
 cloud = ["boto3>=1.34", "s3fs>=2024.2"]
