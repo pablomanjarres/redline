@@ -179,17 +179,32 @@ export function TourProvider({ children }: { children: ReactNode }) {
         if (!s.fields) await s.resolveFields();
         return;
       case 'confirmFields':
+        // Confirming the design no longer runs the checks. It inspects the file
+        // and extracts the claims, so this leaves the Claim Review screen with a
+        // real, unconfirmed list for the reader to look at.
         if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
         if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
         return;
+      case 'confirmClaims':
+        // The workbench runs only after the claim list is confirmed. Walk the
+        // whole front door, each hop idempotent, so a reader who deep-links to a
+        // check or the report still lands on real, routed results.
+        if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
+        if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
+        if (!sessionRef.current.claimsConfirmed) await sessionRef.current.confirmClaims();
+        return;
       case 'runCheck': {
         const id = e.checkId;
-        if (!s.fieldsConfirmed) {
-          if (!s.fields) await s.resolveFields();
-          await sessionRef.current.confirmFields();
-          return; // confirmFields runs all four
-        }
-        if (s.results[id] == null && !s.running[id]) await s.runCheck(id);
+        // Results come from confirming the claim list, which runs only the
+        // routed checks. Make sure the whole chain ran, then fill this one check
+        // directly if the routed run has not produced it yet. runCheck is a real
+        // session action, so the step is never dead, even for a check the fixture
+        // routes a claim to on its own.
+        if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
+        if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
+        if (!sessionRef.current.claimsConfirmed) await sessionRef.current.confirmClaims();
+        const cur = sessionRef.current;
+        if (cur.results[id] == null && !cur.running[id]) await cur.runCheck(id);
         return;
       }
       case 'setCheck3Track':

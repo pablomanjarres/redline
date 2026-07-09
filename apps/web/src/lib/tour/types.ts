@@ -31,6 +31,7 @@ export type TourEnsure =
   | { kind: 'loadScenario'; scenarioId: ScenarioId }
   | { kind: 'resolveFields' }
   | { kind: 'confirmFields' }
+  | { kind: 'confirmClaims' }
   | { kind: 'runCheck'; checkId: CheckId }
   | { kind: 'setCheck3Track'; track: string };
 
