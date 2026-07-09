@@ -35,10 +35,10 @@ import type {
   FieldSpec,
   ScenarioId,
 } from '@redline/contracts';
+import { CHECK_IDS, checkRecord } from '@redline/contracts';
 import { DEFAULT_CONFIG, SCENARIOS, assembleReport, reasoningLines } from '@redline/engine';
 import { postCheck, postFields } from '@/lib/api';
 
-const IDS: CheckId[] = [1, 2, 3, 4];
 const DEFAULT_SCENARIO: ScenarioId = 'marson';
 const STORAGE_KEY = 'redline_state_v1';
 const STREAM_INTERVAL_MS = 165;
@@ -86,10 +86,12 @@ interface PersistShape {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const zeroResults = (): Record<CheckId, CheckResult | null> => ({ 1: null, 2: null, 3: null, 4: null });
-const zeroRunning = (): Record<CheckId, boolean> => ({ 1: false, 2: false, 3: false, 4: false });
-const zeroReasoning = (): Record<CheckId, string[]> => ({ 1: [], 2: [], 3: [], 4: [] });
-const zeroReveal = (): Record<CheckId, number> => ({ 1: 0, 2: 0, 3: 0, 4: 0 });
+// Every per-check map is keyed off CHECK_IDS, so adding a rigor check needs no
+// change here: `checkRecord` fills one slot per registered check.
+const zeroResults = (): Record<CheckId, CheckResult | null> => checkRecord(() => null);
+const zeroRunning = (): Record<CheckId, boolean> => checkRecord(() => false);
+const zeroReasoning = (): Record<CheckId, string[]> => checkRecord(() => []);
+const zeroReveal = (): Record<CheckId, number> => checkRecord(() => 0);
 
 function withId<T>(map: Record<CheckId, T>, id: CheckId, value: T): Record<CheckId, T> {
   return { ...map, [id]: value };
@@ -108,7 +110,7 @@ function mergeConfig(base: CheckConfigMap, saved?: Partial<CheckConfigMap> | nul
     // Per-id merge. `id` is the CheckId union, so index the target through a
     // string-keyed view to avoid the union-of-configs intersection assignment.
     const target = out as Record<CheckId, Record<string, unknown>>;
-    for (const id of IDS) {
+    for (const id of CHECK_IDS) {
       const patch = saved[id];
       if (patch) target[id] = { ...target[id], ...patch };
     }
@@ -177,14 +179,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const coreRef = useRef(core);
   coreRef.current = core;
 
-  const timers = useRef<Record<CheckId, ReturnType<typeof setInterval> | null>>({
-    1: null,
-    2: null,
-    3: null,
-    4: null,
-  });
+  const timers = useRef<Record<CheckId, ReturnType<typeof setInterval> | null>>(
+    checkRecord<ReturnType<typeof setInterval> | null>(() => null),
+  );
   // Per-check run token: a superseded run's async resolution is ignored.
-  const tokens = useRef<Record<CheckId, number>>({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  const tokens = useRef<Record<CheckId, number>>(checkRecord(() => 0));
   const mounted = useRef(true);
 
   const clearTimer = useCallback((id: CheckId) => {
@@ -252,7 +251,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const runCheck = useCallback((id: CheckId) => runCheckInternal(id, { stream: true }), [runCheckInternal]);
 
   const runAll = useCallback(() => {
-    for (const id of IDS) void runCheckInternal(id, { stream: true });
+    for (const id of CHECK_IDS) void runCheckInternal(id, { stream: true });
   }, [runCheckInternal]);
 
   // Quiet restore after a reload: repopulate a confirmed check's result and its
@@ -279,7 +278,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const loadScenario = useCallback(
     (id: ScenarioId) => {
-      for (const k of IDS) {
+      for (const k of CHECK_IDS) {
         clearTimer(k);
         tokens.current[k] += 1;
       }
@@ -361,7 +360,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setCore(next);
 
     if (next.fieldsConfirmed) {
-      for (const id of IDS) void restoreResult(id);
+      for (const id of CHECK_IDS) void restoreResult(id);
     }
     // Intentionally run-once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -370,7 +369,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(
     () => () => {
       mounted.current = false;
-      for (const k of IDS) {
+      for (const k of CHECK_IDS) {
         const t = timers.current[k];
         if (t) clearInterval(t);
       }
@@ -383,7 +382,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const claims = scenario.claims;
 
   const report = useMemo<AuditReport>(() => {
-    const done = IDS.map((id) => core.results[id]).filter((r): r is CheckResult => r != null);
+    const done = CHECK_IDS.map((id) => core.results[id]).filter((r): r is CheckResult => r != null);
     try {
       return assembleReport(dataset, done);
     } catch {

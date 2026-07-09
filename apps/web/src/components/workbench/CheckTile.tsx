@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { CheckId } from '@redline/contracts';
+import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { MiniChart } from '@/components/charts';
-import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
  * One station on the audit board: a whole-tile link into a check's stage. Dark
@@ -19,7 +19,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
   const { results, running, claims } = useSession();
   const result = results[checkId];
   const isRunning = running[checkId];
-  const meta = CHECK_META[checkId];
+  const meta = checkMeta(checkId);
   const claim = claims.find((c) => c.check === checkId)?.text ?? '';
 
   const state = isRunning ? 'running' : result ? result.state : 'ready';

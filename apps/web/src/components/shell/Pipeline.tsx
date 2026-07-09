@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { CheckId } from '@redline/contracts';
+import { CHECK_IDS, CHECK_REGISTRY } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
 import { useSession } from '@/state/session';
 
 /**
- * The pipeline: a horizontal rail of stations (design resolution, the four
- * checks, the report) with a verdict light on each. This IS the navigation, in
- * place of a sidebar of links. The rail line runs behind the nodes so the audit
- * reads as one flow left to right.
+ * The pipeline: a horizontal rail of stations (design resolution, every
+ * registered check, the report, the corrected bundle) with a verdict light on
+ * each. This IS the navigation, in place of a sidebar of links. The rail line
+ * runs behind the nodes so the audit reads as one flow left to right. With
+ * eight checks plus Design, Report, and Corrected it is a long rail, so it
+ * scrolls horizontally on a narrow viewport rather than cramming.
  */
-const IDS: CheckId[] = [1, 2, 3, 4];
-
 export function Pipeline() {
   const path = usePathname();
   const { results, running, fieldsConfirmed } = useSession();
@@ -28,13 +28,13 @@ export function Pipeline() {
     pulse: false,
     locked: false,
   });
-  IDS.forEach((id) => {
+  CHECK_IDS.forEach((id) => {
     const r = results[id];
     const run = running[id];
     stations.push({
       href: `/checks/${id}`,
-      n: `0${id}`,
-      label: ['Pseudoreplication', 'Double dipping', 'Fragility', 'Confounding'][id - 1]!,
+      n: id < 10 ? `0${id}` : String(id),
+      label: CHECK_REGISTRY[id].name,
       active: path === `/checks/${id}`,
       light: run ? '#2563EB' : r ? signalColor(r.state) : 'var(--ink-4)',
       pulse: run,
@@ -46,6 +46,15 @@ export function Pipeline() {
     n: '',
     label: 'Report',
     active: path === '/report',
+    light: 'var(--ink-4)',
+    pulse: false,
+    locked: !fieldsConfirmed,
+  });
+  stations.push({
+    href: '/corrected',
+    n: '',
+    label: 'Corrected',
+    active: path === '/corrected',
     light: 'var(--ink-4)',
     pulse: false,
     locked: !fieldsConfirmed,

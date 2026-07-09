@@ -1,15 +1,38 @@
 'use client';
 
 import type { CheckId } from '@redline/contracts';
+import { CHECK_IDS, CHECK_REGISTRY } from '@redline/contracts';
 import { useSession } from '@/state/session';
 import { CheckTile } from '@/components/workbench/CheckTile';
 
-const IDS: CheckId[] = [1, 2, 3, 4];
-
 /**
- * Workbench: the audit board. Four checks as dark tiles, each a live instrument
- * you open and operate. "Re-run all four" fires every check at once.
+ * Workbench: the audit board. Every registered check is a live instrument you
+ * open and operate. The four founding checks read as the spine, then the rigor
+ * checks sit under a quiet subhead. "Re-run all" fires every check at once.
  */
+const CORE_IDS: CheckId[] = CHECK_IDS.filter((id) => CHECK_REGISTRY[id].group === 'core');
+const RIGOR_IDS: CheckId[] = CHECK_IDS.filter((id) => CHECK_REGISTRY[id].group === 'rigor');
+
+const boardStyle = {
+  marginTop: 16,
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+  gap: 20,
+} as const;
+
+function GroupHead({ label, count }: { label: string; count: number }) {
+  return (
+    <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--ink-4)', flex: 'none' }} />
+      <span style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+        {label}
+      </span>
+      <span style={{ font: '500 10px/1 var(--mono)', color: 'var(--ink-4)' }}>{count}</span>
+      <span aria-hidden style={{ flex: 1, height: 1, background: 'var(--edge)' }} />
+    </div>
+  );
+}
+
 export default function WorkbenchPage() {
   const { runAll } = useSession();
 
@@ -22,7 +45,7 @@ export default function WorkbenchPage() {
             Workbench
           </div>
           <h1 style={{ margin: '14px 0 0', font: '800 30px/1.05 var(--display)', letterSpacing: '-.02em', color: 'var(--ink)' }}>
-            Four checks. Operate each one.
+            {CHECK_IDS.length} checks. Operate each one.
           </h1>
           <p style={{ margin: '12px 0 0', maxWidth: 640, font: '400 13.5px/1.6 var(--sans)', color: 'var(--ink-3)' }}>
             Each check is an independent instrument with its own knobs.{' '}
@@ -47,15 +70,29 @@ export default function WorkbenchPage() {
             cursor: 'pointer',
           }}
         >
-          Re-run all four
+          Re-run all
         </button>
       </div>
 
-      {/* audit board */}
-      <div data-tour="workbench.board" style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-        {IDS.map((id) => (
-          <CheckTile key={id} checkId={id} />
-        ))}
+      {/* audit board: the founding spine, then the rigor checks under a quiet subhead */}
+      <div data-tour="workbench.board">
+        <GroupHead label="Core checks" count={CORE_IDS.length} />
+        <div style={boardStyle}>
+          {CORE_IDS.map((id) => (
+            <CheckTile key={id} checkId={id} />
+          ))}
+        </div>
+
+        {RIGOR_IDS.length > 0 && (
+          <>
+            <GroupHead label="Rigor checks" count={RIGOR_IDS.length} />
+            <div style={boardStyle}>
+              {RIGOR_IDS.map((id) => (
+                <CheckTile key={id} checkId={id} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
