@@ -13,11 +13,15 @@ just an argv-to-JSON wrapper so an agent can run a check with one command.
     python redline_audit.py --h5ad analysis.h5ad --check fields   # foundation step
 
 Contract this script codes to (source of truth: docs/build/INTERFACES.md and the
-Zod shapes in packages/contracts). The `redline` package is expected to expose:
+Zod shapes in packages/contracts). It drives `redline.job_runner`, the same
+path-based engine bridge the MCP server and the RemoteTarget use:
 
-    redline.audit(h5ad=<path>, check=<1|2|3|4>, config=<dict|None>,
-                  fields=<list[dict]|None>) -> ComputeResult-shaped object
-    redline.resolve_fields(h5ad=<path>) -> list of FieldSpec-shaped objects
+    job_runner.compute_result(check_id=<1|2|3|4>, h5ad=<path>, config=<dict>,
+                              fields=<list[dict]|None>) -> ComputeResult dict
+    job_runner.resolve_fields(h5ad=<path>) -> list of FieldSpec dicts
+
+Both load the .h5ad, run the foundation step when fields are not supplied, and
+return JSON-safe dicts, so this stays a thin argv-to-JSON shim over the engine.
 
 Output shapes match the contracts exactly:
   * a check prints a ComputeResult: {checkId, state, headline, stats[], chart{}}
@@ -76,59 +80,35 @@ def load_json_arg(raw: str | None, label: str) -> Any:
         raise SystemExit(f"{label} is not valid JSON: {err}")
 
 
-def import_redline() -> Any:
-    """Import the `redline` package or exit 2 with an actionable message."""
+def import_engine() -> Any:
+    """Import the `redline.job_runner` bridge or exit 2 with an actionable
+    message. This is the same path-based entry point the MCP server and the
+    RemoteTarget call, so the CLI, the connector, and the web app share one
+    load-AnnData / resolve-fields / run-check / JSON-normalize path.
+    """
     try:
-        import redline  # type: ignore
+        from redline import job_runner  # type: ignore
     except ImportError as err:
         eprint(f"redline engine is not importable: {err}")
         eprint("install it from the repo root, for example:")
         eprint("  pip install -e services/rigor[stats]")
         raise SystemExit(2)
-    return redline
+    return job_runner
 
 
-def resolve_callable(redline: Any, names: list[str]) -> Any:
-    """Return the first attribute in `names` that exists on the engine.
+def run_check(engine: Any, h5ad: str, check: int, config: Any, fields: Any) -> Any:
+    """Run one pillar on the .h5ad and return its ComputeResult as a JSON dict.
 
-    The parallel build may land a slightly different name; failing loudly here
-    with the list of attempted names beats an opaque AttributeError deeper in.
+    `job_runner.compute_result` loads the AnnData, resolves the design itself when
+    `fields` is None, runs the check, and returns a JSON-safe dict. The engine
+    applies its own per-check defaults, so an empty config is fine.
     """
-    for name in names:
-        fn = getattr(redline, name, None)
-        if callable(fn):
-            return fn
-    eprint(f"redline exposes none of the expected callables: {names}")
-    eprint("reconcile with services/rigor/redline (INTERFACES.md is the contract).")
-    raise SystemExit(2)
+    return engine.compute_result(int(check), h5ad, config or {}, fields)
 
 
-def run_audit(redline: Any, h5ad: str, check: int, config: Any, fields: Any) -> Any:
-    """Call redline.audit, tolerating `check` vs `check_id` keyword naming.
-
-    Only forwards config/fields when the caller supplied them so the engine's own
-    defaults and internal field resolution stay in charge otherwise.
-    """
-    audit = resolve_callable(redline, ["audit"])
-    base: dict[str, Any] = {"h5ad": h5ad}
-    if config is not None:
-        base["config"] = config
-    if fields is not None:
-        base["fields"] = fields
-    last_err: TypeError | None = None
-    for key in ("check", "check_id"):
-        try:
-            return audit(**{**base, key: check})
-        except TypeError as err:
-            last_err = err
-            continue
-    raise SystemExit(f"redline.audit rejected both 'check' and 'check_id': {last_err}")
-
-
-def run_fields(redline: Any, h5ad: str) -> Any:
+def run_fields(engine: Any, h5ad: str) -> Any:
     """Run the foundation step (design resolution) and return FieldSpec[]."""
-    resolve = resolve_callable(redline, ["resolve_fields", "infer_fields"])
-    return resolve(h5ad=h5ad)
+    return engine.resolve_fields(h5ad)
 
 
 def to_jsonable(value: Any) -> Any:
@@ -216,13 +196,13 @@ def main(argv: list[str] | None = None) -> int:
     config = load_json_arg(args.config_json, "--config-json")
     fields = load_json_arg(args.fields_json, "--fields-json")
 
-    redline = import_redline()
+    engine = import_engine()
 
     try:
         if args.check == "fields":
-            result = run_fields(redline, args.h5ad)
+            result = run_fields(engine, args.h5ad)
         else:
-            result = run_audit(redline, args.h5ad, int(args.check), config, fields)
+            result = run_check(engine, args.h5ad, int(args.check), config, fields)
     except SystemExit:
         raise
     except Exception as err:  # noqa: BLE001 — surface any engine failure cleanly
