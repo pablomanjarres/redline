@@ -2,7 +2,11 @@
 <!--
   Watch pablomanjarres/redline for new pull requests and hand each to the review loop.
 
+  Install AFTER this branch merges. The path below is the main checkout; while the
+  scripts live only on a feature branch every tick exits 127 into a log nobody reads.
+
   Install:
+    ./scripts/pr-watch.sh --seed        # prime the watermark first
     cp scripts/com.pablo.redline-pr-watch.plist ~/Library/LaunchAgents/
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pablo.redline-pr-watch.plist
   Run one now:

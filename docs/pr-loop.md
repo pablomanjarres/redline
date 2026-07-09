@@ -58,6 +58,11 @@ cannot spend tokens or touch a PR.
 
 ## Install
 
+**Install it after this PR merges, not before.** The plist runs
+`redline/scripts/pr-watch.sh` from the main checkout. Bootstrap it while the
+scripts live only on a feature branch and every tick exits 127 into a log nobody
+reads, which is the failure mode this loop exists to prevent.
+
 ```bash
 # Prime the watermark so an existing backlog does not stampede on the first tick.
 ./scripts/pr-watch.sh --seed
