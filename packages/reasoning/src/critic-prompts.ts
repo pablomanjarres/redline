@@ -1,5 +1,6 @@
 import type { CheckId, CriticRequest } from '@redline/contracts';
 import type { PromptPair } from './prompts.js';
+import { FENCE_CLOSE, FENCE_OPEN, fenced } from './fence.js';
 
 /**
  * The critic's system prompt. The critic is the second, adversarial pass over a
@@ -107,31 +108,6 @@ const CRITIC_REMIT: Record<CheckId, CriticRemit> = {
     ].join(' '),
   },
 };
-
-const FENCE_OPEN = '⟦';
-const FENCE_CLOSE = '⟧';
-const MAX_FIELD = 400;
-
-/**
- * Fence one piece of untrusted text. Dataset titles, claims, cluster names, gene
- * names and obs column names all originate in a `.h5ad` the scientist supplies,
- * and they flow into the critic's prompt. Strip control characters and newlines
- * so a value cannot open a new line of context, strip the fence marks so it
- * cannot close its own fence, and cap the length. The system prompt tells the
- * model that fenced text is data, never an instruction.
- */
-function fenced(value: unknown): string {
-  const raw = String(value ?? '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
-    .split(FENCE_OPEN)
-    .join('')
-    .split(FENCE_CLOSE)
-    .join('')
-    .trim();
-  const clipped = raw.length > MAX_FIELD ? `${raw.slice(0, MAX_FIELD)}...` : raw;
-  return `${FENCE_OPEN}${clipped}${FENCE_CLOSE}`;
-}
 
 function formatEvidence(evidence: CriticRequest['evidence']): string {
   // Labels are engine constants (stat labels and chart keys). Values are not:
