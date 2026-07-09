@@ -62,37 +62,54 @@ def _seed_int(seed: Any) -> int:
         return 0
 
 
-def _leiden_at_k(sc: Any, a: Any, k: int, seed: int) -> np.ndarray:
-    """Leiden takes a resolution, not a k. Bisect the resolution until the cluster
-    count matches the granularity the claimed grouping implies.
+def _leiden_labels(sc: Any, a: Any, res: float, seed: int) -> np.ndarray:
+    sc.tl.leiden(a, resolution=float(res), key_added="_rl_k", random_state=seed)
+    return np.asarray(a.obs["_rl_k"].astype(str).to_numpy())
+
+
+def _leiden_at_k(sc: Any, a: Any, k: int, seed: int, hint: Optional[float]) -> tuple[np.ndarray, float]:
+    """Leiden takes a resolution, not a k. Find the resolution whose cluster count
+    matches the granularity the claimed grouping implies, and return it.
 
     Without this, leiden at a fixed resolution over-partitions and
     `_best_match_cluster` locks onto a fragment of the group the scientist named.
     Its real markers then score near chance against that fragment and a clean
     analysis gets flagged. KMeans was always handed k, so the two backends
     disagreed and the verdict depended on which one happened to be installed.
+
+    `hint` is a resolution that already hit k on comparable data. Repeated checks
+    (the interval loop) pass the previous one, so the bisect runs once, not once
+    per repetition.
     """
+    if hint is not None:
+        lab = _leiden_labels(sc, a, hint, seed)
+        if int(np.unique(lab).size) == k:
+            return lab, float(hint)
+
     lo, hi = _RES_LO, _RES_HI
-    best_lab, best_gap = None, None
+    best_lab, best_gap, best_res = None, None, _RES_HI
     for _ in range(_RES_STEPS):
         mid = (lo + hi) / 2.0
-        sc.tl.leiden(a, resolution=mid, key_added="_rl_k", random_state=seed)
-        lab = np.asarray(a.obs["_rl_k"].astype(str).to_numpy())
+        lab = _leiden_labels(sc, a, mid, seed)
         n = int(np.unique(lab).size)
         gap = abs(n - k)
         if best_gap is None or gap < best_gap:
-            best_lab, best_gap = lab, gap
+            best_lab, best_gap, best_res = lab, gap, mid
         if n == k:
-            return lab
+            return lab, float(mid)
         if n > k:
             hi = mid
         else:
             lo = mid
-    return best_lab if best_lab is not None else np.zeros(a.n_obs, dtype=str)
+    return (best_lab if best_lab is not None else np.zeros(a.n_obs, dtype=str)), float(best_res)
 
 
-def _recluster_train(train: np.ndarray, k: int, seed: Any) -> tuple[np.ndarray, str]:
-    """Cluster the discovery (train) half, and name the engine that did it.
+def _recluster_train(
+    train: np.ndarray, k: int, seed: Any, res_hint: Optional[float] = None
+) -> tuple[np.ndarray, str, Optional[float]]:
+    """Cluster the discovery (train) half, name the engine, and return the leiden
+    resolution it settled on (None off the leiden path) so a repeated check can
+    reuse it.
 
     Runs on the train half only so the group definition is independent of the
     held-out half the markers are validated on. Both backends target `k` groups,
@@ -109,7 +126,8 @@ def _recluster_train(train: np.ndarray, k: int, seed: Any) -> tuple[np.ndarray, 
         sc.pp.scale(a, max_value=10)
         sc.pp.pca(a, n_comps=int(min(30, max(2, min(a.shape) - 1))))
         sc.pp.neighbors(a, n_neighbors=15)
-        return _leiden_at_k(sc, a, k, rs), "Leiden (scanpy)"
+        lab, res = _leiden_at_k(sc, a, k, rs, res_hint)
+        return lab, "Leiden (scanpy)", res
     except ImportError as exc:
         reason = f"missing {exc.name or 'scanpy'}"
     except Exception as exc:
@@ -121,7 +139,7 @@ def _recluster_train(train: np.ndarray, k: int, seed: Any) -> tuple[np.ndarray, 
     n_comp = int(min(30, max(2, min(log.shape) - 1)))
     emb = PCA(n_components=n_comp, random_state=0).fit_transform(log - log.mean(axis=0))
     km = KMeans(n_clusters=k, n_init=10, random_state=rs).fit(emb)
-    return km.labels_.astype(str), f"KMeans fallback ({reason})"
+    return km.labels_.astype(str), f"KMeans fallback ({reason})", None
 
 
 def _claimed_mask(adata: Any, grouping: Optional[str], target_group: Optional[str],
@@ -205,7 +223,7 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
 
     labels = obs_series(adata, grouping) if grouping else None
     n_levels = int(np.unique([str(x) for x in labels]).size) if labels is not None else 8
-    labels_train, cluster_engine = _recluster_train(train, k=max(2, n_levels), seed=seed)
+    labels_train, cluster_engine, _res = _recluster_train(train, k=max(2, n_levels), seed=seed)
 
     claimed = _claimed_mask(adata, grouping, target_group, markers or [], var_names, C)
     if claimed is None or claimed.sum() == 0:
