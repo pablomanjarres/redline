@@ -106,8 +106,18 @@ cd redline
 pnpm install
 pnpm build        # builds the four packages, then the Next.js workbench
 pnpm typecheck
-pnpm test         # engine fixtures (26) + reasoning (7)
+pnpm test         # engine fixtures (26) + reasoning (7) + guided tour (32)
 ```
+
+### Take the tour
+
+Open the workbench and it offers a guided walkthrough on the first visit. It darkens
+everything except the control you should touch next and explains what that control does,
+what to put there, and why the check behind it matters, across all four catches, the clean
+verdict, the report, and the engine surface.
+
+Pick **Walk me through it** to drive, or **Play it for me** to watch it run hands free.
+Append `?tour=1` to reopen it, or `?tour=0` to keep it shut. See `docs/guided-tour.md`.
 
 ### Configuration
 

@@ -37,6 +37,7 @@ export default function EnvironmentPage() {
 
       {/* terminal block — void body, raised title bar, like the reasoning console */}
       <div
+        data-tour="env.terminal"
         style={{
           marginTop: 30,
           background: 'var(--void)',
@@ -116,7 +117,7 @@ export default function EnvironmentPage() {
       </section>
 
       {/* three places it runs */}
-      <section aria-label="Where Redline runs">
+      <section data-tour="env.surfaces" aria-label="Where Redline runs">
         <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)', flex: 'none' }}
