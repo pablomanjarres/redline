@@ -5,7 +5,7 @@ errors is present in a case. It is a SEPARATE IMPLEMENTATION from the engine (it
 never imports ``redline.pillars`` / ``redline.audit`` / ``redline.foundation``),
 but it is NOT method-independent: it applies the same core statistics the engine
 runs (Welch t for pseudoreplication, Poisson-thinning held-out marker AUC for
-double dipping, a PCA/KMeans resolution sweep for fragility, chi-squared Cramer's
+double dipping, a PCA/leiden resolution sweep for fragility, chi-squared Cramer's
 V for confounding). So agreement between this labeler and the engine is a
 consistency check, not evidence of correctness, and it is strongest exactly where
 the two share the most (pillars 1 and 4). Read this honestly:
@@ -15,10 +15,14 @@ the two share the most (pillars 1 and 4). Read this honestly:
   technical variable collinear with the condition), so the labeler is really a
   build-time sanity check on those, not an independent oracle.
 - For double dipping and fragility the labeler retains a little more distance (it
-  scores the given state mask on a held-out split and sweeps KMeans over an
-  explicit k-grid, with a seed distinct from the engine's, see ``redline_arm``),
-  but note that in a leiden-less environment the engine also falls back to KMeans,
-  so the two share the clustering primitive and differ only in grid and seed.
+  scores the given state mask on a held-out split and sweeps the clustering
+  resolution itself, with a seed distinct from the engine's, see ``redline_arm``),
+  but it sweeps the SAME axis with the SAME primitive (scanpy leiden) the engine
+  uses, differing only in grid, seed, and threshold. It previously swept KMeans
+  over a k-grid, which is a different question than the one Pillar 3 asks: the
+  resolution is the knob the scientist leaves unjustified. Sharing the axis makes
+  the fragility label meaningful, and makes its agreement with the engine even
+  less independent. Read the numbers accordingly.
 
 The generator tunes cases against THIS labeler, never against the engine, and
 filters to a clear decision margin, which is disclosed as a limitation in the
@@ -34,7 +38,6 @@ from typing import Any
 import numpy as np
 from scipy import stats
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 from sklearn.metrics import roc_auc_score
 
 from . import spec
@@ -169,27 +172,46 @@ def label_double_dipping(counts, var_names, state_labels, target_state, seed) ->
     }
 
 
-def _kmeans_labels(emb: np.ndarray, k: int, seed: int) -> np.ndarray:
-    k = max(2, min(k, emb.shape[0]))
-    return KMeans(n_clusters=k, random_state=int(seed), n_init=10).fit_predict(emb)
+def _leiden_sweep(emb: np.ndarray, resolutions, seed: int) -> list[np.ndarray]:
+    """Cluster the embedding at each resolution with leiden.
+
+    Clean-room: this builds its own AnnData and its own neighbor graph and never
+    imports `redline`. It shares the scanpy primitive with the engine, the way
+    the rest of this labeler shares scipy with it, so agreement is a consistency
+    check and not independent validation. See the benchmark README.
+    """
+    import anndata as ad
+    import scanpy as sc
+
+    a = ad.AnnData(X=np.asarray(emb, dtype=float))
+    sc.pp.neighbors(a, use_rep="X", n_neighbors=15)  # once; the graph does not depend on resolution
+    out = []
+    for r in resolutions:
+        sc.tl.leiden(a, resolution=float(r), key_added="_bench_lab", random_state=int(seed))
+        out.append(np.asarray(a.obs["_bench_lab"].astype(str).to_numpy()))
+    return out
 
 
 def label_fragility(counts, state_labels, target_state, seed) -> dict[str, Any]:
-    """Sweep k; a state is 'present' at a k if some cluster both covers and is
-    pure for it. Stable across the sweep => robust; narrow window => fragile."""
+    """Sweep the clustering resolution; a state is 'present' at a resolution if
+    some cluster both covers and is pure for it. Stable across the sweep =>
+    robust; narrow window => fragile.
+
+    The resolution is the knob the scientist leaves unjustified, and it is the
+    knob the engine's Pillar 3 sweeps. A k-sweep answered a different question.
+    """
     state_labels = np.asarray(state_labels)
     mask = state_labels == target_state
     if mask.sum() < 2:
-        return {"present": False, "stability": 1.0, "settings": 0, "present_ks": []}
+        return {"present": False, "stability": 1.0, "settings": 0, "present_res": []}
 
     ln = lognorm(counts)
     ln = ln - ln.mean(axis=0, keepdims=True)
     n_comp = int(min(30, ln.shape[0] - 1, ln.shape[1]))
     emb = PCA(n_components=n_comp, random_state=int(seed)).fit_transform(ln)
 
-    present_ks = []
-    for k in spec.P3_K_GRID:
-        lab = _kmeans_labels(emb, k, seed)
+    present_res = []
+    for r, lab in zip(spec.P3_RES_GRID, _leiden_sweep(emb, spec.P3_RES_GRID, seed)):
         best_present = False
         for cl in np.unique(lab):
             cm = lab == cl
@@ -199,15 +221,15 @@ def label_fragility(counts, state_labels, target_state, seed) -> dict[str, Any]:
             if cover >= spec.P3_PRESENT_COVER and purity >= spec.P3_PRESENT_PURITY:
                 best_present = True
                 break
-        present_ks.append((int(k), bool(best_present)))
+        present_res.append((float(r), bool(best_present)))
 
-    stability = sum(p for _, p in present_ks) / len(present_ks)
+    stability = sum(p for _, p in present_res) / len(present_res)
     present = stability < spec.P3_FRAGILE_STAB
     return {
         "present": bool(present),
         "stability": round(float(stability), 4),
-        "settings": len(present_ks),
-        "present_ks": present_ks,
+        "settings": len(present_res),
+        "present_res": present_res,
     }
 
 

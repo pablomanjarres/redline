@@ -82,9 +82,15 @@ P2_TOP_K = 4
 P2_COLLAPSE_AUC = 0.60        # held-out mean-marker AUC at/below => markers collapse
 P2_HOLD_AUC = 0.62            # held-out AUC at/above => markers genuinely hold
 P2_MIN_HELDOUT = 20           # cells needed on the held-out side to judge
-# Pillar 3: k-sweep persistence of the claimed state.
-P3_K_GRID = (2, 3, 4, 5, 6, 7, 8)
-P3_PRESENT_COVER = 0.5        # a state is "present" at a k if best cluster covers >= this
+# Pillar 3: resolution-sweep persistence of the claimed state.
+#
+# The labeler used to sweep KMeans over k. The engine sweeps leiden over the
+# resolution knob, which is the parameter a scientist actually leaves
+# unjustified, so a "fragile" label derived from a k-sweep was answering a
+# different question than the check it grades. Sweep the same axis, with the
+# labeler's own clean-room implementation and its own thresholds.
+P3_RES_GRID = (0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0)
+P3_PRESENT_COVER = 0.5        # a state is "present" at a resolution if best cluster covers >= this
 P3_PRESENT_PURITY = 0.5       # ... and is at least this pure
 P3_FRAGILE_STAB = 0.5         # present in < this fraction of settings => fragile
 P3_STABLE_STAB = 0.8          # present in >= this fraction => stable
