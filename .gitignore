@@ -48,3 +48,11 @@ services/rigor/cache/
 # The self-verification run is COMMITTED, not ignored: a deployed /verifications
 # that renders an empty state proves nothing to anyone who opens it. Regenerate
 # with `pnpm --filter @redline/verify run verify` and commit the result.
+
+# pr-watch runtime state: watermark, heartbeat, per-PR loop logs, kill switch.
+# Runtime state never goes in a skill directory, and never in git.
+.claude/pr-watch/seen
+.claude/pr-watch/queue
+.claude/pr-watch/heartbeat
+.claude/pr-watch/logs/
+.claude/pr-watch/DISABLED
