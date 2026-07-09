@@ -140,7 +140,7 @@ describe('extraction stream copy', () => {
       const lines = extractionLines(sid);
       expect(lines.length).toBeGreaterThan(0);
       expect(lines.some((l) => l.includes('3 auditable claims'))).toBe(true);
-      for (const l of lines) expect(l.includes('—')).toBe(false);
+      for (const l of lines) expect(l.includes('\u2014')).toBe(false);
     }
   });
 });
