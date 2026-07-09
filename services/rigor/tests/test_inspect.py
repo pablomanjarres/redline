@@ -158,3 +158,44 @@ def test_inventory_declares_only_contract_keys(inventories):
             assert set(col.keys()) == obs_keys
         for entry in inv["uns"]:
             assert set(entry.keys()) == uns_keys
+
+
+def test_inspect_opens_the_file_backed_and_never_reads_X(tmp_path, monkeypatch):
+    """The thin inspection must not pull the expression matrix into memory.
+
+    It once did: `inspect_dataset` shared `load_adata`'s full-read cache slot, so a
+    plain `read_h5ad` materialized X before inspection ran. On a 161 MB matrix that
+    cost +158 MB of RSS for an inventory that reads obs, uns, var_names, and a
+    few-hundred-cell sample.
+    """
+    import anndata
+    import numpy as np
+    import pandas as pd
+
+    from redline import job_runner
+
+    n, g = 60, 8
+    X = np.rint(np.random.default_rng(0).poisson(3, (n, g))).astype("float32")
+    obs = pd.DataFrame({"leiden": np.random.default_rng(1).integers(0, 3, n).astype(str)})
+    var = pd.DataFrame(index=[f"g{i}" for i in range(g)])
+    path = tmp_path / "small.h5ad"
+    anndata.AnnData(X=X, obs=obs, var=var).write_h5ad(path)
+
+    # Empty the shared cache so the backed path is the one exercised.
+    job_runner._ADATA_CACHE.pop("entry", None)
+
+    seen = {}
+    real = anndata.read_h5ad
+
+    def spy(p, *args, **kwargs):
+        seen["backed"] = kwargs.get("backed")
+        return real(p, *args, **kwargs)
+
+    monkeypatch.setattr(anndata, "read_h5ad", spy)
+    inventory = job_runner.inspect_dataset(str(path))
+
+    assert seen["backed"] == "r", "inspect must open the .h5ad backed, not read X into memory"
+    assert inventory["hasRawCounts"] is True
+    assert inventory["nCells"] == n and inventory["nGenes"] == g
+    # And it must not have poisoned the full-read cache with a backed object.
+    assert "entry" not in job_runner._ADATA_CACHE
