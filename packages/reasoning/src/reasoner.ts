@@ -44,6 +44,10 @@ export interface Reasoner {
 const NARRATE_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
 const CRITIQUE_MAX_TOKENS = 1024;
+/** The critic decides whether a flag reaches the scientist. Sampled at the model
+ *  default it is a coin flip on the borderline cases, so the same real catch can
+ *  be vetoed on one run and confirmed on the next. A gate has to be reproducible. */
+const CRITIQUE_TEMPERATURE = 0;
 
 type Backend = 'anthropic' | 'bedrock';
 
@@ -57,6 +61,7 @@ export type InvokeFn = (args: {
   system: string;
   user: string;
   maxTokens: number;
+  temperature?: number;
 }) => Promise<string>;
 
 /**
@@ -81,15 +86,16 @@ async function invoke(
   system: string,
   user: string,
   maxTokens: number,
+  temperature?: number,
 ): Promise<string> {
   if (backend === 'anthropic') {
-    return anthropic.invokeMessages({ system, user, maxTokens });
+    return anthropic.invokeMessages({ system, user, maxTokens, temperature });
   }
   const modelId = bedrock.getModelId();
   if (!modelId) {
     throw new ReasonerUnavailable('REDLINE_BEDROCK_MODEL_ID is not set');
   }
-  return bedrock.invokeMessages({ modelId, system, user, maxTokens });
+  return bedrock.invokeMessages({ modelId, system, user, maxTokens, temperature });
 }
 
 const REASON_RETRIES = 3;
@@ -163,11 +169,12 @@ export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
     system: string,
     user: string,
     maxTokens: number,
+    temperature?: number,
   ): Promise<string> => {
-    if (injected) return injected({ system, user, maxTokens });
+    if (injected) return injected({ system, user, maxTokens, temperature });
     const backend = selectBackend();
     if (!backend) throw new ReasonerUnavailable('No reasoning backend configured');
-    return invoke(backend, system, user, maxTokens);
+    return invoke(backend, system, user, maxTokens, temperature);
   };
 
   return {
@@ -228,7 +235,7 @@ export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
         // showing the finding, marked critic-unverified.
         return await withRetry(async () => {
           const { system, user } = buildCriticPrompt(req);
-          const text = await withTimeout(send(system, user, CRITIQUE_MAX_TOKENS), REASON_TIMEOUT_MS, 'critique');
+          const text = await withTimeout(send(system, user, CRITIQUE_MAX_TOKENS, CRITIQUE_TEMPERATURE), REASON_TIMEOUT_MS, 'critique');
           return CriticJudgment.parse(extractJson(text));
         });
       } catch (err) {
