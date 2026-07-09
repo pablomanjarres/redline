@@ -50,6 +50,11 @@ export default function FieldsPage() {
 
   const busy = pending || !hasFields;
 
+  // The guided tour spotlights the row that carries the independent unit. Which
+  // column that is depends on the scenario (donor_id here, mouse_id there), so
+  // resolve it by role and never by name.
+  const unitFieldId = (fields ?? []).find((f) => f.role === 'unit')?.id ?? null;
+
   return (
     <div style={{ maxWidth: 1080, margin: '0 auto', padding: '34px 40px 72px' }}>
       {/* header */}
@@ -77,7 +82,7 @@ export default function FieldsPage() {
         </div>
 
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
-          <div style={{ display: 'flex', gap: 8 }} role="group" aria-label="Confidence tally">
+          <div data-tour="fields.tally" style={{ display: 'flex', gap: 8 }} role="group" aria-label="Confidence tally">
             {TALLY.map(({ key, label }) => {
               const on = counts[key] > 0;
               return (
@@ -110,6 +115,7 @@ export default function FieldsPage() {
             })}
           </div>
           <button
+            data-tour="fields.confirm"
             type="button"
             onClick={onConfirm}
             disabled={busy}
@@ -133,7 +139,7 @@ export default function FieldsPage() {
 
       {/* matrix */}
       {hasFields ? (
-        <div style={{ marginTop: 30, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div data-tour="fields.matrix" style={{ marginTop: 30, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <span style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)' }} />
             <span style={{ font: '700 10px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
@@ -141,7 +147,13 @@ export default function FieldsPage() {
             </span>
           </div>
           {fields!.map((f) => (
-            <FieldMatrixRow key={f.id} field={f} onRole={(role) => setRole(f.id, role)} />
+            <FieldMatrixRow
+              key={f.id}
+              field={f}
+              onRole={(role) => setRole(f.id, role)}
+              tourId={f.id === unitFieldId ? 'fields.unit-row' : undefined}
+              tourRoleId={f.id === unitFieldId ? 'fields.unit-role' : undefined}
+            />
           ))}
         </div>
       ) : (

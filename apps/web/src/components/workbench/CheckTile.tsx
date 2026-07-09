@@ -57,6 +57,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
 
   return (
     <Link
+      data-tour={`workbench.tile.${checkId}`}
       href={`/checks/${checkId}`}
       aria-label={`Open check ${checkId}: ${meta.name}`}
       style={{
