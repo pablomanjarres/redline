@@ -27,7 +27,7 @@ from ..contracts import (
     fragility_chart,
     stat,
 )
-from . import cfg_get, obs_series
+from . import cfg_get, lognorm, obs_series
 
 _PRESENT_COVERAGE = 0.5  # a cluster must hold this share of the tracked group's cells
 _PRESENT_PURITY = 0.5  # ... and be at least this pure, to count as "the group is present"
@@ -48,7 +48,9 @@ def _embedding(adata: Any) -> np.ndarray:
     if C is None:
         X = getattr(adata, "X", None)
         C = gating._to_dense(X) if X is not None else np.zeros((int(getattr(adata, "n_obs", 1)), 1))
-    log = np.log1p(np.clip(C, 0, None))
+    # Depth-normalize before log. Clustering raw log1p(counts) lets library size
+    # drive the embedding, and a continuum then reads as a stable population.
+    log = lognorm(np.clip(C, 0, None))
     try:
         from sklearn.decomposition import PCA
 
