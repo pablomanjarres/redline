@@ -36,11 +36,11 @@ function figure(result: CheckResult, cfg3: Check3Config): ReactNode {
 /** The audit stage for one check: figure on a lightbox plate (the hero), the
  *  verdict, and the instrument + console rail. */
 export function CheckStage({ checkId }: { checkId: CheckId }) {
-  const { results, running, reasoning, reveal, cfg, claims, runCheck } = useSession();
+  const { results, running, reasoning, reveal, cfg, claimForCheck, runCheck } = useSession();
   const result = results[checkId];
   const isRunning = running[checkId];
   const meta = CHECK_META[checkId];
-  const claim = claims.find((c) => c.check === checkId)?.text ?? '';
+  const claim = claimForCheck(checkId) ?? '';
   const revealed = (reasoning[checkId] ?? []).slice(0, reveal[checkId] ?? 0);
   const state = isRunning ? 'running' : result ? result.state : 'ready';
   const light = signalColor(state);

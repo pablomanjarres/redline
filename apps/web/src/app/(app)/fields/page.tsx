@@ -11,8 +11,8 @@ import { FieldMatrixRow } from '@/components/fields/FieldMatrix';
  * Foundation · Design resolution. The structural gate. Every downstream check
  * runs on a field's *role*, so a wrong role poisons every flag it produces.
  * Redline proposes a meaning per column; the scientist confirms or corrects it,
- * then opens the workbench. Dark audit-instrument surface. This page carries no
- * figure, so no lightbox plate appears and it stays fully dark.
+ * then moves on to claim review. Dark audit-instrument surface. This page carries
+ * no figure, so no lightbox plate appears and it stays fully dark.
  */
 
 const CONF_COLOR: Record<Confidence, string> = {
@@ -37,15 +37,14 @@ export default function FieldsPage() {
   const counts: Record<Confidence, number> = { high: 0, medium: 0, low: 0 };
   for (const f of fields ?? []) counts[f.confidence]++;
 
-  async function onConfirm() {
+  function onConfirm() {
     if (pending || !hasFields) return;
     setPending(true);
-    try {
-      await confirmFields();
-      router.push('/workbench');
-    } finally {
-      setPending(false);
-    }
+    // Confirming the design kicks inspection and claim extraction in the session
+    // store, which lives above the router and so survives this navigation. Send
+    // the scientist straight to Claim Review, where the extraction streams in.
+    void confirmFields();
+    router.push('/claims');
   }
 
   const busy = pending || !hasFields;
@@ -132,7 +131,7 @@ export default function FieldsPage() {
               opacity: busy ? 0.5 : 1,
             }}
           >
-            {pending ? 'Opening workbench…' : 'Confirm & open workbench →'}
+            {pending ? 'Reading your analysis…' : 'Confirm & review claims →'}
           </button>
         </div>
       </div>

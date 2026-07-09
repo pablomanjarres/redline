@@ -11,7 +11,7 @@ import { fmt } from '@/lib/format';
  * width, dark. No nav lives here — the pipeline below carries navigation.
  */
 export function Masthead() {
-  const { dataset, report, fieldsConfirmed } = useSession();
+  const { dataset, report, fieldsConfirmed, claimsConfirmed } = useSession();
   const tally = [
     { n: report.flagged, label: 'flagged', c: 'var(--red)' },
     { n: report.clean, label: 'verified', c: 'var(--green)' },
@@ -74,7 +74,7 @@ export function Masthead() {
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18 }}>
         <TourLauncher compact />
-        {fieldsConfirmed ? (
+        {claimsConfirmed ? (
           <div data-tour="shell.tally" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {tally.map((t) => (
               <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -85,7 +85,7 @@ export function Masthead() {
           </div>
         ) : (
           <span style={{ font: '500 10px/1 var(--mono)', letterSpacing: '.14em', color: 'var(--amber)', textTransform: 'uppercase' }}>
-            awaiting design
+            {fieldsConfirmed ? 'awaiting claims' : 'awaiting design'}
           </span>
         )}
         <Link

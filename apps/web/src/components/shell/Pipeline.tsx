@@ -7,16 +7,27 @@ import { signalColor } from '@redline/ui';
 import { useSession } from '@/state/session';
 
 /**
- * The pipeline: a horizontal rail of stations (design resolution, the four
- * checks, the report) with a verdict light on each. This IS the navigation, in
- * place of a sidebar of links. The rail line runs behind the nodes so the audit
- * reads as one flow left to right.
+ * The pipeline: a horizontal rail of stations (design resolution, claim review,
+ * the four checks, the report) with a verdict light on each. This IS the
+ * navigation, in place of a sidebar of links. The rail line runs behind the
+ * nodes so the audit reads as one flow left to right: 00, 00b, 01, 02, 03, 04,
+ * report. Claims sits at 00b (between design 00 and check 01) because the check
+ * numbers 01-04 are canonical ids shown across the whole app, so renumbering
+ * them to make room would desync that mental model.
+ *
+ * Each station gates the one after it. Confirming the design opens Claims;
+ * confirming the claim list opens the four checks and the report. Nothing
+ * downstream of Claims is reachable until claimsConfirmed, and after that a
+ * check no confirmed claim routes to stays locked as well, because it has
+ * nothing to audit (its board tile says the same). A station whose target has
+ * nothing real to show stays locked instead of posing as a live control.
  */
 const IDS: CheckId[] = [1, 2, 3, 4];
 
 export function Pipeline() {
   const path = usePathname();
-  const { results, running, fieldsConfirmed } = useSession();
+  const { results, running, fieldsConfirmed, claimsConfirmed, routedChecks } = useSession();
+  const routedSet = new Set(routedChecks);
 
   const stations: { href: string; n: string; label: string; active: boolean; light: string; pulse: boolean; locked: boolean }[] = [];
   stations.push({
@@ -28,6 +39,15 @@ export function Pipeline() {
     pulse: false,
     locked: false,
   });
+  stations.push({
+    href: '/claims',
+    n: '00b',
+    label: 'Claims',
+    active: path === '/claims',
+    light: claimsConfirmed ? 'var(--green)' : 'var(--amber)',
+    pulse: false,
+    locked: !fieldsConfirmed,
+  });
   IDS.forEach((id) => {
     const r = results[id];
     const run = running[id];
@@ -38,7 +58,7 @@ export function Pipeline() {
       active: path === `/checks/${id}`,
       light: run ? '#2563EB' : r ? signalColor(r.state) : 'var(--ink-4)',
       pulse: run,
-      locked: !fieldsConfirmed,
+      locked: !claimsConfirmed || !routedSet.has(id),
     });
   });
   stations.push({
@@ -48,7 +68,7 @@ export function Pipeline() {
     active: path === '/report',
     light: 'var(--ink-4)',
     pulse: false,
-    locked: !fieldsConfirmed,
+    locked: !claimsConfirmed,
   });
 
   return (
