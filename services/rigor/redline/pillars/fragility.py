@@ -69,9 +69,14 @@ def _resolutions(lo: float, hi: float, step: float) -> list[float]:
     return out or [lo]
 
 
-def _cluster_sweep(emb: np.ndarray, resolutions: list[float], seed: int) -> list[np.ndarray]:
-    """Labels at each resolution. scanpy leiden if available, else KMeans with a
-    resolution-to-k schedule that mimics finer clustering at higher resolution."""
+def _cluster_sweep(emb: np.ndarray, resolutions: list[float], seed: int) -> tuple[list[np.ndarray], str]:
+    """Labels at each resolution, and the engine that produced them. scanpy leiden
+    when leidenalg is installed, else KMeans with a resolution-to-k schedule that
+    mimics finer clustering at higher resolution.
+
+    The engine name is returned, never dropped: a Leiden -> KMeans downgrade
+    changes what a fragility flag means, so it has to reach the user.
+    """
     try:
         import anndata as ad
         import scanpy as sc
@@ -83,16 +88,20 @@ def _cluster_sweep(emb: np.ndarray, resolutions: list[float], seed: int) -> list
             key = f"_rl_leiden_{r}"
             sc.tl.leiden(a, resolution=float(r), key_added=key, random_state=seed)
             labels.append(np.asarray(a.obs[key].astype(str).to_numpy()))
-        return labels
-    except Exception:
-        from sklearn.cluster import KMeans
+        return labels, "Leiden (scanpy)"
+    except ImportError as exc:
+        reason = f"missing {exc.name or 'scanpy'}"
+    except Exception as exc:
+        reason = type(exc).__name__
 
-        labels = []
-        for r in resolutions:
-            k = int(max(2, round(3 + float(r) * 4)))
-            k = min(k, max(2, emb.shape[0] - 1))
-            labels.append(KMeans(n_clusters=k, n_init=10, random_state=0).fit_predict(emb).astype(str))
-        return labels
+    from sklearn.cluster import KMeans
+
+    labels = []
+    for r in resolutions:
+        k = int(max(2, round(3 + float(r) * 4)))
+        k = min(k, max(2, emb.shape[0] - 1))
+        labels.append(KMeans(n_clusters=k, n_init=10, random_state=seed).fit_predict(emb).astype(str))
+    return labels, f"KMeans fallback ({reason})"
 
 
 def _adjacent_ari(labels: list[np.ndarray]) -> float:
@@ -150,9 +159,15 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
 
     resolutions = _resolutions(lo, hi, step)
     emb = _embedding(adata)
-    labels = _cluster_sweep(emb, resolutions, seed)
+    labels, cluster_engine = _cluster_sweep(emb, resolutions, seed)
     cluster_counts = [int(np.unique(l).size) for l in labels]
     mean_ari = _adjacent_ari(labels)
+
+    def _finish(state: str, head: str, stats: list, chart: Any) -> ComputeResult:
+        # Surface the clustering backend, so a Leiden -> KMeans downgrade is
+        # visible rather than silent. Mirrors Pillar 1's "Honest engine" stat.
+        stats.append(stat("Clustering engine", cluster_engine))
+        return compute_result(3, state, head, stats, chart)
 
     track_col = _find_track_column(adata, track, fields) if track else None
 
@@ -176,7 +191,7 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
                 stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
                 stat("Adjacent ARI", f"{mean_ari:.2f}" if np.isfinite(mean_ari) else "n/a"),
             ]
-            return compute_result(3, CLEAN, head, stats, chart)
+            return _finish(CLEAN, head, stats, chart)
 
         head = (
             f"'{track}' appears only between resolution {present_range[0]:.1f} and "
@@ -187,7 +202,7 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
             stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
             stat("Present range", f"{present_range[0]:.1f}-{present_range[1]:.1f}"),
         ]
-        return compute_result(3, FLAGGED, head, stats, chart)
+        return _finish(FLAGGED, head, stats, chart)
 
     # Mechanical mode: overall stability of the clustering to the resolution knob.
     stability = float(mean_ari) if np.isfinite(mean_ari) else 0.0
@@ -202,11 +217,11 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
             stat("Adjacent ARI", f"{stability:.2f}", good=True),
             stat("Cluster count", f"{cluster_counts[0]}-{cluster_counts[-1]}"),
         ]
-        return compute_result(3, CLEAN, head, stats, chart)
+        return _finish(CLEAN, head, stats, chart)
 
     head = "The clustering reshuffles as the resolution changes; conclusions that ride on it are fragile."
     stats = [
         stat("Adjacent ARI", f"{stability:.2f}", bad=True),
         stat("Cluster count", f"{cluster_counts[0]}-{cluster_counts[-1]}"),
     ]
-    return compute_result(3, FLAGGED, head, stats, chart)
+    return _finish(FLAGGED, head, stats, chart)
