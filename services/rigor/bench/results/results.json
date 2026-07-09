@@ -154,16 +154,16 @@
       "redline_raw": {
         "overall": {
           "tp": 30,
-          "fp": 3,
+          "fp": 0,
           "fn": 0,
-          "tn": 151,
+          "tn": 154,
           "n_pos": 30,
           "n_neg": 154,
           "detection": 1.0,
-          "fp_rate": 0.01948051948051948,
-          "precision": 0.9090909090909091,
-          "f1": 0.9523809523809523,
-          "youden_j": 0.9805194805194806
+          "fp_rate": 0.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "youden_j": 1.0
         },
         "by_pillar": {
           "pseudoreplication": {
@@ -194,16 +194,16 @@
           },
           "fragility": {
             "tp": 12,
-            "fp": 3,
+            "fp": 0,
             "fn": 0,
-            "tn": 31,
+            "tn": 34,
             "n_pos": 12,
             "n_neg": 34,
             "detection": 1.0,
-            "fp_rate": 0.08823529411764706,
-            "precision": 0.8,
-            "f1": 0.888888888888889,
-            "youden_j": 0.9117647058823528
+            "fp_rate": 0.0,
+            "precision": 1.0,
+            "f1": 1.0,
+            "youden_j": 1.0
           },
           "confounding": {
             "tp": 6,
@@ -318,11 +318,11 @@
       "n_present_pairs": 30,
       "n_absent_pairs": 154,
       "engine_backend": {
-        "clustering": "kmeans",
-        "differential": "welch"
+        "clustering": "leiden",
+        "differential": "pydeseq2"
       },
       "llm_stats": {
-        "hits": 125,
+        "hits": 122,
         "live_calls": 0,
         "in_tokens": 0,
         "out_tokens": 0
@@ -379,8 +379,8 @@
           "judgment": {
             "pseudoreplication": {
               "present": true,
-              "confidence": 0.97,
-              "reason": "The cell-level p-value (2.6e-20) completely vanishes upon pseudobulk aggregation (p=0.444), indicating the apparent significance was driven by treating non-independent cells as independent samples across only 6 replicates."
+              "confidence": 0.95,
+              "reason": "The cell-level p-value (2.6e-20) is highly significant but the pseudobulk p-value (0.109) is non-significant with only 6 replicates, indicating the claimed effect relies on treating cells as independent samples rather than properly accounting for donor-level variation."
             },
             "double_dipping": {
               "present": false,
@@ -389,8 +389,8 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.7,
-              "reason": "The state persists across 60% of resolution settings (6/10), which is moderate but sufficient to indicate it is not an artifact of a single arbitrary resolution choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": false,
@@ -403,7 +403,7 @@
           "detected": {
             "pseudoreplication": true,
             "double_dipping": false,
-            "fragility": true,
+            "fragility": false,
             "confounding": false
           }
         },
@@ -417,11 +417,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The naive cell-level test is highly significant (p=2.6e-20) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.44), clearly demonstrating pseudoreplication."
-            },
-            "fragility": {
-              "supported": false,
-              "reason": "The cluster is present across the range 0.2\u20131.2, yielding a stability of 0.6 (present in 60% of resolutions tested), which indicates it appears across most of the sweep rather than at only one or a narrow set of resolutions, so the fragility flag is not well-supported."
+              "reason": "The naive cell-level test is highly significant (p=2.6e-20) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.109), clearly demonstrating pseudoreplication."
             }
           }
         }
@@ -429,7 +425,7 @@
       "redline_states": {
         "pseudoreplication": "flagged",
         "double_dipping": "clean",
-        "fragility": "flagged",
+        "fragility": "clean",
         "confounding": "clean"
       }
     },
@@ -483,17 +479,17 @@
             "pseudoreplication": {
               "present": true,
               "confidence": 0.97,
-              "reason": "The cell-level p-value (2.2e-16) completely vanishes upon pseudobulk aggregation (p=0.485), indicating the apparent significance was driven by treating non-independent cells as independent samples from only 6 biological replicates."
+              "reason": "The cell-level p-value (2.2e-16) is highly significant but the pseudobulk p-value (0.127) is non-significant with only 6 replicates, indicating the effect is driven by treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.97,
+              "confidence": 0.99,
               "reason": "The held-out-split AUC (0.9987) nearly matches the discovery-split AUC (1.0), confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The state persists across 80% of resolution settings (range 0.2\u20131.6), indicating reasonable stability across clustering parameters."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": false,
@@ -520,7 +516,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The naive cell-level test is highly significant (p=2.16e-16) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.485), clearly demonstrating pseudoreplication."
+              "reason": "The naive cell-level test is highly significant (p=2.16e-16) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.127), clearly demonstrating pseudoreplication."
             }
           }
         }
@@ -581,8 +577,8 @@
           "judgment": {
             "pseudoreplication": {
               "present": true,
-              "confidence": 0.97,
-              "reason": "The cell-level p-value (1.5e-21) is highly significant but the pseudobulk p-value (0.426) is non-significant, indicating the effect is driven by treating non-independent cells as independent samples across only 6 biological replicates."
+              "confidence": 0.95,
+              "reason": "The cell-level p-value (1.5e-21) is highly significant but the pseudobulk p-value (0.107) is non-significant with only 6 replicates, indicating the effect relies on treating cells as independent samples rather than reflecting a true biological-replicate-level difference."
             },
             "double_dipping": {
               "present": false,
@@ -591,13 +587,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The cluster persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0083 indicates near-zero association between the biological comparison and technical variables, ruling out confounding."
+              "reason": "Cramer's V of 0.0083 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },
@@ -619,7 +615,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The cell-level test is highly significant (p=1.48e-21) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.43), clearly demonstrating pseudoreplication."
+              "reason": "The naive cell-level test is highly significant (p=1.48e-21) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.107), clearly demonstrating pseudoreplication."
             }
           }
         }
@@ -681,7 +677,7 @@
             "pseudoreplication": {
               "present": true,
               "confidence": 0.97,
-              "reason": "The cell-level p-value (2.2e-20) is astronomically significant but the pseudobulk p-value (0.446) is completely non-significant, indicating the effect is driven by treating non-independent cells as independent samples across only 6 biological replicates."
+              "reason": "The cell-level p-value (2.2e-20) is highly significant but the pseudobulk p-value across 6 biological replicates is 0.105 (non-significant), indicating the cell-level significance is driven by treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
@@ -690,12 +686,12 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The state persists across 80% of resolution settings (range 0.2\u20131.6 of 10 settings), indicating reasonable stability across parameter choices."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.95,
+              "confidence": 0.97,
               "reason": "Cramer's V of 0.0306 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
@@ -718,7 +714,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The naive cell-level test is highly significant (p=2.19e-20) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.446), clearly demonstrating pseudoreplication."
+              "reason": "The naive cell-level test is highly significant (p=2.19e-20) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.105), demonstrating classic pseudoreplication."
             }
           }
         }
@@ -779,22 +775,22 @@
           "judgment": {
             "pseudoreplication": {
               "present": true,
-              "confidence": 0.97,
-              "reason": "The cell-level p-value (6.0e-23) is astronomically significant but the pseudobulk p-value across 6 biological replicates is 0.407, indicating the effect is not supported at the donor level and significance was entirely driven by treating cells as independent."
+              "confidence": 0.95,
+              "reason": "The cell-level p-value (6.0e-23) is highly significant but the pseudobulk p-value across 6 biological replicates is 0.099 (non-significant), indicating the apparent effect relies on treating cells as independent samples rather than properly accounting for donor-level variation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.97,
+              "confidence": 0.99,
               "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.93,
-              "reason": "The state persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), demonstrating robust stability."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.95,
+              "confidence": 0.97,
               "reason": "Cramer's V of 0.0306 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
@@ -817,7 +813,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The cell-level test is highly significant (p=5.97e-23) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.41), clearly demonstrating pseudoreplication."
+              "reason": "The cell-level test is highly significant (p=5.97e-23) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.099), demonstrating classic pseudoreplication."
             }
           }
         }
@@ -878,8 +874,8 @@
           "judgment": {
             "pseudoreplication": {
               "present": true,
-              "confidence": 0.97,
-              "reason": "The cell-level p-value (3.4e-22) is astronomically significant but the pseudobulk p-value (0.417) is completely non-significant, indicating the effect is driven by treating non-independent cells as independent samples across only 6 biological replicates."
+              "confidence": 0.95,
+              "reason": "The cell-level p-value (3.4e-22) is highly significant but the pseudobulk p-value (0.093) is non-significant with only 6 replicates, indicating the cell-level test inflated significance by treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
@@ -888,13 +884,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.93,
-              "reason": "The state persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.0611 indicates negligible association between the biological comparison and technical variables, so confounding is not a concern."
+              "reason": "Cramer's V of 0.0611 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
             }
           }
         },
@@ -916,7 +912,7 @@
           "critic": {
             "pseudoreplication": {
               "supported": true,
-              "reason": "The naive cell-level test is highly significant (p=3.4e-22) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.42), clearly demonstrating pseudoreplication."
+              "reason": "The cell-level test is highly significant (p=3.4e-22) but the honest pseudobulk test on the 6 true replicate units is not significant (p=0.093), demonstrating classic pseudoreplication."
             }
           }
         }
@@ -978,22 +974,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (1.9e-148), the pseudobulk p-value (2.1e-04) with 6 replicates confirms the effect survives proper aggregation."
+              "reason": "The pseudobulk p-value (1.7e-70) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely an artifact of treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, confirming markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), indicating robust stability."
+              "reason": "The claimed state persists across 100% of resolution settings tested (0.2 to 2.0), indicating it is robust and not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.97,
-              "reason": "Cramer's V of 0.05 indicates near-complete independence between the biological comparison and the technical variable."
+              "confidence": 0.95,
+              "reason": "A Cramer's V of 0.05 indicates near-complete independence between the biological comparison and the technical variable, so confounding is negligible."
             }
           }
         },
@@ -1072,21 +1068,21 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (6.9e-156), the pseudobulk p-value (2.2e-04) with 6 replicates confirms the effect is real, so the finding survives proper aggregation."
+              "reason": "Although the cell-level p-value is extremely small (6.9e-156), the effect survives pseudobulk aggregation across 6 biological replicates with p=1.2e-41, indicating a genuine biological signal rather than inflated significance from treating cells as independent."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9999) nearly matches the discovery-split AUC (1.0), confirming the markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC of 0.9999 nearly matches the discovery-split AUC of 1.0, confirming that the claimed markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings tested (10/10, range 0.2\u20132.0), demonstrating robust stability rather than dependence on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.97,
+              "confidence": 0.95,
               "reason": "Cramer's V of 0.0778 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
             }
           }
@@ -1166,22 +1162,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (8.6e-153), the pseudobulk p-value (5.4e-05) with 6 replicates confirms the effect survives proper aggregation, indicating a real biological signal."
+              "reason": "Although the cell-level p-value is extremely small, the pseudobulk p-value (3.5e-52) with 6 biological replicates remains highly significant, indicating the effect is real and not driven by treating cells as independent."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9999) matches the discovery-split AUC (0.9999), demonstrating that the markers generalize perfectly and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC (0.9999) matches the discovery-split AUC (0.9999), confirming that the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), indicating it is robust and not an artifact of a single resolution choice."
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.0556 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
+              "reason": "Cramer's V of 0.0556 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -1260,22 +1256,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (4.7e-154), the pseudobulk test on 6 biological replicates still yields a significant result (p=2.5e-04), indicating a real effect survives proper aggregation."
+              "reason": "The pseudobulk p-value (6.5e-58) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not lead to a false discovery."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.97,
-              "reason": "The held-out-split AUC (0.9996) is nearly identical to the discovery-split AUC (1.0), confirming that the markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC of 0.9996 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.96,
-              "reason": "Cramer's V of 0.039 indicates near-complete independence between the biological comparison and the technical variable, ruling out collinearity."
+              "confidence": 0.97,
+              "reason": "Cramer's V of 0.039 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },
@@ -1354,22 +1350,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is vastly inflated (1.6e-151), the pseudobulk p-value (5.9e-06) with 6 replicates confirms the effect is real, so the finding survives proper aggregation."
+              "reason": "Although the cell-level p-value is extremely inflated (1.6e-151), the pseudobulk p-value (2.3e-41) with 6 biological replicates remains highly significant, confirming the effect is real and not an artifact of treating cells as independent."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC of 1.0 matches the discovery-split AUC of 1.0, indicating the markers generalize perfectly and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC of 1.0 perfectly matches the discovery-split AUC of 1.0, indicating the markers generalize completely and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), demonstrating robust stability."
+              "reason": "The claimed state persists across 100% of resolution settings tested (10/10 from 0.2 to 2.0), demonstrating complete stability."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0139 indicates near-zero association between the biological comparison and the technical variable, ruling out confounding."
+              "reason": "Cramer's V of 0.0139 indicates near-zero association between the biological comparison and technical variables, ruling out confounding."
             }
           }
         },
@@ -1448,22 +1444,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly small (7.1e-149), the pseudobulk test on 6 biological replicates still yields a significant p-value (1.3e-04), confirming the effect survives proper aggregation."
+              "reason": "Although the cell-level p-value is extremely inflated (7.1e-149), the pseudobulk p-value across 6 biological replicates remains highly significant (9.3e-32), confirming the effect is real and not an artifact of treating cells as independent."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (1.0), indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC (0.9998) nearly matches the discovery-split AUC (1.0), demonstrating that the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across 100% of resolution settings tested (10/10, range 0.2\u20132.0), demonstrating robust stability."
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), indicating it is robust and not dependent on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0195 indicates near-complete independence between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.0195 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -1541,13 +1537,13 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The pseudobulk p-value (7.0e-05) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not invalidate the finding."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (3.6e-55) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.8,
-              "reason": "The held-out AUC (0.584) drops substantially from the discovery AUC (0.667) and is only marginally above chance (0.5), indicating the markers' separability is inflated by using the same data for clustering and testing."
+              "confidence": 0.92,
+              "reason": "The held-out AUC of 0.5134 is near chance (0.5), indicating the claimed markers have essentially no discriminative power when evaluated on independent data, consistent with double-dipping inflation."
             },
             "fragility": {
               "present": true,
@@ -1579,7 +1575,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "Discovery AUC of 0.67 drops to 0.58 on held-out data (approaching chance), and only 1 of 4 markers survives out-of-sample, indicating the markers largely reflect overfitting to the discovery partition rather than a robust biological signal."
+              "reason": "Discovery AUC of 0.595 collapses to 0.5134 on held-out data (near chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -1644,23 +1640,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The pseudobulk p-value (4.7e-06) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not invalidate the finding."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (7.8e-56) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.82,
-              "reason": "The held-out AUC (0.571) drops substantially from the discovery AUC (0.670), indicating the markers' separability is inflated by using the same data for clustering and testing."
+              "confidence": 0.92,
+              "reason": "The held-out AUC (0.5176) drops to near-chance from the discovery AUC (0.6049), indicating the claimed markers do not generalize and their separation was inflated by using the same data for clustering and testing."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), indicating it is entirely dependent on one arbitrary parameter choice."
+              "reason": "The claimed state appears at only 1 of 10 resolution settings (stability = 0.0), existing solely at resolution 0.2, making it entirely dependent on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "Cramer's V of 0.072 indicates negligible collinearity between the biological comparison and the technical variable."
+              "confidence": 0.93,
+              "reason": "Cramer's V of 0.0722 indicates negligible association between the biological comparison and the technical variable."
             }
           }
         },
@@ -1682,7 +1678,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "The discovery AUC of 0.67 drops to 0.57 on held-out data (near chance), and only 1 of 4 markers survives out of sample, indicating the cluster markers do not generalize and the separation is inflated by double dipping."
+              "reason": "Discovery AUC of 0.60 collapses to 0.52 on held-out data (near chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -1747,18 +1743,18 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.85,
-              "reason": "Although the cell-level p-value is absurdly small (2.9e-144), the pseudobulk p-value (0.001) with 6 replicates still indicates a real effect surviving proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (1.4e-52) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.8,
-              "reason": "The held-out AUC (0.577) drops substantially from the discovery AUC (0.668) and is close to chance (0.5), indicating the markers' separability is inflated by using the same data for clustering and testing."
+              "confidence": 0.92,
+              "reason": "The held-out AUC (0.516) drops to near-chance from the discovery AUC (0.612), indicating the claimed markers' separability is an artifact of using the same data for clustering and testing."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), meaning it is entirely dependent on one arbitrary parameter choice."
+              "reason": "The claimed state persists at 0% of resolution settings (only a single point at 0.2 out of 10), meaning it is entirely dependent on one arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
@@ -1785,7 +1781,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "The discovery AUC of 0.67 drops to 0.58 on held-out data (approaching chance), and only 1 of 4 markers survives out of sample, indicating the cluster markers do not generalize and the separation is inflated by double dipping."
+              "reason": "Discovery AUC of 0.61 collapses to 0.52 on held-out data (near chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -1850,23 +1846,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.85,
-              "reason": "Although the cell-level p-value is absurdly small, the pseudobulk p-value (0.001) with 6 replicates still shows significance, indicating a real biological effect survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (1.6e-61) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.75,
-              "reason": "The held-out AUC (0.589) drops notably from the discovery AUC (0.663) and is only marginally above chance (0.5), suggesting the markers' separability is inflated by using the same data for clustering and testing."
+              "confidence": 0.85,
+              "reason": "The held-out AUC (0.52) drops substantially from the discovery AUC (0.59) to near chance level, indicating the claimed markers are largely artifacts of selecting on the same data used for testing."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), indicating it is entirely dependent on one arbitrary parameter choice."
+              "reason": "The claimed state persists at 0% of resolution settings (only a single resolution of 0.2 out of 10), meaning it is entirely dependent on one arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.033 indicates near-complete independence between the biological comparison and technical variables."
+              "reason": "Cramer's V of 0.033 indicates negligible association between the biological comparison and the technical variable."
             }
           }
         },
@@ -1888,7 +1884,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "The discovery AUC of 0.66 drops to 0.59 on held-out data (approaching chance), and only 1 of 4 markers survives out of sample, indicating the apparent separation is largely an artifact of testing on the same cells used to define the cluster."
+              "reason": "Discovery AUC of 0.59 collapses to 0.52 on held-out data (near chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -1953,23 +1949,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "Although the cell-level p-value is vastly inflated (2.8e-152), the pseudobulk p-value (1.9e-05) with 6 replicates remains significant, indicating a real effect that survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The effect survives pseudobulk aggregation with p=4.1e-57 across 6 biological replicates, indicating a genuine biological signal rather than inflated cell-level statistics."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.75,
-              "reason": "The held-out AUC (0.584) drops notably from the discovery AUC (0.663), and both are only modestly above 0.5, suggesting the markers' separability is partially inflated by using the same data for clustering and testing."
+              "confidence": 0.92,
+              "reason": "The held-out AUC of 0.5132 is near chance (0.5) and substantially lower than the discovery AUC of 0.5893, indicating the claimed markers' separability is an artifact of using the same data for clustering and testing."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), indicating it is entirely dependent on one arbitrary parameter choice."
+              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), meaning it is entirely dependent on one arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.036 indicates near-complete independence between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.0361 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },
@@ -1991,7 +1987,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "The discovery AUC of 0.66 drops to 0.58 on held-out data (approaching chance), and only 1 of 4 markers survives out-of-sample, indicating the cluster markers do not generalize and the separation is largely an artifact of double dipping."
+              "reason": "Discovery AUC of 0.59 collapses to 0.51 on held-out data (near chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -2057,22 +2053,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "The pseudobulk p-value (1.9e-06) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not lead to a false discovery."
+              "reason": "The pseudobulk p-value (1.2e-59) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": true,
-              "confidence": 0.82,
-              "reason": "The held-out AUC (0.567) drops substantially from the discovery AUC (0.681) and approaches chance level, indicating the markers' separability is inflated by using the same data for clustering and testing."
+              "confidence": 0.92,
+              "reason": "The held-out AUC (0.5135) drops to near-chance from the discovery AUC (0.6061), indicating the claimed markers do not generalize and their separation was inflated by using the same data for clustering and testing."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only a single point at 0.2 out of 10 tested), meaning it is entirely dependent on one arbitrary parameter choice."
+              "reason": "The claimed state appears at only 1 of 10 resolution settings (stability = 0.0), existing solely at resolution 0.2, making it entirely dependent on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.036 indicates near-complete independence between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.0361 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },
@@ -2094,7 +2090,7 @@
           "critic": {
             "double_dipping": {
               "supported": true,
-              "reason": "The held-out AUC of 0.567 is near chance (0.5), a substantial drop from the discovery AUC of 0.681, and only 1 of 4 markers survives out of sample, confirming that the apparent separation is driven by double dipping."
+              "reason": "Discovery AUC of 0.61 collapses to 0.51 on held-out data (essentially chance), and 0 of 4 markers survive, clearly indicating the markers do not generalize beyond the discovery set."
             },
             "fragility": {
               "supported": true,
@@ -2160,22 +2156,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (1.5e-154), the pseudobulk test with 6 replicates still yields a highly significant p-value (5.6e-06), confirming the effect is real at the biological-replicate level."
+              "reason": "The pseudobulk p-value (4.1e-43) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely an artifact of treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9998) nearly matches the discovery-split AUC (1.0), demonstrating that the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC (0.9998) nearly matches the discovery-split AUC (1.0), confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.85,
-              "reason": "The state persists across 70% of resolution settings spanning a wide range (0.2\u20131.8), indicating reasonable stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings tested (0.2 to 2.0), indicating it is robust and not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "A Cramer's V of 0.064 indicates near-complete separation between the biological comparison and the technical variable, ruling out meaningful confounding."
+              "reason": "Cramer's V of 0.064 indicates near-complete independence between the biological comparison and the technical variable, so confounding is negligible."
             }
           }
         },
@@ -2183,7 +2179,7 @@
           "detected": {
             "pseudoreplication": false,
             "double_dipping": false,
-            "fragility": true,
+            "fragility": false,
             "confounding": false
           }
         },
@@ -2194,18 +2190,13 @@
             "fragility": false,
             "confounding": false
           },
-          "critic": {
-            "fragility": {
-              "supported": false,
-              "reason": "The cluster is present across the range 0.2\u20131.8 with a stability of 0.7 over 10 resolution settings, indicating it appears at most tested resolutions rather than only at a single narrow resolution, so the fragility flag is not supported."
-            }
-          }
+          "critic": {}
         }
       },
       "redline_states": {
         "pseudoreplication": "clean",
         "double_dipping": "clean",
-        "fragility": "flagged",
+        "fragility": "clean",
         "confounding": "clean"
       }
     },
@@ -2259,7 +2250,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (3.7e-160), the pseudobulk test on 6 replicates still yields a highly significant p-value (2.1e-05), confirming the effect is real at the biological replicate level."
+              "reason": "Although the cell-level p-value is extremely inflated (3.7e-160), the pseudobulk test with 6 replicates still yields a highly significant result (6.3e-47), confirming the effect is real at the biological replicate level."
             },
             "double_dipping": {
               "present": false,
@@ -2274,7 +2265,7 @@
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.0472 indicates near-complete independence between the biological comparison and the technical variable, ruling out meaningful confounding."
+              "reason": "Cramer's V of 0.0472 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -2353,7 +2344,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (4.8e-147), the pseudobulk test on 6 biological replicates still yields a significant result (p=4.5e-04), confirming the effect is real at the replicate level."
+              "reason": "Although the cell-level p-value is extreme (4.8e-147), the pseudobulk test on 6 biological replicates still yields a highly significant result (1.3e-67), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
@@ -2363,7 +2354,7 @@
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range 0.2\u20132.0), demonstrating it is not an artifact of a single resolution choice."
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": false,
@@ -2447,7 +2438,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly inflated (2.5e-148), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (5.0e-06), confirming the effect is real at the replicate level."
+              "reason": "Although the cell-level p-value is extreme (2.5e-148), the pseudobulk test on 6 biological replicates still yields a highly significant result (4.7e-69), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
@@ -2456,13 +2447,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.93,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), demonstrating robust stability rather than dependence on a single arbitrary parameter."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.96,
-              "reason": "Cramer's V of 0.05 indicates near-complete independence between the biological comparison and the technical variable."
+              "confidence": 0.95,
+              "reason": "Cramer's V of 0.05 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
             }
           }
         },
@@ -2541,17 +2532,17 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (8.1e-145), the pseudobulk p-value (7.5e-08) across 6 biological replicates remains highly significant, indicating a real effect that survives proper aggregation."
+              "reason": "Although the cell-level p-value is extremely inflated (8.1e-145), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (5.3e-47), confirming the effect is real at the replicate level."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (1.0), confirming that the markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single arbitrary resolution choice."
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
@@ -2635,22 +2626,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (2.6e-154), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (1.6e-05), confirming the effect is real at the replicate level."
+              "reason": "The pseudobulk p-value (2.5e-30) across 6 biological replicates confirms the effect is real and not driven by treating cells as independent samples."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.97,
-              "reason": "The held-out-split AUC (0.998) is nearly identical to the discovery-split AUC (0.9999), indicating the markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC (0.998) is nearly identical to the discovery-split AUC (0.9999), confirming markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.93,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), demonstrating robust stability rather than dependence on a single arbitrary parameter."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0), indicating it is robust to parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.99,
-              "reason": "Cramer's V of 0.0 indicates perfect separability between the biological comparison and technical variables, with no collinearity."
+              "reason": "Cramer's V of 0.0 indicates perfect separability between the biological comparison and technical variables."
             }
           }
         },
@@ -2728,23 +2719,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is vastly inflated (1.3e-143), the pseudobulk p-value (7.4e-06) with 6 replicates confirms the effect survives proper aggregation, indicating a real biological signal."
+              "confidence": 0.85,
+              "reason": "Although the cell-level p-value is extreme (1.3e-143), the pseudobulk test with 6 replicates still yields a highly significant p-value (1.7e-71), indicating the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "The held-out-split AUC (0.938) is very close to the discovery-split AUC (0.966), indicating the markers generalize well and are not artifacts of circular analysis."
+              "confidence": 0.9,
+              "reason": "The held-out-split AUC (0.8773) remains high and close to the discovery-split AUC (0.9218), indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
-              "confidence": 0.99,
-              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), meaning it is entirely dependent on one arbitrary parameter choice."
+              "confidence": 0.75,
+              "reason": "The state persists in only 50% of resolution settings (5 of 10), meaning it disappears at half the tested resolutions, indicating the biological claim depends on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.88,
-              "reason": "Cramer's V of 0.12 indicates minimal collinearity between the biological comparison and the technical variable, so confounding is unlikely to drive the result."
+              "confidence": 0.9,
+              "reason": "A Cramer's V of 0.12 indicates minimal association between the biological comparison and the technical variable, so confounding is unlikely to drive the results."
             }
           }
         },
@@ -2766,7 +2757,7 @@
           "critic": {
             "fragility": {
               "supported": true,
-              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.0, present only at resolution 0.2), confirming it is not a robust discrete population but an artifact of a single clustering parameter choice."
+              "reason": "The state 'High' is present in only 50% of the resolution sweep (stability 0.5, present in range 0.2\u20131.0 out of the full sweep), indicating it is not robustly recovered across most clustering settings and thus supports a fragility flag."
             }
           }
         }
@@ -2827,23 +2818,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is absurdly inflated (2.5e-148), the pseudobulk p-value (1.6e-05) with 6 replicates confirms the effect survives proper aggregation, so the biological signal is real."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (5.1e-48) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC (0.9524) is nearly identical to the discovery-split AUC (0.972), indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.92,
+              "reason": "The held-out AUC (0.8926) is close to the discovery AUC (0.9239), indicating markers generalize well and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
               "confidence": 0.97,
-              "reason": "The claimed state persists in only 10% of resolution settings (1 out of 10), appearing only at resolution 0.2, indicating it is an artifact of a single arbitrary parameter choice."
+              "reason": "The claimed state persists in only 10% of resolution settings (1 out of 10), appearing only at a single resolution, indicating the biological claim depends entirely on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.025 indicates near-complete independence between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.025 indicates near-complete independence between the biological comparison and technical variables."
             }
           }
         },
@@ -2927,22 +2918,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly small (2.8e-153), the pseudobulk test with 6 replicates still yields a highly significant p-value (4.7e-06), confirming the effect survives proper aggregation."
+              "reason": "The pseudobulk p-value (5.7e-44) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not drive a false discovery."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC (0.9391) is very close to the discovery-split AUC (0.9652), indicating the markers generalize well and are not artifacts of circular analysis."
+              "confidence": 0.92,
+              "reason": "The held-out AUC (0.874) remains close to the discovery AUC (0.914), indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
-              "confidence": 0.85,
-              "reason": "The claimed state persists in only 40% of resolution settings (4 out of 10), indicating it is unstable and dependent on a specific parameter choice."
+              "confidence": 0.97,
+              "reason": "The claimed state persists in only 1 out of 10 resolution settings (stability = 0.1), appearing exclusively at resolution 1.0, making the biological claim entirely dependent on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.97,
-              "reason": "Cramer's V of 0.0306 indicates near-complete independence between the biological comparison and the technical variable."
+              "confidence": 0.95,
+              "reason": "Cramer's V of 0.031 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },
@@ -2964,7 +2955,7 @@
           "critic": {
             "fragility": {
               "supported": true,
-              "reason": "The 'High' state is present in only 40% of the resolution sweep (stability 0.4, appearing in a limited range of 0.2\u20130.8 out of the full sweep), indicating it is not robust across most clustering settings and thus supports the fragility flag."
+              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.1), confirming it exists at a single resolution and is not a robust discrete population."
             }
           }
         }
@@ -3025,23 +3016,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is absurdly inflated (1.4e-142), the pseudobulk test on 6 replicates still yields a significant p-value (3.9e-05), indicating the effect survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (3.0e-65) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC (0.9526) is nearly identical to the discovery-split AUC (0.9679), indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.9,
+              "reason": "The held-out AUC (0.8738) remains high and close to the discovery AUC (0.9246), indicating markers are robust and not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
-              "confidence": 0.92,
-              "reason": "The claimed state persists in only 30% of resolution settings (range 0.2\u20130.6 out of 10), indicating it is unstable and dependent on a narrow parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), indicating it is entirely dependent on one arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.0444 indicates negligible association between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.0444 indicates negligible association between the biological comparison and technical variables."
             }
           }
         },
@@ -3063,7 +3054,7 @@
           "critic": {
             "fragility": {
               "supported": true,
-              "reason": "The 'High' state is present in only 30% of the resolution sweep (stability 0.3, appearing only between 0.2 and 0.6 out of 10 settings), indicating it is not robust across most resolutions and thus supports the fragility flag."
+              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.0, present only at resolution 0.2), confirming it is not a robust discrete population but an artifact of a single clustering parameter choice."
             }
           }
         }
@@ -3124,23 +3115,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is absurdly inflated (2.6e-145), the pseudobulk test on 6 replicates still yields a highly significant p-value (3.0e-06), indicating the effect is real and not merely an artifact of treating cells as independent."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (1.6e-63) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "The held-out-split AUC (0.9457) is very close to the discovery-split AUC (0.9667), showing minimal overfitting and confirming the markers generalize beyond the clustering that defined them."
+              "confidence": 0.9,
+              "reason": "The held-out AUC (0.879) is close to the discovery AUC (0.930), indicating markers generalize well and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
-              "confidence": 0.95,
-              "reason": "The claimed state persists in only 20% of resolution settings (2 out of 10), appearing only in a narrow range [0.4, 0.6], indicating the subcluster is resolution-dependent and not robust."
+              "confidence": 0.99,
+              "reason": "The claimed state persists at 0% of resolution settings (only at a single resolution of 0.2 out of 10 tested), indicating it is entirely dependent on one arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.93,
-              "reason": "Cramer's V of 0.0722 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
+              "reason": "Cramer's V of 0.072 indicates negligible association between the biological comparison and the technical variable."
             }
           }
         },
@@ -3162,7 +3153,7 @@
           "critic": {
             "fragility": {
               "supported": true,
-              "reason": "The 'High' state appears in only 2 out of 10 resolution settings (0.4\u20130.6), yielding a stability of 0.2, which indicates it is present in a small fraction of the sweep and thus fragile."
+              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.0, present only at resolution 0.2), confirming it is not a robust discrete population but an artifact of a single clustering parameter choice."
             }
           }
         }
@@ -3223,23 +3214,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is absurdly inflated (4.2e-162), the pseudobulk p-value (7.6e-04) with 6 replicates confirms the effect survives proper aggregation, so the biological signal is real."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (2.8e-59) across 6 biological replicates remains highly significant, confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC (0.9472) is nearly identical to the discovery-split AUC (0.9688), indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.9,
+              "reason": "The held-out AUC (0.8842) is close to the discovery AUC (0.9264), indicating markers generalize well and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": true,
               "confidence": 0.99,
-              "reason": "The claimed state persists in only 1 out of 10 resolution settings (stability = 0.1), appearing only at resolution 0.2, making it entirely dependent on an arbitrary parameter choice."
+              "reason": "The claimed state appears at only 1 of 10 resolution settings (stability = 0.0), indicating it is entirely dependent on an arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Cramer's V of 0.0361 indicates near-complete independence between the biological comparison and the technical variable."
+              "reason": "Cramer's V of 0.0361 indicates near-complete independence between the biological comparison and technical variables."
             }
           }
         },
@@ -3261,7 +3252,7 @@
           "critic": {
             "fragility": {
               "supported": true,
-              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.1), confirming it exists at a single resolution and is not a robust discrete population."
+              "reason": "The state 'High' appears at only 1 out of 10 resolution settings (stability 0.0, present only at resolution 0.2), confirming it is not a robust discrete population but an artifact of a single clustering parameter choice."
             }
           }
         }
@@ -3323,7 +3314,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "The pseudobulk p-value (9.3e-05) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not drive a false discovery."
+              "reason": "The pseudobulk p-value (9.7e-59) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely an artifact of treating cells as independent."
             },
             "double_dipping": {
               "present": false,
@@ -3333,12 +3324,12 @@
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0), so the biological claim does not depend on an arbitrary parameter choice."
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range 0.2\u20132.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": true,
               "confidence": 0.99,
-              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate the biological effect from the technical artifact."
+              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to distinguish biological signal from technical artifact."
             }
           }
         },
@@ -3421,18 +3412,18 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "Although the cell-level p-value is absurdly inflated (1.2e-152), the pseudobulk test on 6 replicates still yields a significant result (p=5.6e-04), indicating a real effect survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (7.0e-56) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not drive a false discovery."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC (0.9994) is nearly identical to the discovery-split AUC (0.9999), confirming the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC (0.9994) is virtually identical to the discovery-split AUC (0.9999), confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The claimed state persists across 90% of resolution settings (9 of 10), spanning a wide range [0.2, 2.0], indicating robust stability."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0), indicating it is robust to parameter choice."
             },
             "confounding": {
               "present": true,
@@ -3520,23 +3511,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.85,
-              "reason": "Although the cell-level p-value is extremely inflated (1e-148), the pseudobulk test on 6 replicates still yields p=0.002, indicating the effect survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (1.4e-60) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely inflated by pseudoreplication."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
+              "confidence": 0.97,
               "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.8,
-              "reason": "The state persists across 70% of resolution settings (7 of 10), spanning a broad range [0.2, 1.8], indicating reasonable stability rather than dependence on a single arbitrary parameter."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), indicating it is robust and not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": true,
               "confidence": 0.99,
-              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate biological signal from technical artifact."
+              "reason": "A Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to distinguish biological signal from technical artifact."
             }
           }
         },
@@ -3544,7 +3535,7 @@
           "detected": {
             "pseudoreplication": false,
             "double_dipping": false,
-            "fragility": true,
+            "fragility": false,
             "confounding": true
           }
         },
@@ -3556,10 +3547,6 @@
             "confounding": true
           },
           "critic": {
-            "fragility": {
-              "supported": false,
-              "reason": "The cluster is present across the range 0.2\u20131.8 with a stability of 0.7 over 10 resolution settings, indicating it appears at most tested resolutions rather than only at one narrow resolution, so the fragility flag is not supported."
-            },
             "confounding": {
               "supported": true,
               "reason": "Cram\u00e9r's V between 'condition' and 'batch' is 1.0, confirming perfect collinearity and making the biological effect inseparable from the technical variable."
@@ -3570,7 +3557,7 @@
       "redline_states": {
         "pseudoreplication": "clean",
         "double_dipping": "clean",
-        "fragility": "flagged",
+        "fragility": "clean",
         "confounding": "flagged"
       }
     },
@@ -3623,8 +3610,8 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "Although the cell-level p-value is absurdly small (5.3e-149), the pseudobulk p-value (9.1e-08) with 6 replicates confirms the effect survives proper aggregation, indicating a real biological signal."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (7.4e-69) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely an artifact of treating cells as independent."
             },
             "double_dipping": {
               "present": false,
@@ -3633,13 +3620,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.93,
-              "reason": "The state persists across 90% of resolution settings (range 0.2\u20131.8), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": true,
               "confidence": 0.99,
-              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to distinguish biological signal from technical artifact."
+              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate biological signal from technical artifact."
             }
           }
         },
@@ -3722,23 +3709,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.85,
-              "reason": "Although the cell-level p-value is absurdly small (1.1e-158), the pseudobulk p-value of 0.001 with 6 replicates confirms the effect survives proper aggregation."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (4.1e-62) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not drive a false discovery."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The held-out-split AUC of 1.0 matches the discovery-split AUC, indicating the markers generalize perfectly and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "Held-out-split AUC of 1.0 matches the discovery-split AUC of 1.0, indicating the markers generalize perfectly and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.97,
-              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0), demonstrating it is not an artifact of a single resolution choice."
+              "reason": "The state persists across all 10 resolution settings (stability = 1.0), so the biological claim does not depend on an arbitrary parameter choice."
             },
             "confounding": {
               "present": true,
               "confidence": 0.99,
-              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate biological signal from technical artifact."
+              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate the two effects."
             }
           }
         },
@@ -3821,23 +3808,23 @@
           "judgment": {
             "pseudoreplication": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The pseudobulk p-value (2.0e-05) with 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not drive the conclusion."
+              "confidence": 0.95,
+              "reason": "The pseudobulk p-value (1.2e-40) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level significance is not merely inflated by pseudoreplication."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.95,
+              "confidence": 0.97,
               "reason": "The held-out-split AUC of 0.9997 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), indicating it is robust and not an artifact of a single resolution choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), indicating it is robust and not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": true,
               "confidence": 0.99,
-              "reason": "Cramer's V of 1.0 indicates perfect collinearity between the biological comparison and a technical variable, making it impossible to separate biological signal from technical artifact."
+              "reason": "A Cram\u00e9r's V of 1.0 indicates perfect collinearity between the biological comparison and the technical variable, making it impossible to distinguish biological signal from technical artifact."
             }
           }
         },
@@ -3921,17 +3908,17 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is vastly inflated (3.2e-141), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (2.7e-06), confirming the effect is real at the replicate level."
+              "reason": "The pseudobulk p-value (8.1e-70) across 6 biological replicates remains highly significant, confirming the effect is not an artifact of treating cells as independent samples."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (0.9999), indicating the markers generalize and are not artifacts of circular analysis."
+              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (0.9999), indicating the markers generalize and are not inflated by circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
@@ -4015,22 +4002,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (1.8e-147), the pseudobulk p-value (5.2e-06) with 6 replicates confirms the effect survives proper aggregation, indicating a real biological signal."
+              "reason": "Although the cell-level p-value is extreme (1.8e-147), the pseudobulk test with 6 biological replicates still yields a highly significant p-value (9.0e-43), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9989) is nearly identical to the discovery-split AUC (1.0), confirming the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC (0.9989) is nearly identical to the discovery-split AUC (1.0), indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across 100% of resolution settings (10/10, range 0.2\u20132.0), demonstrating robust stability."
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.99,
-              "reason": "Cramer's V of 0.0028 indicates near-zero association between the biological comparison and technical variables, ruling out confounding."
+              "reason": "Cramer's V of 0.0028 indicates near-zero association between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -4109,22 +4096,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly inflated (8.8e-146), the pseudobulk test on 6 replicates still yields a significant result (6.5e-05), indicating the effect is real and survives proper aggregation."
+              "reason": "Although the cell-level p-value is extremely inflated (8.8e-146), the pseudobulk test on 6 biological replicates still yields a highly significant result (3.9e-49), confirming the effect is real and not an artifact of treating cells as independent."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC (0.9992) is nearly identical to the discovery-split AUC (1.0), confirming the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC of 0.9992 nearly matches the discovery-split AUC of 1.0, indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust to clustering parameter choices."
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0389 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
+              "reason": "Cramer's V of 0.0389 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -4203,22 +4190,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "The pseudobulk p-value (1.8e-06) across 6 biological replicates confirms the effect survives proper aggregation, so the cell-level inflation does not lead to a false discovery."
+              "reason": "Although the cell-level p-value is extreme (1.7e-143), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (1.3e-58), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.97,
-              "reason": "The held-out-split AUC of 0.9996 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.99,
+              "reason": "The held-out-split AUC of 0.9996 nearly matches the discovery-split AUC of 1.0, indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range 0.2\u20132.0), indicating it is robust to clustering parameter choice."
+              "reason": "The claimed state persists across 100% of resolution settings tested (10/10 from 0.2 to 2.0), demonstrating robust stability."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.97,
-              "reason": "Cramer's V of 0.0056 indicates near-complete independence between the biological comparison and the technical variable."
+              "confidence": 0.99,
+              "reason": "Cramer's V of 0.0056 indicates near-zero association between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -4297,17 +4284,17 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (4.9e-147), the pseudobulk test on 6 replicates still yields a highly significant p-value (2.1e-05), confirming the effect is real at the biological-replicate level."
+              "reason": "The pseudobulk p-value (1.0e-47) across 6 biological replicates strongly confirms the effect, so the cell-level significance is not merely an artifact of treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC of 0.9994 nearly matches the discovery-split AUC of 1.0, indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC of 0.9994 nearly matches the discovery-split AUC of 1.0, confirming that the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), demonstrating it is not an artifact of a single arbitrary resolution choice."
+              "reason": "The claimed state persists across all 10 resolution settings (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single arbitrary resolution choice."
             },
             "confounding": {
               "present": false,
@@ -4391,7 +4378,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (6.4e-155), the pseudobulk p-value (9.7e-08) across 6 biological replicates remains highly significant, indicating a real effect that survives proper aggregation."
+              "reason": "The pseudobulk p-value (5.6e-54) across 6 biological replicates strongly confirms the effect, so the cell-level significance is not merely an artifact of treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
@@ -4400,13 +4387,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "The state persists across 90% of resolution settings (range 0.2\u20132.0), indicating robust stability rather than dependence on a single arbitrary parameter choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0), indicating it is robust and not an artifact of a single arbitrary parameter choice."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.97,
-              "reason": "A Cram\u00e9r's V of 0.0083 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
+              "confidence": 0.98,
+              "reason": "A Cramer's V of 0.0083 indicates near-zero association between the biological comparison and the technical variable, so confounding is negligible."
             }
           }
         },
@@ -4485,22 +4472,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (7.3e-156), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (3.5e-05), confirming the effect is real at the replicate level."
+              "reason": "The pseudobulk p-value (6.6e-54) across 6 biological replicates strongly confirms the effect, so the cell-level significance is not merely an artifact of treating non-independent cells as independent samples."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC of 0.9998 nearly matches the discovery-split AUC of 1.0, indicating the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC (0.9998) nearly matches the discovery-split AUC (1.0), confirming that the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.95,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), demonstrating robust stability rather than dependence on a single arbitrary parameter."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), indicating it is robust to clustering parameter choices."
             },
             "confounding": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "A Cram\u00e9r's V of 0.0056 indicates near-zero association between the biological comparison and the technical variable, ruling out confounding."
+              "confidence": 0.98,
+              "reason": "Cramer's V of 0.0056 indicates near-zero association between the biological comparison and the technical variable, so confounding is negligible."
             }
           }
         },
@@ -4579,22 +4566,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly inflated (2.5e-146), the pseudobulk test on 6 replicates still yields a significant result (p=8.9e-04), indicating the effect is real at the biological-replicate level."
+              "reason": "The effect remains highly significant (p=1.6e-49) after proper pseudobulk aggregation to 6 biological replicates, indicating a real biological signal rather than inflated cell-level statistics."
             },
             "double_dipping": {
               "present": false,
-              "confidence": 0.99,
-              "reason": "The held-out-split AUC of 0.9999 nearly matches the discovery-split AUC of 1.0, confirming the markers generalize and are not artifacts of circular analysis."
+              "confidence": 0.97,
+              "reason": "The held-out-split AUC of 0.9999 nearly matches the discovery-split AUC of 1.0, confirming that the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
               "confidence": 0.99,
-              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range 0.2\u20132.0), indicating it is robust to clustering parameter choice."
+              "reason": "The claimed state persists across 100% of resolution settings tested (10/10, range 0.2\u20132.0), demonstrating robust stability."
             },
             "confounding": {
               "present": false,
               "confidence": 0.9,
-              "reason": "Cramer's V of 0.1029 indicates minimal association between the biological comparison and the technical variable, so confounding is unlikely to drive the result."
+              "reason": "Cramer's V of 0.1029 indicates minimal association between the biological comparison and technical variables, suggesting the effects are separable."
             }
           }
         },
@@ -4673,7 +4660,7 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is extremely inflated (2.9e-152), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (1.0e-06), confirming the effect is real at the replicate level."
+              "reason": "Although the cell-level p-value is extreme (2.9e-152), the pseudobulk test on 6 biological replicates still yields a highly significant p-value (2.8e-52), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
@@ -4682,13 +4669,13 @@
             },
             "fragility": {
               "present": false,
-              "confidence": 0.9,
-              "reason": "The claimed state persists across 80% of resolution settings (range 0.2\u20132.0), indicating reasonable stability across parameter choices."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across all 10 resolution settings tested (stability = 1.0, range [0.2, 2.0]), demonstrating it is not an artifact of a single resolution choice."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0306 indicates negligible association between the biological comparison and the technical variable, so confounding is not a concern."
+              "reason": "Cramer's V of 0.0306 indicates near-complete independence between the biological comparison and the technical variable, ruling out confounding."
             }
           }
         },
@@ -4767,22 +4754,22 @@
             "pseudoreplication": {
               "present": false,
               "confidence": 0.95,
-              "reason": "Although the cell-level p-value is absurdly small (9.8e-149), the pseudobulk test on 6 biological replicates still yields a significant p-value (1.1e-04), indicating the effect is real and not merely an artifact of treating cells as independent."
+              "reason": "Although the cell-level p-value is extreme (9.8e-149), the pseudobulk test across 6 biological replicates still yields a highly significant result (1.1e-62), confirming the effect survives proper aggregation."
             },
             "double_dipping": {
               "present": false,
               "confidence": 0.97,
-              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (1.0), confirming that the markers generalize and are not inflated by circular analysis."
+              "reason": "The held-out-split AUC (0.9998) is virtually identical to the discovery-split AUC (1.0), indicating the markers generalize and are not artifacts of circular analysis."
             },
             "fragility": {
               "present": false,
-              "confidence": 0.92,
-              "reason": "The claimed state persists across 90% of resolution settings (range 0.2\u20131.8), indicating it is robust and not an artifact of a single arbitrary resolution choice."
+              "confidence": 0.99,
+              "reason": "The claimed state persists across 100% of resolution settings tested (10/10, range 0.2\u20132.0), demonstrating robust stability."
             },
             "confounding": {
               "present": false,
               "confidence": 0.97,
-              "reason": "Cramer's V of 0.0167 indicates near-complete independence between the biological comparison and technical variables, ruling out confounding."
+              "reason": "Cramer's V of 0.0167 indicates near-complete independence between the biological comparison and the technical variable."
             }
           }
         },

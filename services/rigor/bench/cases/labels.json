@@ -29,34 +29,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -96,34 +108,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -163,34 +187,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -230,34 +266,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -297,34 +345,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -364,34 +424,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -431,34 +503,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -498,34 +582,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -565,34 +661,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -632,34 +740,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -699,34 +819,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -766,34 +898,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -833,34 +977,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -900,34 +1056,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -967,34 +1135,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1034,34 +1214,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1101,34 +1293,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1168,34 +1372,46 @@
       },
       "fragility": {
         "stability": 0.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
+            0.4,
             false
           ],
           [
-            4,
+            0.6,
             false
           ],
           [
-            5,
+            0.8,
             false
           ],
           [
-            6,
+            1.0,
             false
           ],
           [
-            7,
+            1.2,
             false
           ],
           [
-            8,
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1235,34 +1451,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1302,34 +1530,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1369,34 +1609,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1436,34 +1688,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1503,34 +1767,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1570,34 +1846,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -1636,35 +1924,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.4286,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.4,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
+            true
+          ],
+          [
+            1.0,
             false
           ],
           [
-            6,
+            1.2,
             false
           ],
           [
-            7,
+            1.4,
             false
           ],
           [
-            8,
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1703,35 +2003,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.2857,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.0,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
-            true
-          ],
-          [
-            4,
-            true
-          ],
-          [
-            5,
+            0.4,
             false
           ],
           [
-            6,
+            0.6,
             false
           ],
           [
-            7,
+            0.8,
             false
           ],
           [
-            8,
+            1.0,
+            false
+          ],
+          [
+            1.2,
+            false
+          ],
+          [
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1770,35 +2082,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.4286,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.1,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
-            true
-          ],
-          [
-            4,
-            true
-          ],
-          [
-            5,
-            true
-          ],
-          [
-            6,
+            0.4,
             false
           ],
           [
-            7,
+            0.6,
             false
           ],
           [
-            8,
+            0.8,
+            false
+          ],
+          [
+            1.0,
+            true
+          ],
+          [
+            1.2,
+            false
+          ],
+          [
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1837,35 +2161,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.4286,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.0,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
-            true
-          ],
-          [
-            4,
-            true
-          ],
-          [
-            5,
+            0.4,
             false
           ],
           [
-            6,
-            true
-          ],
-          [
-            7,
+            0.6,
             false
           ],
           [
-            8,
+            0.8,
+            false
+          ],
+          [
+            1.0,
+            false
+          ],
+          [
+            1.2,
+            false
+          ],
+          [
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1904,35 +2240,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.4286,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.0,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
-            true
-          ],
-          [
-            4,
-            true
-          ],
-          [
-            5,
+            0.4,
             false
           ],
           [
-            6,
-            true
-          ],
-          [
-            7,
+            0.6,
             false
           ],
           [
-            8,
+            0.8,
+            false
+          ],
+          [
+            1.0,
+            false
+          ],
+          [
+            1.2,
+            false
+          ],
+          [
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -1971,35 +2319,47 @@
         "n_markers": 4
       },
       "fragility": {
-        "stability": 0.4286,
-        "settings": 7,
-        "present_ks": [
+        "stability": 0.0,
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             false
           ],
           [
-            3,
-            true
-          ],
-          [
-            4,
-            true
-          ],
-          [
-            5,
-            true
-          ],
-          [
-            6,
+            0.4,
             false
           ],
           [
-            7,
+            0.6,
             false
           ],
           [
-            8,
+            0.8,
+            false
+          ],
+          [
+            1.0,
+            false
+          ],
+          [
+            1.2,
+            false
+          ],
+          [
+            1.4,
+            false
+          ],
+          [
+            1.6,
+            false
+          ],
+          [
+            1.8,
+            false
+          ],
+          [
+            2.0,
             false
           ]
         ]
@@ -2039,34 +2399,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2106,34 +2478,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2173,34 +2557,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2240,34 +2636,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2307,34 +2715,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2374,34 +2794,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2441,34 +2873,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2508,34 +2952,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2575,34 +3031,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2642,34 +3110,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2709,34 +3189,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2776,34 +3268,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2843,34 +3347,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2910,34 +3426,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -2977,34 +3505,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]
@@ -3044,34 +3584,46 @@
       },
       "fragility": {
         "stability": 1.0,
-        "settings": 7,
-        "present_ks": [
+        "settings": 10,
+        "present_res": [
           [
-            2,
+            0.2,
             true
           ],
           [
-            3,
+            0.4,
             true
           ],
           [
-            4,
+            0.6,
             true
           ],
           [
-            5,
+            0.8,
             true
           ],
           [
-            6,
+            1.0,
             true
           ],
           [
-            7,
+            1.2,
             true
           ],
           [
-            8,
+            1.4,
+            true
+          ],
+          [
+            1.6,
+            true
+          ],
+          [
+            1.8,
+            true
+          ],
+          [
+            2.0,
             true
           ]
         ]

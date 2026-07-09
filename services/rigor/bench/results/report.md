@@ -1,4 +1,4 @@
-# Redline detection benchmark — results
+# Redline detection benchmark: results
 
 **Redline catches 100% of planted errors at a 0% false-positive rate; a single Claude call catches 100% at 74%.**
 
@@ -13,7 +13,7 @@
 |---|---|---|---|---|---|
 | Single Claude call, write-up only (baseline) | 100% | 74% | 21% | 34% | 0.26 |
 | Single Claude call, given the re-run numbers | 100% | 0% | 100% | 100% | 1.00 |
-| Redline checks (no critic) | 100% | 2% | 91% | 95% | 0.98 |
+| Redline checks (no critic) | 100% | 0% | 100% | 100% | 1.00 |
 | Redline checks + critic | 100% | 0% | 100% | 100% | 1.00 |
 
 ## Detection by error class
