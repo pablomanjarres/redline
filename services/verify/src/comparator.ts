@@ -33,19 +33,42 @@ function compareCheck(
   const comps: ValueComparison[] = [];
 
   if (checkId === 1) {
-    const dhp = num(d.honestP),
-      ohp = num(oc.honestP as number);
-    comps.push(vc('honestP', d.honestP, oc.honestP, dhp != null && ohp != null && log10pClose(dhp, ohp, TOL.log10p)));
-    comps.push(vc('n', d.n, oc.n, String(d.n) === String(oc.n)));
+    const degraded = d.state === 'flag_only' || d.state === 'hard_stop';
     comps.push(vc('verdict', d.state, oc.verdict, String(d.state) === String(oc.verdict)));
+    if (oc.n != null) comps.push(vc('n (replicate units)', d.n, oc.n, String(d.n) === String(oc.n)));
+    // The engine asserts the corrected result with PyDESeq2 pseudobulk; the
+    // oracle uses Welch's t on the per-unit means. Both are accepted methods, so
+    // on a strong effect their p-values legitimately differ by many orders of
+    // magnitude. The method-independent invariant is the significance CALL, plus
+    // closeness when both are non-significant, which is exactly the
+    // pseudoreplication collapse this check exists to catch. When the check
+    // could not run (no raw counts) the oracle reports no honest p at all.
+    const ohp = oc.honestP == null ? null : num(oc.honestP as number);
+    const dhp = num(d.honestP);
+    if (!degraded && ohp != null && dhp != null) {
+      const alpha = 0.05;
+      const sameCall = (dhp < alpha) === (ohp < alpha);
+      const bothNonSig = dhp >= alpha && ohp >= alpha;
+      const agree = sameCall && (!bothNonSig || log10pClose(dhp, ohp, TOL.log10p));
+      comps.push(vc('honestP (same call; close when non-significant)', d.honestP, oc.honestP, agree));
+    }
   } else if (checkId === 2) {
+    comps.push(vc('verdict', d.state, oc.verdict, String(d.state) === String(oc.verdict)));
     const dh = num(d.holdAUC),
       oh = num(oc.holdAUC as number);
-    if (dh != null && oh != null) comps.push(vc('holdAUC', d.holdAUC, oc.holdAUC, Math.abs(dh - oh) <= TOL.auc));
+    if (dh != null && oh != null) comps.push(vc('holdAUC (the honest test)', d.holdAUC, oc.holdAUC, Math.abs(dh - oh) <= TOL.auc));
     const dd = num(d.discAUC),
       od = num(oc.discAUC as number);
-    if (dd != null && od != null) comps.push(vc('discAUC', d.discAUC, oc.discAUC, Math.abs(dd - od) <= TOL.auc));
-    comps.push(vc('verdict', d.state, oc.verdict, String(d.state) === String(oc.verdict)));
+    if (dd != null && od != null && dh != null && oh != null) {
+      // Discovery AUC is the selection-inflated number, and the two
+      // implementations define the group and pick its markers differently, so
+      // their discovery values legitimately differ. The method-independent
+      // invariant is that BOTH sides show discovery at or above held-out, which
+      // is the double-dipping inflation itself. Held-out AUC, the honest
+      // quantity, is compared numerically above.
+      const agree = (dd >= dh) === (od >= oh);
+      comps.push(vc('discAUC >= holdAUC (inflation on both)', `${d.discAUC} >= ${d.holdAUC}`, `${oc.discAUC} >= ${oc.holdAUC}`, agree));
+    }
   } else if (checkId === 3) {
     const spur = oc.spurious as Record<string, unknown> | undefined;
     const stab = oc.stable as Record<string, unknown> | undefined;
@@ -164,9 +187,21 @@ export function gradeAiWiring(caseProbes: CaseProbe[]): AiWiring {
   };
 }
 
+const EXPECTED_CASES = 4;
+const EXPECTED_CHECKS = 4;
+
 export function isReady(cases: CaseVerdict[], ai: AiWiring, deadUnlabeled: number): { ready: boolean; failures: string[] } {
   const failures: string[] = [];
+  // A case that produced no checks must never pass silently. An empty result is
+  // a failure to run, not an absence of problems.
+  if (cases.length < EXPECTED_CASES) {
+    failures.push(`Only ${cases.length} of ${EXPECTED_CASES} cases ran`);
+  }
   for (const c of cases) {
+    if (c.checks.length < EXPECTED_CHECKS) {
+      const why = c.notes ? ` (${c.notes})` : '';
+      failures.push(`Case ${c.caseId} produced only ${c.checks.length} of ${EXPECTED_CHECKS} checks${why}`);
+    }
     for (const chk of c.checks) {
       if (chk.verdict !== 'WIRED') failures.push(`Case ${c.caseId} check ${chk.checkId} (${CHECK_NAMES[chk.checkId]}): ${chk.verdict}`);
     }
