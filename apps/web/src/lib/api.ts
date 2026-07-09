@@ -7,6 +7,8 @@
 import { z } from 'zod';
 import {
   CheckResult,
+  DatasetInventory,
+  ExtractedClaim,
   FieldSpec,
   type CheckConfigMap,
   type CheckId,
@@ -14,6 +16,19 @@ import {
 } from '@redline/contracts';
 
 const FieldsResponse = z.object({ fields: z.array(FieldSpec) });
+const InspectResponse = z.object({ inventory: DatasetInventory });
+const ClaimsResponse = z.object({
+  claims: z.array(ExtractedClaim),
+  source: z.enum(['model', 'curated']),
+});
+const MapResponse = z.object({ claim: ExtractedClaim });
+
+/** The extraction result: the claims plus whether they are a live model reading
+ * or the curated built-in list. `source` is load-bearing for honest UI copy. */
+export interface ClaimsResult {
+  claims: ExtractedClaim[];
+  source: 'model' | 'curated';
+}
 
 async function postJson(url: string, body: unknown): Promise<unknown> {
   const res = await fetch(url, {
@@ -54,4 +69,46 @@ export async function postCheck(body: {
 }): Promise<CheckResult> {
   const json = await postJson('/api/audit/check', body);
   return CheckResult.parse(json);
+}
+
+/**
+ * Inspection step (spec section 3): the thin inventory of a scenario's `.h5ad`.
+ * POST /api/audit/inspect with `{ scenarioId }` -> `{ inventory }`.
+ */
+export async function postInspect(body: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
+  const json = await postJson('/api/audit/inspect', body);
+  return InspectResponse.parse(json).inventory;
+}
+
+/**
+ * Claim Extraction (spec sections 4, 6): read the inventory (plus any notebook /
+ * prose) and propose the auditable claims, with a `source` telling the caller
+ * whether they are a live model reading or the curated built-in list.
+ * POST /api/audit/claims.
+ */
+export async function postClaims(body: {
+  scenarioId: ScenarioId;
+  inventory: DatasetInventory;
+  fields: FieldSpec[];
+  notebook?: string;
+  prose?: string;
+}): Promise<ClaimsResult> {
+  const json = await postJson('/api/audit/claims', body);
+  return ClaimsResponse.parse(json);
+}
+
+/**
+ * Manual claim entry (spec section 7): map one typed sentence to its checks and
+ * params. POST /api/audit/claims/map -> `{ claim }`. The route returns 503 when
+ * no honest mapping is possible; `postJson` throws on that, and the caller adds
+ * nothing rather than fabricating a routing.
+ */
+export async function postMapClaim(body: {
+  scenarioId: ScenarioId;
+  inventory: DatasetInventory;
+  fields: FieldSpec[];
+  text: string;
+}): Promise<ExtractedClaim> {
+  const json = await postJson('/api/audit/claims/map', body);
+  return MapResponse.parse(json).claim;
 }
