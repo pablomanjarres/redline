@@ -52,12 +52,12 @@ export const ruleBasedReasoner: Reasoner = reasonerFrom(async (req) => {
     }
     case 2: {
       const hold = num(e, 'holdAUC');
-      const cells = num(e, 'heldoutCells');
+      const cells = num(e, 'Held-out cells');
       if (Number.isFinite(hold) && hold >= 0.62) {
         return j('veto', `holdAUC=${e.holdAUC}`, 'The markers still separate the group on the held-out half.', 'high');
       }
       if (Number.isFinite(cells) && cells < 20) {
-        return j('downgrade', `heldoutCells=${e.heldoutCells}`, 'The held-out half is too small to tell a real collapse from noise.', 'medium');
+        return j('downgrade', `Held-out cells=${e['Held-out cells']}`, 'The held-out half is too small to tell a real collapse from noise.', 'medium');
       }
       return j('confirm', `holdAUC=${e.holdAUC}`, 'The markers collapse on an adequately sized held-out half.', 'high');
     }
@@ -70,7 +70,7 @@ export const ruleBasedReasoner: Reasoner = reasonerFrom(async (req) => {
     }
     case 4: {
       const v = num(e, 'cramersV');
-      const separable = e.separable === true;
+      const separable = e['Separable'] === 'yes';
       if (separable || (Number.isFinite(v) && v < 0.9)) {
         return j('veto', `cramersV=${e.cramersV}`, 'The grouping and the technical variable are separable.', 'high');
       }

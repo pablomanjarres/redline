@@ -32,9 +32,14 @@ function metaLine(f: FieldSpec): string {
 export function FieldMatrixRow({
   field,
   onRole,
+  tourId,
+  tourRoleId,
 }: {
   field: FieldSpec;
   onRole: (role: FieldRole) => void;
+  /** Set by the page on the one row the guided tour spotlights. */
+  tourId?: string;
+  tourRoleId?: string;
 }) {
   const c = field.confidence;
   const color = CONF_COLOR[c];
@@ -58,7 +63,7 @@ export function FieldMatrixRow({
   };
 
   return (
-    <div style={card}>
+    <div data-tour={tourId} style={card}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ font: '600 15px/1.2 var(--mono)', color: 'var(--ink)' }}>{field.id}</span>
@@ -112,6 +117,8 @@ export function FieldMatrixRow({
           Meaning this field carries
         </span>
         <select
+          data-testid={`field-role-${field.id}`}
+          data-tour={tourRoleId}
           aria-label={`Meaning for ${field.id}`}
           value={field.role}
           onChange={(e) => onRole(e.target.value as FieldRole)}

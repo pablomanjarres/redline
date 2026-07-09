@@ -35,7 +35,7 @@ import type {
   FieldSpec,
   ScenarioId,
 } from '@redline/contracts';
-import { DEFAULT_CONFIG, SCENARIOS, assembleReport, reasoningLines } from '@redline/engine';
+import { DEFAULT_CONFIG, SCENARIO_DEFAULTS, SCENARIOS, assembleReport, reasoningLines } from '@redline/engine';
 import { postCheck, postFields } from '@/lib/api';
 
 const IDS: CheckId[] = [1, 2, 3, 4];
@@ -121,7 +121,9 @@ function freshCore(scenarioId: ScenarioId): CoreState {
     scenarioId,
     fields: null,
     fieldsConfirmed: false,
-    cfg: cloneConfig(DEFAULT_CONFIG),
+    // Each scenario loads with its own knob defaults (the tracked group, the unit,
+    // the nuisance column differ per dataset), falling back to the global default.
+    cfg: cloneConfig(SCENARIO_DEFAULTS[scenarioId] ?? DEFAULT_CONFIG),
     results: zeroResults(),
     running: zeroRunning(),
     reasoning: zeroReasoning(),

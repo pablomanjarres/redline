@@ -95,18 +95,58 @@ const METHOD = {
   4: "design-matrix rank and Cramer's V on the resolved columns",
 } as const;
 
-function req(
-  caseId: 'A' | 'B' | 'C',
-  checkId: CheckId,
-  claim: string,
-  evidence: CriticRequest['evidence'],
-): CriticRequest {
+/** Semantic evidence, as the oracle reports it. Rewritten below into the shape
+ *  the app actually sends. */
+type RawEvidence = Record<string, number | string | boolean | null | undefined>;
+
+const num = (v: unknown): number => Number(v ?? 0);
+const pval = (v: unknown): string => {
+  const n = num(v);
+  return n !== 0 && Math.abs(n) < 1e-4 ? n.toExponential(1) : String(n);
+};
+
+/**
+ * Rewrite the oracle's evidence into the exact shape `POST /api/audit/check`
+ * hands the critic: `computeEvidence` merges the stat labels the card displays
+ * with the chart's own camelCase fields.
+ *
+ * The harness used to invent its own keys (`heldoutCells`, `separable`,
+ * `markersHolding`), none of which the route ever sends. A green run on a shape
+ * production never builds proves nothing about production.
+ */
+function productionEvidence(checkId: CheckId, e: RawEvidence): CriticRequest['evidence'] {
+  const out: Record<string, string | number | boolean> = {};
+  if (checkId === 1) {
+    out['Naive p'] = pval(e.naiveP);
+    out['Honest p'] = pval(e.honestP);
+    out['True n'] = `${num(e.n)} donors`;
+    if (e.icc != null) out['Intra-unit corr.'] = `ICC ${num(e.icc).toFixed(2)}`;
+    Object.assign(out, { chartKind: 'significance', naiveP: num(e.naiveP), honestP: num(e.honestP), honestN: num(e.n) });
+  } else if (checkId === 2) {
+    out['Discovery AUC'] = num(e.discAUC).toFixed(2);
+    out['Held-out AUC'] = num(e.holdAUC).toFixed(2);
+    out['Markers holding'] = `${num(e.markersHolding)} / ${num(e.nMarkers)}`;
+    if (e.heldoutCells != null) out['Held-out cells'] = String(num(e.heldoutCells));
+    Object.assign(out, { chartKind: 'groups', discAUC: num(e.discAUC), holdAUC: num(e.holdAUC), markerCount: num(e.nMarkers) });
+  } else if (checkId === 3) {
+    out['Stability'] = `${Math.round(num(e.stability) * 100)}%`;
+    Object.assign(out, { chartKind: 'fragility', stability: num(e.stability) });
+  } else {
+    out["Cramer's V"] = num(e.cramersV).toFixed(2);
+    out['Separable'] = e.separable ? 'yes' : 'no';
+    out['Design'] = e.rankDeficient ? 'rank deficient' : 'full rank';
+    Object.assign(out, { chartKind: 'confound', cramersV: num(e.cramersV) });
+  }
+  return out as CriticRequest['evidence'];
+}
+
+function req(caseId: 'A' | 'B' | 'C', checkId: CheckId, claim: string, evidence: RawEvidence): CriticRequest {
   return {
     checkId,
     computeState: 'flagged',
     claim,
     datasetTitle: DATASET[caseId],
-    evidence,
+    evidence: productionEvidence(checkId, evidence),
     method: METHOD[checkId],
     design: DESIGN[caseId],
   };

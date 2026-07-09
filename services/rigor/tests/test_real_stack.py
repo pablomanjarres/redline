@@ -111,6 +111,87 @@ def test_pillar3_runs_real_leiden_sweep(synth_h5ad):
     assert len(steps) >= 3
     # Every step reports a real cluster count from the re-clustering.
     assert all(s["clusters"] >= 1 for s in steps)
+    # The point of this module is the real toolchain. Without this the KMeans
+    # fallback satisfies every assertion above and the test name is a lie.
+    engine = next(s["value"] for s in result["stats"] if s["label"] == "Clustering engine")
+    assert engine == "Leiden (scanpy)", f"expected real Leiden, got {engine!r}"
+
+
+def test_pillar3_kmeans_fallback_is_seeded_and_labeled(synth_h5ad, monkeypatch):
+    """When leiden is unavailable the fallback must still honor the seed, and must
+    say so. A zero-variance fallback silently masquerading as a resolution sweep is
+    exactly the failure this tool exists to catch."""
+    from redline.pillars import fragility
+
+    emb = np.random.default_rng(0).normal(size=(80, 6))
+    resolutions = [0.2, 0.4, 0.6]
+
+    def _no_leiden(*_a, **_k):
+        raise ImportError("No module named 'leidenalg'", name="leidenalg")
+
+    monkeypatch.setattr("scanpy.tl.leiden", _no_leiden)
+
+    labels_a, engine_a = fragility._cluster_sweep(emb, resolutions, seed=1)
+    labels_b, engine_b = fragility._cluster_sweep(emb, resolutions, seed=2)
+
+    assert "KMeans fallback" in engine_a and "leidenalg" in engine_a
+    assert engine_a == engine_b
+    # Different seeds must produce different partitions somewhere in the sweep,
+    # otherwise a repeated "stochastic" check collapses to one deterministic run.
+    assert any(not np.array_equal(a, b) for a, b in zip(labels_a, labels_b))
+
+
+def _two_state_counts(seed: int = 0):
+    """800 cells, 80 genes, two clear states; state B is defined by 6 real markers."""
+    r = np.random.default_rng(seed)
+    X = r.poisson(4, size=(800, 80)).astype(float)
+    X[np.ix_(np.arange(300), np.arange(6))] += r.poisson(14, size=(300, 6))
+    return X
+
+
+def test_pillar2_leiden_honors_the_requested_k():
+    """Leiden takes a resolution, not a k. If it over-partitions, Pillar 2's
+    best-match cluster is a fragment of the claimed group, the group's real
+    markers score near chance against it, and a clean analysis gets FLAGGED.
+    Pin the granularity, and pin that the leiden path is what actually ran."""
+    from redline.pillars import double_dipping as dd
+
+    X = _two_state_counts()
+    labels, engine, res = dd._recluster_train(X, k=2, seed=0)
+
+    assert engine == "Leiden (scanpy)", f"expected the real leiden path, got {engine!r}"
+    assert int(np.unique(labels).size) == 2, "leiden ignored the k the claim implies"
+    assert res is not None and 0.0 < res <= 2.0
+
+    # Same seed, same partition, and the hint reproduces it without re-bisecting.
+    again, _, res2 = dd._recluster_train(X, k=2, seed=0, res_hint=res)
+    assert np.array_equal(labels, again)
+    assert res2 == res
+
+
+def test_pillar2_backends_agree_on_a_clean_group():
+    """The verdict must not depend on which clustering library is installed."""
+    from sklearn.cluster import KMeans
+    from sklearn.decomposition import PCA
+
+    from redline.pillars import double_dipping as dd
+
+    X = _two_state_counts()
+    leiden_labels, engine, _ = dd._recluster_train(X, k=2, seed=0)
+    assert engine == "Leiden (scanpy)"
+
+    log = np.log1p(X)
+    emb = PCA(n_components=30, random_state=0).fit_transform(log - log.mean(axis=0))
+    km_labels = KMeans(n_clusters=2, n_init=10, random_state=0).fit(emb).labels_.astype(str)
+
+    truth = np.zeros(800, dtype=bool)
+    truth[:300] = True
+    for labels in (leiden_labels, km_labels):
+        best = max(
+            float(np.logical_and(labels == lbl, truth).sum()) / float(np.logical_or(labels == lbl, truth).sum())
+            for lbl in np.unique(labels)
+        )
+        assert best > 0.8, f"backend failed to recover the planted state (best Jaccard {best:.2f})"
 
 
 def _load_oracle():

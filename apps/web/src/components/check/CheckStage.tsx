@@ -33,6 +33,16 @@ function figure(result: CheckResult, cfg3: Check3Config): ReactNode {
   }
 }
 
+/** Slug a stat label into a stable kebab-case test id: lowercase, runs of
+ *  non-alphanumerics collapse to a single dash, no leading/trailing dash.
+ *  e.g. "Honest p (donor-level)" -> "honest-p-donor-level". */
+function slug(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 /** The audit stage for one check: figure on a lightbox plate (the hero), the
  *  verdict, and the instrument + console rail. */
 export function CheckStage({ checkId }: { checkId: CheckId }) {
@@ -69,6 +79,8 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 'none' }}>
           {(isRunning || result) && (
             <span
+              data-testid="check-verdict"
+              data-tour="check.badge"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -88,6 +100,8 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </span>
           )}
           <button
+            data-testid="rerun-check"
+            data-tour="check.rerun"
             onClick={() => void runCheck(checkId)}
             style={{
               font: '700 11px/1 var(--sans)',
@@ -110,7 +124,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.7fr) 356px', gap: 22, marginTop: 26, alignItems: 'start' }}>
         <div style={{ minWidth: 0 }}>
           {/* lightbox plate */}
-          <div style={{ position: 'relative', borderRadius: 16, background: 'var(--plate)', boxShadow: 'var(--plate-glow)', overflow: 'hidden' }}>
+          <div data-tour="check.figure" style={{ position: 'relative', borderRadius: 16, background: 'var(--plate)', boxShadow: 'var(--plate-glow)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 18px', borderBottom: '1px solid var(--plate-line)' }}>
               <span style={{ width: 7, height: 7, borderRadius: 7, background: showFigure ? light : 'var(--plate-line)' }} />
               <span style={{ font: '600 9.5px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: '#8792a3' }}>Figure</span>
@@ -135,9 +149,9 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
 
           {/* stat strip */}
           {showFigure && result!.stats.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+            <div data-tour="check.stats" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               {result!.stats.map((s, i) => (
-                <div key={i} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
+                <div key={i} data-testid={`stat-${slug(s.label)}`} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
                   <div style={{ font: '700 19px/1 var(--mono)', color: s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)' }}>{s.value}</div>
                   <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
                 </div>
@@ -145,7 +159,11 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </div>
           )}
 
-          {showFigure && <VerdictReadout result={result!} checkId={checkId} />}
+          {showFigure && (
+            <div data-tour="check.verdict">
+              <VerdictReadout result={result!} checkId={checkId} />
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

@@ -19,6 +19,8 @@ export function ReportRow({ result }: { result: CheckResult }) {
 
   return (
     <article
+      data-testid={`report-row-${checkId}`}
+      data-tour={`report.row.${checkId}`}
       aria-label={`Check ${num} ${meta.name}, ${stateLabel(state)}`}
       style={{
         background: 'var(--panel)',

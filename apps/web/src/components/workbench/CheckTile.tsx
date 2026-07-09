@@ -57,7 +57,9 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
 
   return (
     <Link
+      data-tour={`workbench.tile.${checkId}`}
       href={`/checks/${checkId}`}
+      data-testid={`check-tile-${checkId}`}
       aria-label={`Open check ${checkId}: ${meta.name}`}
       style={{
         display: 'flex',
@@ -85,6 +87,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
             <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
           </div>
           <span
+            data-testid={`tile-verdict-${checkId}`}
             style={{
               flex: 'none',
               display: 'inline-flex',

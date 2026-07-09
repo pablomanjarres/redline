@@ -64,6 +64,7 @@ export function Pipeline() {
 
   return (
     <nav
+      data-tour="shell.pipeline"
       aria-label="Audit pipeline"
       className="rl-scroll"
       style={{
