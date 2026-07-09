@@ -26,3 +26,6 @@ export {
 // The curated prose and the assembled report.
 export { curatedNarrative } from './narrative.js';
 export { assembleReport } from './report.js';
+
+// The corrected-analysis bundle (README + notebook + per-finding scripts).
+export { buildBundle } from './bundle.js';

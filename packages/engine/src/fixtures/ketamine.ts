@@ -8,18 +8,48 @@ import type {
   Check2Config,
   Check3Config,
   Check4Config,
+  Check5Config,
+  Check6Config,
+  Check7Config,
+  Check8Config,
   CheckConfigMap,
   UnitProfile,
 } from '@redline/contracts';
-import { buildSteps, cit, groupInt, type FullCheck } from './shared.js';
+import {
+  buildSteps,
+  buildResolutionSteps,
+  cit,
+  fdr,
+  groupInt,
+  mkCode,
+  rec,
+  script1,
+  script2,
+  script3,
+  script4,
+  script5,
+  script6,
+  script7,
+  script8,
+  volcanoPair,
+  type FullCheck,
+} from './shared.js';
 
 // ---------------------------------------------------------------------------
-// Scenario `ketamine` - the LOCKED fallback. This is an exact reproduction of
-// project/redline-engine.js mapped into the contract shapes (mice -> profiles /
-// units, cond -> group, mean -> value). Its numbers and copy are the reference;
-// do not alter them. The em dashes and curly quotes below are part of that
-// locked reference and are reproduced verbatim.
+// Scenario `ketamine` - the LOCKED fallback. Checks 1 to 4 are an exact
+// reproduction of project/redline-engine.js mapped into the contract shapes
+// (mice -> profiles / units, cond -> group, mean -> value). Their numbers and
+// copy are the reference; do not alter them. The em dashes and curly quotes in
+// checks 1 to 4 are part of that locked reference and are reproduced verbatim.
+//
+// The correction payloads and checks 5 to 8 are NEW and follow the voice rules
+// (no em dashes). Case B carries different field names, genes, numbers, and
+// resolutions from Case A on purpose: that is the generality test.
 // ---------------------------------------------------------------------------
+
+const H5AD = 'pfc_ketamine_scRNAseq.h5ad';
+const REF = 'saline';
+const ALT = 'ketamine';
 
 const dataset: DatasetMeta = {
   file: 'pfc_ketamine_scRNAseq.h5ad',
@@ -153,10 +183,43 @@ function k1(cfg: Check1Config): FullCheck {
         { label: 'Minimum needed', value: '≥ 3 / group' },
       ],
       chart: { kind: 'hardstop', units: 2, perGroup: 1, profiles: KET_UNITS },
+      recommendations: [
+        rec(
+          'Collect a design with at least 3 replicate units per group.',
+          "'litter_id' resolves to 2 units, one per condition, so no test can separate the drug from that single litter.",
+          'A valid mouse-level differential-expression test becomes possible.',
+          'needs_new_data',
+          cit('c1'),
+        ),
+      ],
+      preview: {
+        methodLabel: 'no valid test (n=1 per group)',
+        unsalvageable: true,
+        before: { kind: 'hardstop', units: 2, perGroup: 1, profiles: KET_UNITS },
+        after: null,
+      },
     };
   }
 
   const badUnit = cfg.unit === 'cell_barcode';
+  const p1 = {
+    h5ad: H5AD,
+    unit: 'mouse_id',
+    grouping: 'condition',
+    ref: REF,
+    alt: ALT,
+    gene: 'Bdnf',
+    covariates: ['n_genes', 'pct_mito'],
+    alpha,
+  };
+  const v1 = volcanoPair('naive per-cell test, ~ condition', 'pseudobulk + PyDESeq2, ~ condition', alpha, 1.0, [
+    { gene: 'Bdnf', fc: 0.8, before: 8.5, after: 0.47, sigBefore: true, sigAfter: false, claimed: true },
+    { gene: 'Fos', fc: 1.1, before: 6.9, after: 1.9, sigBefore: true, sigAfter: true },
+    { gene: 'Arc', fc: 0.7, before: 5.2, after: 0.6, sigBefore: true, sigAfter: false },
+    { gene: 'Il1b', fc: 0.5, before: 3.8, after: 0.4, sigBefore: true, sigAfter: false },
+    { gene: 'Nfkbia', fc: 0.3, before: 2.6, after: 0.3, sigBefore: true, sigAfter: false },
+    { gene: 'Gfap', fc: -0.2, before: 1.0, after: 0.35, sigBefore: false, sigAfter: false },
+  ]);
   return {
     checkId: 1,
     state: 'flagged',
@@ -175,6 +238,22 @@ function k1(cfg: Check1Config): FullCheck {
       { label: 'Intra-mouse corr.', value: 'ICC 0.18' },
     ],
     chart: { kind: 'significance', naive, honest, alpha, units: KET_UNITS, badUnit },
+    correctedCode: mkCode('01_pseudoreplication.py', script1(p1), p1),
+    recommendations: [
+      rec(
+        'Aggregate cells to mouse_id and re-test with pseudobulk (PyDESeq2).',
+        'The per-cell p-value (3.1e-9) treats 48,213 correlated cells as independent; at the mouse level (n=6) the effect is p = 0.34.',
+        'Bdnf drops below significance once the true replicate is the mouse.',
+        'fixable_now',
+        cit('c1'),
+      ),
+    ],
+    preview: {
+      methodLabel: 'pseudobulk + PyDESeq2',
+      unsalvageable: false,
+      before: v1.before,
+      after: v1.after,
+    },
   };
 }
 
@@ -213,6 +292,14 @@ function k2(cfg: Check2Config): FullCheck {
 
   const discAUC = 0.9;
   const holdAUC = 0.58;
+  const p2 = {
+    h5ad: H5AD,
+    grouping: 'leiden',
+    target_group: 'Activated-Microglia',
+    markers: ['Il1b', 'Tnf', 'Ccl4', 'Nfkbia'],
+    split: cfg.split,
+    seed: 0,
+  };
   return {
     checkId: 2,
     state: 'flagged',
@@ -232,6 +319,30 @@ function k2(cfg: Check2Config): FullCheck {
       { label: 'Markers holding', value: '0 / 4' },
     ],
     chart: { kind: 'groups', markers, split: cfg.split, verified: true, discAUC, holdAUC },
+    correctedCode: mkCode('02_double_dipping.py', script2(p2), p2),
+    recommendations: [
+      rec(
+        'Validate the markers on cells held out from the clustering.',
+        'The four markers separate the group at AUC 0.90 on the cells they were chosen on and 0.58 (near chance) on held-out cells.',
+        'The activated-microglia state does not survive out of sample.',
+        'fixable_now',
+        cit('c2'),
+      ),
+      rec(
+        'Use ClusterDE for a calibrated test of the cluster.',
+        'Count splitting is evidence, not a certified FDR correction. ClusterDE is the stronger method.',
+        'A false-discovery-controlled marker set for the claimed state.',
+        'fixable_now',
+        cit('c2'),
+      ),
+    ],
+    preview: {
+      methodLabel: 'held-out marker test (count split)',
+      caveat: 'Count splitting is evidence, not a certified FDR correction. ClusterDE is the stronger method.',
+      unsalvageable: false,
+      before: { kind: 'groups', markers, split: cfg.split, verified: true, discAUC },
+      after: { kind: 'groups', markers, split: cfg.split, verified: true, discAUC, holdAUC },
+    },
   };
 }
 
@@ -244,6 +355,16 @@ function k3(cfg: Check3Config): FullCheck {
   const pct = Math.round(stability * 100);
 
   if (cfg.track === 'Responder') {
+    const p3 = {
+      h5ad: H5AD,
+      track: 'Responder',
+      track_column: 'leiden',
+      min: cfg.min,
+      max: cfg.max,
+      step: cfg.step,
+      seed: 0,
+    };
+    const stableSteps = buildSteps(cfg.min, cfg.max, cfg.step, [0.0, 9.9]);
     return {
       checkId: 3,
       state: 'flagged',
@@ -269,6 +390,32 @@ function k3(cfg: Check3Config): FullCheck {
         { label: 'Present range', value: present[0].toFixed(1) + '–' + present[1].toFixed(1) },
       ],
       chart: { kind: 'fragility', steps, present, track: cfg.track, stability },
+      correctedCode: mkCode('03_fragility.py', script3(p3), p3),
+      recommendations: [
+        rec(
+          'Report the cluster stability across resolutions, or drop the subcluster.',
+          "The 'Responder' subcluster appears in only " +
+            nPresent +
+            ' of ' +
+            steps.length +
+            ' resolution settings and is absent elsewhere.',
+          'The ketamine-responsive state is reported as a clustering artifact, not a population.',
+          'fixable_now',
+          cit('c3'),
+        ),
+      ],
+      preview: {
+        methodLabel: 'cluster-stability report',
+        unsalvageable: false,
+        before: { kind: 'fragility', steps, present, track: cfg.track, stability },
+        after: {
+          kind: 'fragility',
+          steps: stableSteps,
+          present: [cfg.min, cfg.max],
+          track: 'Microglia (stable parent)',
+          stability: 1,
+        },
+      },
     };
   }
 
@@ -326,6 +473,7 @@ function k4(cfg: Check4Config): FullCheck {
     };
   }
 
+  const p4 = { h5ad: H5AD, interest: 'condition', technical: 'seq_batch', separable: false };
   return {
     checkId: 4,
     state: 'flagged',
@@ -341,6 +489,326 @@ function k4(cfg: Check4Config): FullCheck {
       { label: 'Separable', value: 'No' },
     ],
     chart: { kind: 'confound', grid, cramersV: 1.0, verified: true },
+    correctedCode: mkCode('04_confounding.py', script4(p4), p4),
+    recommendations: [
+      rec(
+        'Do not report a treatment effect from this comparison.',
+        'Every ketamine sample ran on 2024-11-03 and every saline sample on 2024-11-05, so condition and seq_batch are one split.',
+        'The confounded contrast is withdrawn rather than reported.',
+        'unsalvageable',
+        cit('c4'),
+      ),
+      rec(
+        'Collect a design where condition and seq_batch vary independently.',
+        'With treatment balanced across batches, the batch effect can be separated from the drug effect.',
+        'A separable effect that a model can estimate.',
+        'needs_new_data',
+        cit('c4'),
+      ),
+    ],
+    preview: {
+      methodLabel: 'no separable effect (full confound)',
+      caveat: 'Condition and seq_batch are one split. No model can attribute a difference to the drug.',
+      unsalvageable: true,
+      before: { kind: 'confound', grid, cramersV: 1.0, verified: true },
+      after: null,
+    },
+  };
+}
+
+// CHECK 5 - significance claimed on raw p-values across ~1,800 genes.
+function k5(cfg: Check5Config): FullCheck {
+  const alpha = cfg.alpha;
+  const method = cfg.method;
+  const p5 = {
+    h5ad: H5AD,
+    unit: 'mouse_id',
+    grouping: 'condition',
+    ref: REF,
+    alt: ALT,
+    alpha,
+    method,
+    tests: 1800,
+  };
+  const top = [
+    { gene: 'Fos', p: 1e-7, q: 6e-5, survives: true },
+    { gene: 'Arc', p: 3e-5, q: 0.009, survives: true },
+    { gene: 'Bdnf', p: 5e-4, q: 0.08, survives: false },
+    { gene: 'Il1b', p: 2e-3, q: 0.12, survives: false },
+    { gene: 'Nfkbia', p: 5e-3, q: 0.16, survives: false },
+  ];
+  const v5 = volcanoPair('raw p, ~1,800 genes', method.toUpperCase() + ' at q < ' + alpha, alpha, 1.0, [
+    { gene: 'Fos', fc: 1.1, before: 7.0, after: 4.2, sigBefore: true, sigAfter: true, claimed: true },
+    { gene: 'Arc', fc: 0.7, before: 4.5, after: 2.0, sigBefore: true, sigAfter: true },
+    { gene: 'Bdnf', fc: 0.8, before: 3.3, after: 1.1, sigBefore: true, sigAfter: false, claimed: true },
+    { gene: 'Il1b', fc: 0.4, before: 2.7, after: 0.92, sigBefore: true, sigAfter: false },
+    { gene: 'Nfkbia', fc: 0.3, before: 2.3, after: 0.8, sigBefore: true, sigAfter: false },
+    { gene: 'Gfap', fc: -0.1, before: 0.5, after: 0.3, sigBefore: false, sigAfter: false },
+  ]);
+  return {
+    checkId: 5,
+    state: 'flagged',
+    headline: 'Significance was claimed on raw p-values across roughly 1,800 genes.',
+    error: 'Uncorrected multiple testing',
+    citation: cit('c5', true),
+    original: '356 genes are differentially expressed between ketamine and saline (p < 0.05).',
+    corrected:
+      'Of 356 genes significant on raw p, 17 survive Benjamini-Hochberg control at q < ' +
+      alpha +
+      ' across 1,800 tests. The other 339 are expected false positives at this test count.',
+    stats: [
+      { label: 'Raw hits', value: '356', bad: true },
+      { label: 'Survive BH (q<' + alpha + ')', value: '17' },
+      { label: 'Tests', value: '1,800' },
+    ],
+    chart: fdr(1800, alpha, 356, 17, method, top),
+    correctedCode: mkCode('05_multiple_testing.py', script5(p5), p5),
+    recommendations: [
+      rec(
+        'Apply Benjamini-Hochberg across all 1,800 tested genes.',
+        '356 genes pass a raw p threshold; only 17 survive FDR control at q < ' + alpha + '.',
+        'The differential-expression list shrinks from 356 to 17 defensible genes.',
+        'fixable_now',
+        cit('c5', true),
+      ),
+    ],
+    preview: {
+      methodLabel: 'Benjamini-Hochberg (BH)',
+      unsalvageable: false,
+      before: v5.before,
+      after: v5.after,
+    },
+  };
+}
+
+// CHECK 6 - a separable covariate (sex) left out of the model.
+function k6(cfg: Check6Config): FullCheck {
+  const alpha = cfg.alpha;
+  const naive = { n: 6, p: 0.012, log10p: 1.92, sig: true };
+  const honest = { n: 6, p: 0.14, log10p: 0.85, sig: false };
+  const p6 = {
+    h5ad: H5AD,
+    interest: 'condition',
+    covariate: 'sex',
+    ref: REF,
+    alt: ALT,
+    unit: 'mouse_id',
+    alpha,
+  };
+  const v6 = volcanoPair('~ condition', '~ condition + sex', alpha, 1.0, [
+    { gene: 'Bdnf', fc: 0.8, before: 1.92, after: 0.85, sigBefore: true, sigAfter: false, claimed: true },
+    { gene: 'Fos', fc: 1.1, before: 3.6, after: 3.0, sigBefore: true, sigAfter: true },
+    { gene: 'Xist', fc: -0.9, before: 3.0, after: 0.3, sigBefore: true, sigAfter: false },
+    { gene: 'Ddx3y', fc: 0.7, before: 2.5, after: 0.2, sigBefore: true, sigAfter: false },
+    { gene: 'Il1b', fc: 0.4, before: 1.5, after: 0.8, sigBefore: true, sigAfter: false },
+  ]);
+  return {
+    checkId: 6,
+    state: 'flagged',
+    headline: 'A separable batch variable (sex) was left out of the model.',
+    error: 'Unmodeled separable covariate',
+    citation: cit('c6'),
+    original: 'Ketamine changes the microglial program (p = 0.012), adjusting for nothing else.',
+    corrected:
+      "‘sex’ is not as balanced across condition as assumed (Cramér's V = 0.24) and shifts the estimate. With sex in the model the condition effect is p = 0.14, no longer significant at " +
+      alpha +
+      '. Sex belongs in the model.',
+    stats: [
+      { label: 'Effect p (no covariate)', value: '0.012', bad: true },
+      { label: 'Effect p (+ sex)', value: '0.14' },
+      { label: 'sex vs condition', value: "Cramér's V 0.24" },
+    ],
+    chart: { kind: 'significance', naive, honest, alpha, units: KET_UNITS, badUnit: false },
+    correctedCode: mkCode('06_unmodeled_covariate.py', script6(p6), p6),
+    recommendations: [
+      rec(
+        'Add sex as a covariate in the mouse-level model.',
+        "sex is separable from condition (Cramér's V = 0.24) and moves the effect from p = 0.012 to p = 0.14.",
+        'The condition effect is reported with sex controlled, and is no longer significant.',
+        'fixable_now',
+        cit('c6'),
+      ),
+    ],
+    preview: {
+      methodLabel: 'pseudobulk + PyDESeq2, ~ condition + sex',
+      unsalvageable: false,
+      before: v6.before,
+      after: v6.after,
+    },
+  };
+}
+
+// CHECK 7 - resolution chosen WITH a criterion: the chosen setting is supported,
+// so this reports CLEAN. The never-cry-wolf path, exercised by a rigor check.
+function k7(cfg: Check7Config): FullCheck {
+  const supported: [number, number] = [0.4, 0.8];
+  const steps = buildResolutionSteps(cfg.min, cfg.max, cfg.step, supported);
+  const nInside = steps.filter((s) => s.present).length;
+  const stability = steps.length ? nInside / steps.length : 0;
+  const chosenInside = cfg.chosen >= supported[0] - 1e-9 && cfg.chosen <= supported[1] + 1e-9;
+  const p7 = {
+    h5ad: H5AD,
+    min: cfg.min,
+    max: cfg.max,
+    step: cfg.step,
+    criterion: cfg.criterion,
+    chosen: cfg.chosen,
+    seed: 0,
+  };
+
+  if (!chosenInside) {
+    const afterSteps = steps.map((s) => ({ ...s }));
+    return {
+      checkId: 7,
+      state: 'flagged',
+      headline: 'The clustering resolution was chosen without a stability criterion.',
+      error: 'Arbitrary resolution choice',
+      citation: cit('c7'),
+      original: 'Analysis clustered at resolution ' + cfg.chosen.toFixed(1) + ', giving 12 clusters.',
+      corrected:
+        'Silhouette peaks across resolution ' +
+        supported[0].toFixed(1) +
+        '–' +
+        supported[1].toFixed(1) +
+        '; the chosen ' +
+        cfg.chosen.toFixed(1) +
+        ' sits outside that window. A criterion-selected resolution gives more stable clusters.',
+      stats: [
+        { label: 'Chosen resolution', value: cfg.chosen.toFixed(1), bad: true },
+        { label: 'Supported window', value: supported[0].toFixed(1) + ' to ' + supported[1].toFixed(1) },
+        { label: 'Criterion', value: cfg.criterion },
+      ],
+      chart: {
+        kind: 'fragility',
+        steps,
+        present: supported,
+        track: cfg.criterion,
+        stability,
+        chosen: cfg.chosen,
+        supported,
+      },
+      correctedCode: mkCode('07_resolution_choice.py', script7(p7), p7),
+      recommendations: [
+        rec(
+          'Select the resolution by ' + cfg.criterion + ', inside 0.4 to 0.8.',
+          'The chosen ' + cfg.chosen.toFixed(1) + ' scores below the 0.4 to 0.8 window.',
+          'More stable clusters that a criterion supports.',
+          'fixable_now',
+          cit('c7'),
+        ),
+      ],
+      preview: {
+        methodLabel: 'silhouette-selected resolution',
+        unsalvageable: false,
+        before: {
+          kind: 'fragility',
+          steps,
+          present: supported,
+          track: cfg.criterion,
+          stability,
+          chosen: cfg.chosen,
+          supported,
+        },
+        after: {
+          kind: 'fragility',
+          steps: afterSteps,
+          present: supported,
+          track: cfg.criterion,
+          stability,
+          chosen: 0.6,
+          supported,
+        },
+      },
+    };
+  }
+
+  return {
+    checkId: 7,
+    state: 'clean',
+    headline: 'The chosen resolution sits inside the supported window.',
+    error: null,
+    citation: cit('c7'),
+    original: null,
+    corrected:
+      'Resolution ' +
+      cfg.chosen.toFixed(1) +
+      ' falls inside the ' +
+      supported[0].toFixed(1) +
+      '–' +
+      supported[1].toFixed(1) +
+      ' window that ' +
+      cfg.criterion +
+      ' supports. The cluster count is defensible and safe to report.',
+    stats: [
+      { label: 'Chosen resolution', value: cfg.chosen.toFixed(1), good: true },
+      { label: 'Supported window', value: supported[0].toFixed(1) + ' to ' + supported[1].toFixed(1) },
+    ],
+    chart: {
+      kind: 'fragility',
+      steps,
+      present: supported,
+      track: cfg.criterion,
+      stability,
+      chosen: cfg.chosen,
+      supported,
+    },
+  };
+}
+
+// CHECK 8 - a t-test run on raw, overdispersed counts.
+function k8(cfg: Check8Config): FullCheck {
+  const alpha = cfg.alpha;
+  const naive = { n: 6, p: 0.006, log10p: 2.22, sig: true };
+  const honest = { n: 6, p: 0.15, log10p: 0.82, sig: false };
+  const p8 = {
+    h5ad: H5AD,
+    grouping: 'condition',
+    ref: REF,
+    alt: ALT,
+    unit: 'mouse_id',
+    claimed_test: cfg.claimedTest,
+    alpha,
+  };
+  const v8 = volcanoPair('t-test on raw counts', 'Wilcoxon rank-sum', alpha, 1.0, [
+    { gene: 'Bdnf', fc: 0.8, before: 2.22, after: 0.82, sigBefore: true, sigAfter: false, claimed: true },
+    { gene: 'Fos', fc: 1.1, before: 3.5, after: 2.3, sigBefore: true, sigAfter: true },
+    { gene: 'Arc', fc: 0.6, before: 1.9, after: 0.6, sigBefore: true, sigAfter: false },
+    { gene: 'Il1b', fc: 0.4, before: 1.6, after: 0.5, sigBefore: true, sigAfter: false },
+    { gene: 'Gfap', fc: -0.2, before: 0.6, after: 0.3, sigBefore: false, sigAfter: false },
+  ]);
+  return {
+    checkId: 8,
+    state: 'flagged',
+    headline: 'A t-test was run on raw counts, which it does not fit.',
+    error: 'Violated test assumptions',
+    citation: cit('c8', true),
+    original: 'A t-test on raw counts gives p = 0.006 for the ketamine effect.',
+    corrected:
+      'Raw counts are overdispersed (variance/mean = 5.4), so a t-test overstates significance. A Wilcoxon rank-sum test on the same mouse-level values gives p = 0.15, not significant at ' +
+      alpha +
+      '.',
+    stats: [
+      { label: 't-test p (raw counts)', value: '0.006', bad: true },
+      { label: 'Wilcoxon p', value: '0.15' },
+      { label: 'Overdispersion', value: '5.4×' },
+    ],
+    chart: { kind: 'significance', naive, honest, alpha, units: KET_UNITS, badUnit: false },
+    correctedCode: mkCode('08_test_assumptions.py', script8(p8), p8),
+    recommendations: [
+      rec(
+        'Re-test with a count-aware test (Wilcoxon or negative binomial).',
+        'Raw counts are overdispersed (variance/mean = 5.4); the t-test p = 0.006 becomes p = 0.15 under Wilcoxon.',
+        'The ketamine effect is no longer significant once the test matches the data.',
+        'fixable_now',
+        cit('c8', true),
+      ),
+    ],
+    preview: {
+      methodLabel: 'Wilcoxon rank-sum',
+      unsalvageable: false,
+      before: v8.before,
+      after: v8.after,
+    },
   };
 }
 
@@ -402,6 +870,39 @@ function kr4(cfg: Check4Config): string[] {
   ];
 }
 
+function kr5(cfg: Check5Config): string[] {
+  return [
+    'Testing every gene at the mouse level, ketamine vs. saline.',
+    'Counting how many pass a raw p < ' + cfg.alpha + ' threshold.',
+    'Applying ' + cfg.method.toUpperCase() + ' across roughly 1,800 tests.',
+    'Reporting how many survive q < ' + cfg.alpha + '.',
+  ];
+}
+
+function kr6(cfg: Check6Config): string[] {
+  return [
+    "Cross-tabulating ‘condition’ against ‘" + cfg.covariate + "’ (Cramér's V).",
+    'Fitting the mouse-level effect without ' + cfg.covariate + ', then with it.',
+    'Comparing the two p-values to see whether ' + cfg.covariate + ' belongs in the model.',
+  ];
+}
+
+function kr7(cfg: Check7Config): string[] {
+  return [
+    'Sweeping resolution ' + cfg.min.toFixed(1) + ' to ' + cfg.max.toFixed(1) + ' (step ' + cfg.step.toFixed(1) + ').',
+    'Scoring each setting by ' + cfg.criterion + '.',
+    'Reading the chosen ' + cfg.chosen.toFixed(1) + ' against the supported window.',
+  ];
+}
+
+function kr8(cfg: Check8Config): string[] {
+  return [
+    'Aggregating to mouse-level values, ketamine vs. saline.',
+    'Measuring overdispersion (variance / mean) of the raw counts.',
+    'Re-testing with Wilcoxon and comparing to the claimed ' + cfg.claimedTest + '.',
+  ];
+}
+
 export function ketamineFull(checkId: CheckId, cfg: unknown): FullCheck {
   switch (checkId) {
     case 1:
@@ -410,8 +911,16 @@ export function ketamineFull(checkId: CheckId, cfg: unknown): FullCheck {
       return k2(cfg as Check2Config);
     case 3:
       return k3(cfg as Check3Config);
-    default:
+    case 4:
       return k4(cfg as Check4Config);
+    case 5:
+      return k5(cfg as Check5Config);
+    case 6:
+      return k6(cfg as Check6Config);
+    case 7:
+      return k7(cfg as Check7Config);
+    default:
+      return k8(cfg as Check8Config);
   }
 }
 
@@ -423,8 +932,16 @@ export function ketamineReasoning(checkId: CheckId, cfg: unknown): string[] {
       return kr2(cfg as Check2Config);
     case 3:
       return kr3(cfg as Check3Config);
-    default:
+    case 4:
       return kr4(cfg as Check4Config);
+    case 5:
+      return kr5(cfg as Check5Config);
+    case 6:
+      return kr6(cfg as Check6Config);
+    case 7:
+      return kr7(cfg as Check7Config);
+    default:
+      return kr8(cfg as Check8Config);
   }
 }
 
@@ -433,6 +950,10 @@ export const KETAMINE_DEFAULTS: CheckConfigMap = {
   2: { split: 0.3, grouping: 'leiden' },
   3: { min: 0.2, max: 2.0, step: 0.2, track: 'Responder', scrub: 0.9 },
   4: { interest: 'condition', nuisance: ['seq_batch'] },
+  5: { alpha: 0.05, method: 'bh' },
+  6: { interest: 'condition', covariate: 'sex', alpha: 0.05 },
+  7: { min: 0.2, max: 2.0, step: 0.2, criterion: 'silhouette', chosen: 0.6 },
+  8: { grouping: 'condition', claimedTest: 'ttest', alpha: 0.05 },
 };
 
 export const ketamineScenario: Scenario = {
