@@ -80,7 +80,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
       <div style={{ padding: '19px 21px 21px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* header: number · name · sub · verdict badge */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
-          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>0{checkId}</span>
+          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>{String(checkId).padStart(2, '0')}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '700 17px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{meta.name}</div>
             <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>

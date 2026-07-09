@@ -129,7 +129,7 @@ export default function IntakePage() {
             <div style={{ marginTop: 11, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {claims.map((c) => (
                 <div key={c.id} style={{ display: 'flex', gap: 9, font: '400 12px/1.4 var(--sans)', color: 'var(--ink-2)' }}>
-                  <span style={{ font: '600 10px/1.5 var(--mono)', color: 'var(--red)', flex: 'none' }}>0{c.check}</span>
+                  <span style={{ font: '600 10px/1.5 var(--mono)', color: 'var(--red)', flex: 'none' }}>{String(c.check).padStart(2, '0')}</span>
                   <span>“{c.text}”</span>
                 </div>
               ))}

@@ -399,7 +399,7 @@ function StatTable({ stats }: { stats: StatReadout[] }) {
 function CheckCard({ result }: { result: CheckResult }) {
   const { checkId, state, headline, stats, error, original, corrected, missing, citation } = result;
   const t = tint(state);
-  const num = `0${checkId}`;
+  const num = String(checkId).padStart(2, '0');
   const ref = `${citation.authors} (${citation.year}) · ${citation.venue}`;
 
   return (
