@@ -46,3 +46,6 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "slow: exercises the real engine (PyDESeq2 / Leiden); deselect with -m 'not slow'",
+]
