@@ -39,13 +39,30 @@ export { assembleReport } from './report.js';
 // Claim -> check routing: the pure decision layer shared by the session store
 // and the acceptance harness (which of the four checks run, and with what
 // config, given the confirmed claims). Client-safe: no React, no Node builtins.
+//
+// The (claim, check) run model (runsFrom + configForRun) is the current path;
+// the ownerClaimByCheck / mergeRoutedConfig / claimTextForCheck functions are
+// @deprecated single-owner shims kept only until apps/web migrates.
 export {
+  runKeyOf,
+  runsFrom,
+  configForRun,
+  configForRunWithOutcome,
   routedChecksFrom,
   ownerClaimByCheck,
   ownerRouteParams,
   ROUTE_PARAM_ALIASES,
+  NON_KNOB_PARAMS,
   aliasParams,
   mergeRouteParams,
   mergeRoutedConfig,
+  mergeRoutedConfigWithOutcome,
   claimTextForCheck,
+} from './routing.js';
+export type {
+  RunKey,
+  RunDescriptor,
+  MergeOutcome,
+  RunConfigOutcome,
+  RoutedConfigOutcome,
 } from './routing.js';
