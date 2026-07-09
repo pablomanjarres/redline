@@ -21,8 +21,31 @@ export {
   DEFAULT_CONFIG,
   defaultConfigFor,
   reasoningLines,
+  extractionLines,
+  curatedClaimsFor,
 } from './scenarios.js';
+
+// The dataset inventories (spec section 3) and the curated extracted claims
+// (spec section 5) for the fixture path, so intake and extraction run with no
+// credentials and no .h5ad. All client-safe (pure data), so they belong here.
+export { MARSON_INVENTORY, KETAMINE_INVENTORY, INVENTORIES } from './inventories.js';
+export { MARSON_CLAIMS } from './fixtures/marson.js';
+export { KETAMINE_CLAIMS } from './fixtures/ketamine.js';
 
 // The curated prose and the assembled report.
 export { curatedNarrative } from './narrative.js';
 export { assembleReport } from './report.js';
+
+// Claim -> check routing: the pure decision layer shared by the session store
+// and the acceptance harness (which of the four checks run, and with what
+// config, given the confirmed claims). Client-safe: no React, no Node builtins.
+export {
+  routedChecksFrom,
+  ownerClaimByCheck,
+  ownerRouteParams,
+  ROUTE_PARAM_ALIASES,
+  aliasParams,
+  mergeRouteParams,
+  mergeRoutedConfig,
+  claimTextForCheck,
+} from './routing.js';
