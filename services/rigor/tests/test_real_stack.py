@@ -111,6 +111,34 @@ def test_pillar3_runs_real_leiden_sweep(synth_h5ad):
     assert len(steps) >= 3
     # Every step reports a real cluster count from the re-clustering.
     assert all(s["clusters"] >= 1 for s in steps)
+    # The point of this module is the real toolchain. Without this the KMeans
+    # fallback satisfies every assertion above and the test name is a lie.
+    engine = next(s["value"] for s in result["stats"] if s["label"] == "Clustering engine")
+    assert engine == "Leiden (scanpy)", f"expected real Leiden, got {engine!r}"
+
+
+def test_pillar3_kmeans_fallback_is_seeded_and_labeled(synth_h5ad, monkeypatch):
+    """When leiden is unavailable the fallback must still honor the seed, and must
+    say so. A zero-variance fallback silently masquerading as a resolution sweep is
+    exactly the failure this tool exists to catch."""
+    from redline.pillars import fragility
+
+    emb = np.random.default_rng(0).normal(size=(80, 6))
+    resolutions = [0.2, 0.4, 0.6]
+
+    def _no_leiden(*_a, **_k):
+        raise ImportError("No module named 'leidenalg'", name="leidenalg")
+
+    monkeypatch.setattr("scanpy.tl.leiden", _no_leiden)
+
+    labels_a, engine_a = fragility._cluster_sweep(emb, resolutions, seed=1)
+    labels_b, engine_b = fragility._cluster_sweep(emb, resolutions, seed=2)
+
+    assert "KMeans fallback" in engine_a and "leidenalg" in engine_a
+    assert engine_a == engine_b
+    # Different seeds must produce different partitions somewhere in the sweep,
+    # otherwise a repeated "stochastic" check collapses to one deterministic run.
+    assert any(not np.array_equal(a, b) for a, b in zip(labels_a, labels_b))
 
 
 def _load_oracle():
