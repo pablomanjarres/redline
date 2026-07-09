@@ -50,7 +50,7 @@ version of this in the first twenty seconds. It is a hard constraint, not a foot
   independent unit (high). `condition` as the grouping compared (high). `cell_barcode`
   as observation (high). `lane` as a nuisance whose two levels line up with condition
   (medium).
-- **Say:** "Before any statistics run, Claude reads the columns and proposes the
+- **Say:** "Before any statistics run, Redline reads the columns and proposes the
   experimental design. Which column is the real biological replicate, which is the
   comparison, which are technical nuisances. A wrong guess here makes every downstream
   flag wrong, so the scientist confirms it, and nothing runs until they do."
@@ -66,7 +66,7 @@ version of this in the first twenty seconds. It is a hard constraint, not a foot
   profiles and re-testing.
 - **The WOW:** the naive cell-level p-value of about 6.2e-11 (n about 51,842) gets a
   strike through it, and the honest pseudobulk value across the 4 donors, about 0.21,
-  drops in beside it. The volcano deflates from fireworks to nearly empty. The badge
+  drops in beside it. The tall reported bar collapses below the significance line. The badge
   turns to **Flagged** in red.
 - **Say:** "The tiny p-value counted about 52,000 correlated cells as 52,000
   independent animals. Aggregate to one profile per donor, re-run with pseudobulk, and

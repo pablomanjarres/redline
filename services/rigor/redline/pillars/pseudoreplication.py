@@ -240,6 +240,9 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
     ]
     if icc is not None:
         stats.append(stat("Intra-unit corr.", f"ICC {icc:.2f}", bad=(icc >= 0.05)))
+    # Surface which engine produced the honest p, so a PyDESeq2 -> Welch downgrade
+    # (missing heavy stack, or a decoupler API change) is visible, never silent.
+    stats.append(stat("Honest engine", honest_engine))
 
     if naive.sig and not honest.sig:
         if bad_unit:
@@ -266,47 +269,49 @@ def _needs_input(check_id: int, message: str, alpha: float) -> ComputeResult:
 def _deseq2_honest_p(
     adata: Any, unit_col: str, group_col: str, ref: str, alt: str, cell_mask: np.ndarray, target_gene: str
 ) -> Optional[float]:
-    """Honest p from ``decoupler.get_pseudobulk`` + PyDESeq2, or ``None`` on any
-    missing dependency / failure (the caller then uses the Welch fallback)."""
+    """Honest p from a pseudobulk-sum + PyDESeq2 refit, or ``None`` on any missing
+    dependency / failure (the caller then uses the Welch fallback)."""
     from .. import gating
 
     counts, _ = gating.counts_array(adata)
     if counts is None:
         return None
     try:
-        import anndata as ad
         import numpy as _np
         import pandas as pd
 
         var_names = [str(v) for v in getattr(adata, "var_names", range(counts.shape[1]))]
         obs = getattr(adata, "obs")
-        sub_counts = counts[cell_mask]
-        sub_obs = obs.loc[cell_mask].copy()
-        sub = ad.AnnData(X=_np.asarray(sub_counts), obs=sub_obs)
-        sub.var_names = var_names
-        sub.layers["counts"] = _np.asarray(sub_counts)
+        sub_counts = _np.asarray(counts[cell_mask], dtype=float)
+        sub_obs = obs.loc[cell_mask]
 
-        # decoupler.get_pseudobulk: sum counts per (unit x group) sample.
-        import decoupler as dc
-
-        sample_col = "_rl_sample"
-        sub.obs[sample_col] = (
-            sub.obs[unit_col].astype(str) + "|" + sub.obs[group_col].astype(str)
+        # Pseudobulk: sum raw counts to one profile per (unit x group) sample. This
+        # is exactly what decoupler.get_pseudobulk(mode="sum") computes, done here
+        # as a groupby-sum so the keystone correction never rides on decoupler's
+        # cross-version API. decoupler 2.0 both moved get_pseudobulk to
+        # decoupler.pp.pseudobulk AND changed the sample-by-group semantics; the
+        # naive 2.x call aggregates to phantom all-zero samples that silently null
+        # the DE test (a strong replicate-level effect comes back non-significant).
+        sample = (
+            sub_obs[unit_col].astype(str).to_numpy() + "|" + sub_obs[group_col].astype(str).to_numpy()
         )
-        pdata = dc.get_pseudobulk(
-            sub, sample_col=sample_col, groups_col=group_col, layer="counts", mode="sum", min_cells=1, min_counts=0
+        cell_df = pd.DataFrame(sub_counts, columns=var_names)
+        cell_df["_rl_sample"] = sample
+        pb = cell_df.groupby("_rl_sample", sort=True).sum()
+        # Every pseudobulk sample carries exactly one group label (the sample encodes it).
+        group_of = (
+            pd.DataFrame({"s": sample, "g": sub_obs[group_col].astype(str).to_numpy()})
+            .drop_duplicates("s")
+            .set_index("s")["g"]
         )
-        counts_df = pd.DataFrame(
-            _np.asarray(pdata.X), index=[str(i) for i in pdata.obs_names], columns=[str(v) for v in pdata.var_names]
-        )
-        meta = pd.DataFrame({group_col: pdata.obs[group_col].astype(str).values}, index=counts_df.index)
+        meta = pd.DataFrame({group_col: group_of.loc[pb.index].to_numpy()}, index=pb.index)
 
         from pydeseq2.dds import DeseqDataSet
         from pydeseq2.ds import DeseqStats
 
-        counts_df = counts_df.round().astype(int)
-        counts_df = counts_df.loc[:, counts_df.sum(axis=0) > 0]
-        dds = DeseqDataSet(counts=counts_df, metadata=meta, design_factors=group_col)
+        pb_counts = pb.round().astype(int)
+        pb_counts = pb_counts.loc[:, pb_counts.sum(axis=0) > 0]
+        dds = DeseqDataSet(counts=pb_counts, metadata=meta, design_factors=group_col)
         dds.deseq2()
         st = DeseqStats(dds, contrast=[group_col, alt, ref])
         st.summary()
