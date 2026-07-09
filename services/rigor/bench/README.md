@@ -23,14 +23,26 @@ not re-running, and re-running is exactly what Redline does.
 |---|---|---|---|---|---|
 | Single Claude call, write-up only (baseline) | 100% | 74% | 21% | 34% | 0.26 |
 | Single Claude call, given the re-run numbers | 100% | 0% | 100% | 100% | 1.00 |
-| Redline checks (no critic) | 100% | 2% | 91% | 95% | 0.98 |
+| Redline checks (no critic) | 100% | 0% | 100% | 100% | 1.00 |
 | **Redline checks + critic** | **100%** | **0%** | **100%** | **100%** | **1.00** |
 
-The critic can only remove flags, never add them. It turned the four checks'
-raw 2% false-positive rate into 0% by vetoing three borderline fragility flags
-(a state present in 60-70% of the resolution sweep is not a resolution artifact),
-each with an evidence-grounded reason. That is the "never cry wolf" invariant,
-measured.
+**The critic changes nothing on this benchmark.** It confirms every flag the
+deterministic checks raise and vetoes none: `tp 30 -> 30`, `fp 0 -> 0`. It can
+only remove flags, and the checks now raise no false ones, so there is nothing
+for it to remove. An earlier run of this benchmark measured a 2% raw
+false-positive rate and credited the critic with clearing it. That rate came from
+the engine clustering on a depth-unnormalized embedding, which produced three
+borderline fragility flags. Fixing the embedding removed them at the source. The
+critic's value is not demonstrated here, and this benchmark should not be cited
+as evidence for it.
+
+**Read the detection column with suspicion.** 100% does not mean Redline catches
+100% of statistical errors. It means the engine reproduces the labeler on
+wide-margin cases. Every negative scores stability exactly 1.00 and every
+positive at most 0.50, against a 0.80 decision boundary: nothing sits within 0.20
+of the line. The load-bearing number in this table is the **74% false-positive
+rate of the write-up baseline**, which never sees the engine and so cannot be an
+artifact of it.
 
 ![detection and false positives by class](results/detection_by_class.png)
 
@@ -81,16 +93,25 @@ number:
 - **For pseudoreplication and confounding the truth is definitional by construction.**
   The generator plants a donor outlier with too few replicates, and makes the batch
   collinear with the condition. Those cases are true by how they were built; the
-  labeler is a sanity check on them, not an oracle. For double dipping and fragility
-  the labeler retains a little more independence (it scores the given state mask on
-  a held-out split, and sweeps KMeans over an explicit k-grid, with a seed distinct
-  from the engine's), but in this environment the engine's own clustering also falls
-  back to KMeans (leiden is unavailable), so the two share the clustering primitive
-  and differ only in grid and seed. Treat the agreement as weak, not as validation.
+  labeler is a sanity check on them, not an oracle.
+- **Fragility is now near-definitional too.** The labeler used to sweep KMeans over a
+  k-grid. That answered a different question than Pillar 3 asks (the resolution is
+  the knob a scientist leaves unjustified, not k), so the labeler now sweeps the
+  resolution, with the same primitive the engine uses. Labeler and engine differ only
+  in seed and in threshold (fragile below 0.5; flagged below 0.8). Agreement on this
+  pillar is a consistency check between two implementations of one statistic.
+- **Double dipping keeps real independence.** The labeler scores the *given* state
+  mask on a Poisson-thinned held-out split and picks markers by mean difference; the
+  engine re-clusters the discovery half and best-matches the claim. Different
+  procedures, same question. Six of the thirty positives carry this signal.
 - **Cases are tuned against the labeler, never against the engine or the baseline,**
-  and filtered to a clear decision margin (`generate.py` `_accept`), which makes the
-  labels unambiguous but also removes the borderline cases where the engine would be
-  most likely to slip. This is a real limitation, disclosed below.
+  and filtered to a clear decision margin (`generate.py` `_accept`). Two things follow.
+  It removes the borderline cases where the engine would be most likely to slip, which
+  is a real limitation. But the frozen cases in this repo were selected under the
+  *previous* KMeans labeler and were never reselected, so the case set carries no
+  selection bias toward the current leiden engine. `python -m bench.relabel --check`
+  confirms both labelers assign the identical truth vector to all 46 cases: the truth
+  is a property of what was planted, not of how it is measured.
 - **Consequence:** the Redline arm shares its statistical method AND its case
   selection with the grader, so its detection rate is near-definitional and should
   not be read as an independent validation. The load-bearing, fair result is the
@@ -141,8 +162,10 @@ cry wolf, while Redline's held-out re-test tells them apart.
 
 ## Fairness and honesty
 
-- Both arms are reported in full, including where Redline was imperfect (the raw
-  checks had a 2% false-positive rate before the critic).
+- Both arms are reported in full. The raw checks previously carried a 2%
+  false-positive rate that the critic cleared; depth-normalizing the clustering
+  embedding removed those flags at the source, so the critic now clears nothing and
+  its contribution here is zero.
 - The false-positive rate is reported as prominently as detection, per class and
   on the clean controls. A one-sided detection number would not be credible.
 - The baseline gets a genuinely strong prompt and the strongest available model,
@@ -160,14 +183,17 @@ cry wolf, while Redline's held-out re-test tells them apart.
   - The write-up baseline is judged partly on information the write-up withholds
     (the discriminating statistic), which is realistic for a naive analysis but is
     why the evidence baseline is included as the fair control.
-  - Redline's 0% false-positive rate is a knife-edge: the four deterministic checks
-    alone produce a nonzero rate (a few borderline fragility flags), and the critic,
-    an LLM step, is what removes them. The `redline_raw` row shows the pre-critic
-    number so this is not hidden.
-  - The engine runs its deterministic path (Welch for pillar 1, KMeans for
-    clustering since leiden is unavailable, PyDESeq2 absent), recorded in
-    `results.json` under `meta.engine_backend`, so `--replay` reproduces exactly in
-    that environment; production may use leiden/PyDESeq2 instead. The number is
+  - The 0% false-positive rate belongs to the deterministic checks, not to the critic.
+    `redline_raw` and `redline_critic` are both 0%; the critic vetoes nothing. Do not
+    read this benchmark as evidence that the critic works.
+  - The fragility detection rate is sensitive to how the counts are normalized before
+    clustering. Depth-normalized it is 12/12; on raw `log1p(counts)` (the old bug) it
+    is 7/12; under median-library normalization it is 10/12. The engine and the
+    labeler happen to use the same counts-per-10k convention, which flatters the
+    engine. The direction of the effect is robust; the exact 12/12 is not.
+  - The engine runs the real stack (PyDESeq2 for pillar 1, leiden for clustering),
+    recorded in `results.json` under `meta.engine_backend` and pinned in
+    `bench/requirements-lock.txt`, so `--replay` reproduces exactly. The number is
     frozen for one model; the harness re-runs against any Bedrock model.
 
 ## Reproduce
