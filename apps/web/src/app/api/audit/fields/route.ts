@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ScenarioId } from '@redline/contracts';
 import { getComputeTarget } from '@redline/engine/server';
+import { createReasoner } from '@redline/reasoning';
 
 export const runtime = 'nodejs';
 
@@ -25,8 +26,33 @@ export async function POST(req: Request) {
 
   try {
     const target = getComputeTarget();
-    const fields = await target.inferFields({ scenarioId });
-    return Response.json({ fields });
+    // Raw column summaries: id, dtype, cardinality, a sample value. The compute
+    // target reads them (fixture from the scenario, a real target from the .h5ad).
+    const base = await target.inferFields({ scenarioId });
+
+    // When a reasoning backend is wired, Claude proposes the roles from the raw
+    // columns, so the foundation step is a real model call that adapts to the
+    // dataset's own columns. With no backend, fall back to the target's heuristic
+    // roles and label the source honestly.
+    const reasoner = createReasoner();
+    if (reasoner.available) {
+      try {
+        const fields = await reasoner.proposeFields({
+          datasetTitle: scenarioId,
+          columns: base.map((f) => ({
+            id: f.id,
+            dtype: f.dtype,
+            levels: f.levels,
+            missing: f.missing,
+            sample: f.sample,
+          })),
+        });
+        return Response.json({ fields, source: reasoner.backend });
+      } catch {
+        return Response.json({ fields: base, source: 'heuristic' });
+      }
+    }
+    return Response.json({ fields: base, source: 'heuristic' });
   } catch {
     return Response.json({ error: 'Internal error' }, { status: 500 });
   }

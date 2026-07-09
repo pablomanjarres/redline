@@ -13,9 +13,15 @@ import { fmt } from '@/lib/format';
  * they ran, picks a built-in scenario, then begins the audit. Nothing is tested
  * here; the first real work happens once fields are confirmed.
  */
-const SCENARIOS: { id: ScenarioId; label: string }[] = [
+// Marson and Ketamine are the demo scenarios (locked fixtures), kept first. The
+// last three are verification foils: they only produce numbers on the real
+// `local` compute target (each reads its foil .h5ad), never the fixture path.
+const SCENARIOS: { id: ScenarioId; label: string; localOnly?: boolean }[] = [
   { id: 'marson', label: 'Marson' },
   { id: 'ketamine', label: 'Ketamine' },
+  { id: 'pfc', label: 'PFC', localOnly: true },
+  { id: 'clean', label: 'Clean', localOnly: true },
+  { id: 'nocounts', label: 'No counts', localOnly: true },
 ];
 
 export default function IntakePage() {
@@ -61,9 +67,15 @@ export default function IntakePage() {
           <div data-tour="intake.scenario" role="group" aria-label="Choose scenario" style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--panel-2)', border: '1px solid var(--edge-2)', borderRadius: 8 }}>
             {SCENARIOS.map((s) => {
               const active = scenarioId === s.id;
+              // The verification foils carry no locked fixture numbers, so on the
+              // fixture target every check would 500. Honesty rule 6: disable and
+              // label the dead control rather than let it fail on click.
+              const disabled = !!s.localOnly && !computeTargetAvailable;
               return (
-                <button key={s.id} type="button" aria-pressed={active} onClick={() => loadScenario(s.id)}
-                  style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', border: 'none', background: active ? 'var(--signal)' : 'transparent', color: active ? 'var(--surface)' : 'var(--ink-3)' }}>
+                <button key={s.id} type="button" aria-pressed={active} disabled={disabled}
+                  onClick={() => loadScenario(s.id)}
+                  title={disabled ? 'Requires a real compute target (REDLINE_COMPUTE_TARGET=local)' : undefined}
+                  style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', padding: '7px 12px', borderRadius: 6, cursor: disabled ? 'not-allowed' : 'pointer', border: 'none', background: active ? 'var(--signal)' : 'transparent', color: disabled ? 'var(--ink-4)' : active ? 'var(--surface)' : 'var(--ink-3)', opacity: disabled ? 0.55 : 1 }}>
                   {s.label}
                 </button>
               );
@@ -96,9 +108,14 @@ export default function IntakePage() {
                 <div style={{ font: '500 12.5px/1.2 var(--mono)', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataset.file}</div>
                 <div style={{ marginTop: 3, font: '400 11px/1 var(--mono)', color: 'var(--ink-4)' }}>{dataset.sizeGB} GB · loaded</div>
               </div>
-              <span data-tour="intake.upload" title={computeTargetAvailable ? '' : 'connect a compute target to audit your own data'} style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: computeTargetAvailable ? 'pointer' : 'not-allowed' }}>
+              {/* Non-actionable by design: there is no upload handler in this build, so
+                  render a disabled, labelled control rather than a pointer-cursor span. */}
+              <button type="button" disabled data-tour="intake.upload"
+                aria-label={computeTargetAvailable ? 'Upload .h5ad (not available in this build)' : 'Connect a compute target to audit your own data'}
+                title={computeTargetAvailable ? 'Upload is not available in this build' : 'connect a compute target to audit your own data'}
+                style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: 'not-allowed', background: 'none', border: 'none', padding: 0 }}>
                 {computeTargetAvailable ? 'Upload .h5ad' : 'connect a compute\ntarget for your own'}
-              </span>
+              </button>
             </div>
             <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: '14px 26px' }}>
               {stats.map((s) => (

@@ -24,6 +24,9 @@ export class ReasonerUnavailable extends Error {
 export interface Reasoner {
   /** True when a reasoning backend is configured. Read lazily; no network. */
   readonly available: boolean;
+  /** The configured backend, or undefined when none is wired. Lets a caller
+   *  stamp the source of a produced narrative or field proposal. */
+  readonly backend: 'anthropic' | 'bedrock' | undefined;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
 }
@@ -66,6 +69,51 @@ async function invoke(
   return bedrock.invokeMessages({ modelId, system, user, maxTokens });
 }
 
+const REASON_RETRIES = 3;
+/** A model call that hangs must not block the request forever. The SDKs do not
+ *  bound this themselves, and a hung Bedrock invoke stalled a whole audit. */
+const REASON_TIMEOUT_MS = Number(process.env.REDLINE_REASONING_TIMEOUT_MS ?? 25000);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms}ms`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
+}
+
+/**
+ * Retry a reasoning call with a short exponential backoff. The verification
+ * harness fires many model calls in quick succession, and Bedrock throttles
+ * transiently (a 429 or a one-off unparseable reply). Retrying keeps the real
+ * model on the primary path instead of silently dropping to the curated
+ * fallback, which matters because the fallback is a different, static source.
+ */
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < REASON_RETRIES; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < REASON_RETRIES - 1) await sleep(400 * 2 ** attempt);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 /**
  * Build a reasoner backed by Claude — the first-party Claude API or AWS Bedrock,
  * whichever the environment configures (see `selectBackend`). Construction is
@@ -79,6 +127,10 @@ export function createReasoner(): Reasoner {
       return selectBackend() !== undefined;
     },
 
+    get backend(): Backend | undefined {
+      return selectBackend();
+    },
+
     async narrate(req: NarrativeRequest): Promise<Narrative> {
       const backend = selectBackend();
       if (!backend) {
@@ -87,10 +139,11 @@ export function createReasoner(): Reasoner {
         );
       }
       try {
-        const { system, user } = buildNarrativePrompt(req);
-        const text = await invoke(backend, system, user, NARRATE_MAX_TOKENS);
-        const narrative = Narrative.parse(extractJson(text));
-        return enforceHonesty(req, narrative);
+        return await withRetry(async () => {
+          const { system, user } = buildNarrativePrompt(req);
+          const text = await withTimeout(invoke(backend, system, user, NARRATE_MAX_TOKENS), REASON_TIMEOUT_MS, 'narrate');
+          return enforceHonesty(req, Narrative.parse(extractJson(text)));
+        });
       } catch (err) {
         throw asUnavailable('narrate', err);
       }
@@ -104,10 +157,11 @@ export function createReasoner(): Reasoner {
         );
       }
       try {
-        const { system, user } = buildFieldProposalPrompt(req);
-        const text = await invoke(backend, system, user, FIELDS_MAX_TOKENS);
-        const { fields } = FieldProposalResponse.parse(extractJson(text));
-        return fields;
+        return await withRetry(async () => {
+          const { system, user } = buildFieldProposalPrompt(req);
+          const text = await withTimeout(invoke(backend, system, user, FIELDS_MAX_TOKENS), REASON_TIMEOUT_MS, 'proposeFields');
+          return FieldProposalResponse.parse(extractJson(text)).fields;
+        });
       } catch (err) {
         throw asUnavailable('proposeFields', err);
       }

@@ -43,7 +43,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
       </div>
 
       {result.error && (
-        <div style={{ marginTop: 12, font: '800 22px/1.15 var(--display)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{result.error}</div>
+        <div data-testid="verdict-error" style={{ marginTop: 12, font: '800 22px/1.15 var(--display)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{result.error}</div>
       )}
 
       <div style={{ marginTop: 18, font: '600 9.5px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
@@ -55,7 +55,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
           {result.original}
         </p>
       )}
-      <p style={{ margin: '11px 0 0', font: '400 16px/1.55 var(--sans)', color: 'var(--ink)', display: 'flex', gap: 10 }}>
+      <p data-testid="verdict-corrected" style={{ margin: '11px 0 0', font: '400 16px/1.55 var(--sans)', color: 'var(--ink)', display: 'flex', gap: 10 }}>
         <span style={{ color: 'var(--red)', fontWeight: 800, flex: 'none' }}>▸</span>
         <span>{result.corrected}</span>
       </p>
@@ -67,7 +67,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
         </div>
       )}
 
-      <div style={{ marginTop: 18, paddingTop: 15, borderTop: '1px solid var(--edge)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+      <div data-testid="verdict-citation" style={{ marginTop: 18, paddingTop: 15, borderTop: '1px solid var(--edge)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <span style={{ font: '700 9px/1 var(--mono)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-4)', flex: 'none', marginTop: 2 }}>Method</span>
         <div>
           <div style={{ font: '600 12.5px/1.4 var(--mono)', color: 'var(--ink-2)' }}>

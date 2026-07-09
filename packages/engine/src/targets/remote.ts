@@ -57,29 +57,51 @@ export class RemoteTarget implements ComputeTarget {
     return this.id === 'local' ? this.callLocal(payload) : this.callHttp(payload);
   }
 
+  /**
+   * Spawn the engine for one job. The call is bounded: a Python process that
+   * hangs is killed and the promise rejects, so a stuck job cannot wedge the
+   * request or leak an orphaned child that starves the server.
+   */
   private async callLocal(payload: unknown): Promise<unknown> {
     const cmd = process.env.REDLINE_ENGINE_CMD ?? '';
     const parts = cmd.split(' ').filter(Boolean);
     const bin = parts[0];
     if (!bin) throw new Error('REDLINE_ENGINE_CMD is empty.');
+    const timeoutMs = Number(process.env.REDLINE_ENGINE_TIMEOUT_MS ?? 90000);
     const { spawn } = await import('node:child_process');
     return new Promise<unknown>((resolve, reject) => {
       const child = spawn(bin, parts.slice(1), { stdio: ['pipe', 'pipe', 'inherit'] });
       let out = '';
+      let settled = false;
+      const finish = (fn: () => void): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        fn();
+      };
+      const timer = setTimeout(() => {
+        finish(() => {
+          child.kill('SIGKILL');
+          reject(new Error(`redline engine timed out after ${timeoutMs}ms`));
+        });
+      }, timeoutMs);
+
       child.stdout.on('data', (d: Buffer) => {
         out += d.toString();
       });
-      child.on('error', reject);
+      child.on('error', (err) => finish(() => reject(err)));
       child.on('close', (code) => {
-        if (code !== 0) {
-          reject(new Error(`redline engine exited with code ${code}`));
-          return;
-        }
-        try {
-          resolve(JSON.parse(out));
-        } catch (err) {
-          reject(err instanceof Error ? err : new Error(String(err)));
-        }
+        finish(() => {
+          if (code !== 0) {
+            reject(new Error(`redline engine exited with code ${code}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(out));
+          } catch (err) {
+            reject(err instanceof Error ? err : new Error(String(err)));
+          }
+        });
       });
       child.stdin.write(JSON.stringify(payload));
       child.stdin.end();

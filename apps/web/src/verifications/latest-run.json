@@ -1,0 +1,1067 @@
+{
+  "ready": true,
+  "timestamp": "2026-07-09T12:40:25.517Z",
+  "cases": [
+    {
+      "caseId": "A",
+      "scenarioId": "marson",
+      "label": "Marson CD4 T-cell Perturb-seq: naive foil (canonical)",
+      "checks": [
+        {
+          "checkId": 1,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "naiveP": "2.3519063372304143e-7",
+            "honestP": "0.7761218669496212",
+            "n": "4",
+            "naiveSig": "true",
+            "honestSig": "false",
+            "badUnit": "false"
+          },
+          "oracle": {
+            "naiveP": "2.3519057614703889e-7",
+            "honestP": "0.774814770578524",
+            "n": "4",
+            "icc": "0.5242503313558332",
+            "verdict": "flagged",
+            "perGroup": "2"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "n (replicate units)",
+              "displayed": "4",
+              "oracle": "4",
+              "withinTolerance": true
+            },
+            {
+              "key": "honestP (same call; close when non-significant)",
+              "displayed": "0.7761218669496212",
+              "oracle": "0.774814770578524",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / PyDESeq2 pseudobulk / 3524.2ms"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 2,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "discAUC": "0.5834",
+            "holdAUC": "0.5411",
+            "markers": "4"
+          },
+          "oracle": {
+            "discAUC": "0.6103353332206636",
+            "holdAUC": "0.5806627091431469",
+            "markersHolding": "0",
+            "nMarkers": "4",
+            "verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "holdAUC (the honest test)",
+              "displayed": "0.5411",
+              "oracle": "0.5806627091431469",
+              "withinTolerance": true
+            },
+            {
+              "key": "discAUC >= holdAUC (inflation on both)",
+              "displayed": "0.5834 >= 0.5411",
+              "oracle": "0.6103353332206636 >= 0.5806627091431469",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 8756.8ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:split",
+              "passed": true,
+              "detail": "0.5411 -> 0.5894"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 3,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "stability": "0.3",
+            "presentMin": "0.2",
+            "presentMax": "0.6",
+            "steps": "10"
+          },
+          "oracle": {
+            "resolutions.0": "0.2",
+            "resolutions.1": "0.4",
+            "resolutions.2": "0.6",
+            "resolutions.3": "0.8",
+            "resolutions.4": "1",
+            "resolutions.5": "1.2",
+            "resolutions.6": "1.4",
+            "resolutions.7": "1.6",
+            "resolutions.8": "1.8",
+            "resolutions.9": "2",
+            "spurious.group": "Effector",
+            "spurious.stability": "0.3",
+            "spurious.settings": "3",
+            "spurious.totalSettings": "10",
+            "spurious.verdict": "flagged",
+            "stable.group": "Naive",
+            "stable.stability": "1",
+            "stable.settings": "10",
+            "stable.totalSettings": "10",
+            "stable.verdict": "clean"
+          },
+          "comparisons": [
+            {
+              "key": "spurious.stability",
+              "displayed": "0.3",
+              "oracle": "0.3",
+              "withinTolerance": true
+            },
+            {
+              "key": "spurious.verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.stability",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 10367.3ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:step",
+              "passed": true,
+              "detail": "10 settings -> 4 settings"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ],
+          "note": "tracked spurious=flagged, stable=clean"
+        },
+        {
+          "checkId": 4,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "cramersV": "1",
+            "verified": "true"
+          },
+          "oracle": {
+            "cramersV": "1",
+            "rankDeficient": "true",
+            "separable": "false",
+            "verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "cramersV",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / design-matrix rank / 1046.3ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:nuisance",
+              "passed": true,
+              "detail": "V=1 -> V=0.0572"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "B",
+      "scenarioId": "pfc",
+      "label": "PFC psilocybin: generalization (renamed columns)",
+      "checks": [
+        {
+          "checkId": 1,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "naiveP": "0.0000013142551762383382",
+            "honestP": "0.7541214935110524",
+            "n": "6",
+            "naiveSig": "true",
+            "honestSig": "false",
+            "badUnit": "false"
+          },
+          "oracle": {
+            "naiveP": "0.0000013142549864276435",
+            "honestP": "0.7189075296388847",
+            "n": "6",
+            "icc": "0.6067214168626809",
+            "verdict": "flagged",
+            "perGroup": "3"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "n (replicate units)",
+              "displayed": "6",
+              "oracle": "6",
+              "withinTolerance": true
+            },
+            {
+              "key": "honestP (same call; close when non-significant)",
+              "displayed": "0.7541214935110524",
+              "oracle": "0.7189075296388847",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / PyDESeq2 pseudobulk / 4284.8ms"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 2,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "discAUC": "0.5865",
+            "holdAUC": "0.5447",
+            "markers": "4"
+          },
+          "oracle": {
+            "discAUC": "0.5802420765174343",
+            "holdAUC": "0.5778340911536806",
+            "markersHolding": "0",
+            "nMarkers": "4",
+            "verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "holdAUC (the honest test)",
+              "displayed": "0.5447",
+              "oracle": "0.5778340911536806",
+              "withinTolerance": true
+            },
+            {
+              "key": "discAUC >= holdAUC (inflation on both)",
+              "displayed": "0.5865 >= 0.5447",
+              "oracle": "0.5802420765174343 >= 0.5778340911536806",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 8151.2ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:split",
+              "passed": true,
+              "detail": "0.5447 -> 0.6547"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 3,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "stability": "0.3",
+            "presentMin": "0.2",
+            "presentMax": "0.6",
+            "steps": "10"
+          },
+          "oracle": {
+            "resolutions.0": "0.2",
+            "resolutions.1": "0.4",
+            "resolutions.2": "0.6",
+            "resolutions.3": "0.8",
+            "resolutions.4": "1",
+            "resolutions.5": "1.2",
+            "resolutions.6": "1.4",
+            "resolutions.7": "1.6",
+            "resolutions.8": "1.8",
+            "resolutions.9": "2",
+            "spurious.group": "Reactive",
+            "spurious.stability": "0.3",
+            "spurious.settings": "3",
+            "spurious.totalSettings": "10",
+            "spurious.verdict": "flagged",
+            "stable.group": "Neuron",
+            "stable.stability": "1",
+            "stable.settings": "10",
+            "stable.totalSettings": "10",
+            "stable.verdict": "clean"
+          },
+          "comparisons": [
+            {
+              "key": "spurious.stability",
+              "displayed": "0.3",
+              "oracle": "0.3",
+              "withinTolerance": true
+            },
+            {
+              "key": "spurious.verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.stability",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 9835.9ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:step",
+              "passed": true,
+              "detail": "10 settings -> 4 settings"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ],
+          "note": "tracked spurious=flagged, stable=clean"
+        },
+        {
+          "checkId": 4,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "cramersV": "1",
+            "verified": "true"
+          },
+          "oracle": {
+            "cramersV": "1",
+            "rankDeficient": "true",
+            "separable": "false",
+            "verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "cramersV",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / design-matrix rank / 1100.3ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:nuisance",
+              "passed": true,
+              "detail": "V=1 -> V=0.0348"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "C",
+      "scenarioId": "clean",
+      "label": "Clean analysis: never cry wolf",
+      "checks": [
+        {
+          "checkId": 1,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "clean",
+            "naiveP": "0",
+            "honestP": "1.9863263880158606e-173",
+            "n": "6",
+            "naiveSig": "true",
+            "honestSig": "true",
+            "badUnit": "false"
+          },
+          "oracle": {
+            "naiveP": "0",
+            "honestP": "0.000004818807220093829",
+            "n": "6",
+            "icc": "0.8138837686800194",
+            "verdict": "clean",
+            "perGroup": "3"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            },
+            {
+              "key": "n (replicate units)",
+              "displayed": "6",
+              "oracle": "6",
+              "withinTolerance": true
+            },
+            {
+              "key": "honestP (same call; close when non-significant)",
+              "displayed": "1.9863263880158606e-173",
+              "oracle": "0.000004818807220093829",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / PyDESeq2 pseudobulk / 4127.5ms"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 2,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "clean",
+            "discAUC": "0.9999",
+            "holdAUC": "0.9998",
+            "markers": "4"
+          },
+          "oracle": {
+            "discAUC": "1",
+            "holdAUC": "1",
+            "markersHolding": "4",
+            "nMarkers": "4",
+            "verdict": "clean"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            },
+            {
+              "key": "holdAUC (the honest test)",
+              "displayed": "0.9998",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "discAUC >= holdAUC (inflation on both)",
+              "displayed": "0.9999 >= 0.9998",
+              "oracle": "1 >= 1",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 7270.4ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:split",
+              "passed": true,
+              "detail": "0.9998 -> 1"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 3,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "clean",
+            "stability": "1",
+            "presentMin": "0.2",
+            "presentMax": "2",
+            "steps": "10"
+          },
+          "oracle": {
+            "resolutions.0": "0.2",
+            "resolutions.1": "0.4",
+            "resolutions.2": "0.6",
+            "resolutions.3": "0.8",
+            "resolutions.4": "1",
+            "resolutions.5": "1.2",
+            "resolutions.6": "1.4",
+            "resolutions.7": "1.6",
+            "resolutions.8": "1.8",
+            "resolutions.9": "2",
+            "spurious.group": "Rare",
+            "spurious.stability": "1",
+            "spurious.settings": "10",
+            "spurious.totalSettings": "10",
+            "spurious.verdict": "clean",
+            "stable.group": "Rare",
+            "stable.stability": "1",
+            "stable.settings": "10",
+            "stable.totalSettings": "10",
+            "stable.verdict": "clean"
+          },
+          "comparisons": [
+            {
+              "key": "spurious.stability",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "spurious.verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.stability",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "stable.verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 9476.5ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:step",
+              "passed": true,
+              "detail": "10 settings -> 4 settings"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ],
+          "note": "tracked spurious=clean, stable=clean"
+        },
+        {
+          "checkId": 4,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "clean",
+            "cramersV": "0.0333",
+            "verified": "true"
+          },
+          "oracle": {
+            "cramersV": "0.03333379502344234",
+            "rankDeficient": "false",
+            "separable": "true",
+            "verdict": "clean"
+          },
+          "comparisons": [
+            {
+              "key": "cramersV",
+              "displayed": "0.0333",
+              "oracle": "0.03333379502344234",
+              "withinTolerance": true
+            },
+            {
+              "key": "verdict",
+              "displayed": "clean",
+              "oracle": "clean",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / design-matrix rank / 4068.5ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:nuisance",
+              "passed": true,
+              "detail": "V=0.0333 -> V=0.061"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "D",
+      "scenarioId": "nocounts",
+      "label": "Normalized only, no raw counts (graceful degradation)",
+      "checks": [
+        {
+          "checkId": 1,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flag_only",
+            "naiveP": "0.0003035102019917652",
+            "honestP": "0.0003035102019917652",
+            "n": "4",
+            "naiveSig": "true",
+            "honestSig": "true",
+            "badUnit": "false"
+          },
+          "oracle": {
+            "naiveP": "0.00017627678535472288",
+            "n": "4",
+            "icc": "0.29191846809094646",
+            "verdict": "flag_only",
+            "perGroup": "2",
+            "note": "no integer counts; honest replicate-level re-test needs raw counts"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flag_only",
+              "oracle": "flag_only",
+              "withinTolerance": true
+            },
+            {
+              "key": "n (replicate units)",
+              "displayed": "4",
+              "oracle": "4",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / pseudobulk DE / 905ms"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 2,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flag_only",
+            "markers": "0"
+          },
+          "oracle": {
+            "markersHolding": "0",
+            "nMarkers": "0",
+            "verdict": "flag_only",
+            "note": "no integer counts available"
+          },
+          "comparisons": [
+            {
+              "key": "verdict",
+              "displayed": "flag_only",
+              "oracle": "flag_only",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / count-split held-out AUC / 451.5ms"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 3,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "stability": "0.6",
+            "presentMin": "0.2",
+            "presentMax": "1.2",
+            "steps": "10"
+          },
+          "oracle": {
+            "resolutions.0": "0.2",
+            "resolutions.1": "0.4",
+            "resolutions.2": "0.6",
+            "resolutions.3": "0.8",
+            "resolutions.4": "1",
+            "resolutions.5": "1.2",
+            "resolutions.6": "1.4",
+            "resolutions.7": "1.6",
+            "resolutions.8": "1.8",
+            "resolutions.9": "2",
+            "spurious.group": "Naive",
+            "spurious.stability": "0.6",
+            "spurious.settings": "6",
+            "spurious.totalSettings": "10",
+            "spurious.verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "spurious.stability",
+              "displayed": "0.6",
+              "oracle": "0.6",
+              "withinTolerance": true
+            },
+            {
+              "key": "spurious.verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / Leiden (scanpy) / 7125.1ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:step",
+              "passed": true,
+              "detail": "10 settings -> 4 settings"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        },
+        {
+          "checkId": 4,
+          "verdict": "WIRED",
+          "displayed": {
+            "state": "flagged",
+            "cramersV": "1",
+            "verified": "true"
+          },
+          "oracle": {
+            "cramersV": "1",
+            "rankDeficient": "true",
+            "separable": "false",
+            "verdict": "flagged"
+          },
+          "comparisons": [
+            {
+              "key": "cramersV",
+              "displayed": "1",
+              "oracle": "1",
+              "withinTolerance": true
+            },
+            {
+              "key": "verdict",
+              "displayed": "flagged",
+              "oracle": "flagged",
+              "withinTolerance": true
+            }
+          ],
+          "probes": [
+            {
+              "name": "matches-oracle",
+              "passed": true,
+              "detail": "displayed values within tolerance of the oracle"
+            },
+            {
+              "name": "real-compute",
+              "passed": true,
+              "detail": "local / design-matrix rank / 888.5ms"
+            },
+            {
+              "name": "fresh-nonce",
+              "passed": true,
+              "detail": "a fresh compute nonce on re-run"
+            },
+            {
+              "name": "liveness:nuisance",
+              "passed": true,
+              "detail": "V=1 -> V=0.0244"
+            },
+            {
+              "name": "reasoning-source",
+              "passed": true,
+              "detail": "source = bedrock"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "aiWiring": {
+    "fieldResolution": {
+      "source": "bedrock",
+      "real": true,
+      "detail": "Claude proposed the roles from the raw columns"
+    },
+    "reasoning": {
+      "source": "bedrock",
+      "real": true,
+      "detail": "Claude wrote the finding prose"
+    },
+    "fieldResolutionAdaptsAcrossCases": true
+  },
+  "deadControls": [
+    {
+      "location": "intake page",
+      "selector": "upload-h5ad",
+      "label": "Upload .h5ad (not available in this build)",
+      "dead": false
+    }
+  ],
+  "failures": []
+}
