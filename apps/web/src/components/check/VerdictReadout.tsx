@@ -1,6 +1,6 @@
 'use client';
 
-import type { CheckId, CheckResult, CheckState } from '@redline/contracts';
+import type { CheckId, CheckResult, CheckState, CriticAssessment } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
 
 /* The verdict readout: the marked-up conclusion for a finding, on the dark
@@ -20,6 +20,62 @@ function conclusionLabel(state: CheckState, checkId: CheckId): string {
   if (state === 'flag_only') return 'What Redline can and cannot say';
   if (state === 'hard_stop') return 'Why no valid result is possible';
   return checkId === 1 ? 'Your conclusion, corrected' : 'Your conclusion, rewritten as evidence';
+}
+
+/** The critic strip: how the independent second pass ruled on this finding. */
+function criticPresentation(a: CriticAssessment): { label: string; color: string } {
+  if (a.unverified) return { label: 'Unverified, shown by default', color: 'var(--ink-4)' };
+  if (a.verdict === 'veto') return { label: 'Vetoed the flag', color: 'var(--green)' };
+  if (a.verdict === 'downgrade') return { label: 'Downgraded to advisory', color: 'var(--amber)' };
+  return { label: 'Confirmed the flag', color: 'var(--ink-3)' };
+}
+
+function CriticStrip({ critic }: { critic: CriticAssessment }) {
+  const { label, color } = criticPresentation(critic);
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        paddingTop: 15,
+        borderTop: '1px solid var(--edge)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12,
+      }}
+    >
+      <span
+        style={{
+          font: '700 9px/1 var(--mono)',
+          letterSpacing: '.14em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-4)',
+          flex: 'none',
+          marginTop: 2,
+        }}
+      >
+        Critic
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ width: 8, height: 8, borderRadius: 8, background: color, boxShadow: `0 0 7px ${color}`, flex: 'none' }} />
+          <span style={{ font: '700 11px/1.2 var(--sans)', letterSpacing: '.02em', color }}>{label}</span>
+          {!critic.unverified && (
+            <span style={{ font: '500 9.5px/1 var(--mono)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
+              {critic.confidence} confidence
+            </span>
+          )}
+        </div>
+        <div style={{ marginTop: 6, font: '400 12.5px/1.5 var(--sans)', color: 'var(--ink-3)' }}>
+          {critic.justification}
+        </div>
+        {critic.keysOn && (
+          <div style={{ marginTop: 6, font: '500 11px/1.3 var(--mono)', color: 'var(--ink-4)' }}>
+            keys on {critic.keysOn}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function VerdictReadout({ result, checkId }: { result: CheckResult; checkId: CheckId }) {
@@ -43,7 +99,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
       </div>
 
       {result.error && (
-        <div style={{ marginTop: 12, font: '800 22px/1.15 var(--display)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{result.error}</div>
+        <div data-testid="verdict-error" style={{ marginTop: 12, font: '800 22px/1.15 var(--display)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{result.error}</div>
       )}
 
       <div style={{ marginTop: 18, font: '600 9.5px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
@@ -55,7 +111,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
           {result.original}
         </p>
       )}
-      <p style={{ margin: '11px 0 0', font: '400 16px/1.55 var(--sans)', color: 'var(--ink)', display: 'flex', gap: 10 }}>
+      <p data-testid="verdict-corrected" style={{ margin: '11px 0 0', font: '400 16px/1.55 var(--sans)', color: 'var(--ink)', display: 'flex', gap: 10 }}>
         <span style={{ color: 'var(--red)', fontWeight: 800, flex: 'none' }}>▸</span>
         <span>{result.corrected}</span>
       </p>
@@ -67,7 +123,7 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
         </div>
       )}
 
-      <div style={{ marginTop: 18, paddingTop: 15, borderTop: '1px solid var(--edge)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+      <div data-testid="verdict-citation" style={{ marginTop: 18, paddingTop: 15, borderTop: '1px solid var(--edge)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <span style={{ font: '700 9px/1 var(--mono)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-4)', flex: 'none', marginTop: 2 }}>Method</span>
         <div>
           <div style={{ font: '600 12.5px/1.4 var(--mono)', color: 'var(--ink-2)' }}>
@@ -82,6 +138,8 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
           <div style={{ marginTop: 4, font: '400 12.5px/1.5 var(--sans)', color: 'var(--ink-3)' }}>{result.citation.note}</div>
         </div>
       </div>
+
+      {result.critic && <CriticStrip critic={result.critic} />}
     </div>
   );
 }

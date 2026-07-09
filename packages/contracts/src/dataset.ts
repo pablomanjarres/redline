@@ -27,7 +27,7 @@ export const Claim = z.object({
 });
 export type Claim = z.infer<typeof Claim>;
 
-export const ScenarioId = z.enum(['marson', 'ketamine']);
+export const ScenarioId = z.enum(['marson', 'ketamine', 'pfc', 'clean', 'nocounts']);
 export type ScenarioId = z.infer<typeof ScenarioId>;
 
 /**

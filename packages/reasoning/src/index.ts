@@ -7,7 +7,7 @@
  * `ReasonerUnavailable` so the caller can fall back to the curated narrative.
  */
 export { createReasoner, ReasonerUnavailable } from './reasoner.js';
-export type { Reasoner } from './reasoner.js';
+export type { Reasoner, InvokeFn } from './reasoner.js';
 export {
   SYSTEM_PROMPT,
   FIELD_SYSTEM_PROMPT,
@@ -19,3 +19,4 @@ export {
 } from './prompts.js';
 export type { PromptPair } from './prompts.js';
 export { parseClaimsReply, parseClaimReply } from './claims.js';
+export { CRITIC_SYSTEM_PROMPT, buildCriticPrompt } from './critic-prompts.js';

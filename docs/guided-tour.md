@@ -65,6 +65,38 @@ sideways on narrow screens. A scroll listener plus a `ResizeObserver` plus a
 `MutationObserver` would cover those three and still miss a CSS transition. The frame loop
 covers all of them, and only re-renders when the rectangle moves.
 
+## The light travels
+
+Between steps the hole does not jump, it glides to the next control, and the ring and the
+coach mark travel with it on the same easing so the three read as one object crossing the
+page. `--rl-tour-glide` and `--rl-tour-ease` in `globals.css` are the single source for
+that motion.
+
+Three things make it work.
+
+**The scrim can be interpolated.** Each panel's geometry is an affine function of the hole
+rectangle: the top panel's height is the hole's top, the left panel's width is the hole's
+left, and so on. Transitioning all four independently with one easing and one duration
+therefore produces, on every intermediate frame, exactly the four panels of an intermediate
+hole. The tiling never opens a gap, so the light can move without leaking a bright seam.
+The end-to-end driver asserts this: mid-glide it samples eight points just outside the ring
+and requires every one of them to land on a scrim panel.
+
+**The panels must keep their identity.** Every step change passes through a `searching`
+frame while the next target is located. Dropping to a full scrim there would unmount the
+four panels and mount four fresh ones at the new position, and a new element cannot
+transition, so the hole would snap and the scrim would flash opaque between steps. The
+overlay holds the previous rectangle until the next target is found.
+
+**Only one thing may move at a time.** `scrollIntoView` is instant, not smooth. A smooth
+scroll would drag the target for about 300ms while the spotlight was mid-glide, and since
+the rectangle is re-read every frame the scrim would ease toward a moving destination and
+trail behind it.
+
+Geometry transitions are armed only for the moment after a step changes. During ordinary
+tracking, when the reader scrolls or a chart mounts, they are off, or the scrim would lag
+behind the page. Under `prefers-reduced-motion` every one of them is dropped.
+
 ## A step is never dead
 
 Each step may carry an `ensure`, a side effect the tour runs on entering it. A reader who

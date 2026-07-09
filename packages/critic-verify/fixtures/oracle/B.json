@@ -1,0 +1,62 @@
+{
+  "caseId": "B",
+  "checks": {
+    "1": {
+      "naiveP": 1.3142549864276435e-06,
+      "honestP": 0.7189075296388847,
+      "n": 6,
+      "icc": 0.6067214168626809,
+      "verdict": "flagged",
+      "perGroup": 3
+    },
+    "2": {
+      "discAUC": 0.5802420765174343,
+      "holdAUC": 0.5778340911536806,
+      "markersHolding": 0,
+      "nMarkers": 4,
+      "verdict": "flagged"
+    },
+    "3": {
+      "resolutions": [
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        1.2,
+        1.4,
+        1.6,
+        1.8,
+        2.0
+      ],
+      "spurious": {
+        "group": "Reactive",
+        "stability": 0.0,
+        "settings": 0,
+        "totalSettings": 10,
+        "presentRange": [
+          null,
+          null
+        ],
+        "verdict": "flagged"
+      },
+      "stable": {
+        "group": "Neuron",
+        "stability": 1.0,
+        "settings": 10,
+        "totalSettings": 10,
+        "presentRange": [
+          0.2,
+          2.0
+        ],
+        "verdict": "clean"
+      }
+    },
+    "4": {
+      "cramersV": 1.0,
+      "rankDeficient": true,
+      "separable": false,
+      "verdict": "flagged"
+    }
+  }
+}

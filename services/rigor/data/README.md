@@ -236,6 +236,38 @@ python oracle.py --pseudobulk-key marson2025_data/pseudobulk_counts.h5ad \
 python oracle.py --skip-remote
 ```
 
+## Generalizing beyond Marson: the naive-foil generator (`generate_foil.py`)
+
+`build_naive_foil.py` above hand-builds the foil for the one hero dataset.
+`generate_foil.py` is the general version (Add-on 4): it manufactures a realistic
+naive analysis on ANY single-cell `.h5ad`, with Claude choosing a believable claim
+from the dataset it is handed, and it records ground truth so the harness and the
+oracle can score the case. It exists to make test fixtures at volume, to feed the
+prevalence study one naive analysis per public dataset, and to prove Redline is not
+hardcoded to one file. Full detail in `docs/foil-generator.md`.
+
+```
+services/rigor/data/
+  base_datasets.py       neutral base single-cell datasets (three presets, different
+                         column names) that stand in for public datasets
+  generate_foil.py       any .h5ad -> a naive foil (or a clean Case C variant) plus
+                         a ground-truth manifest, verified against the real engine
+```
+
+```bash
+# build the bundled demonstration set: three presets x {foil, clean} + manifest
+python -m data.generate_foil --demo --out cache/foils/
+
+# a foil on your own dataset, then a clean variant
+python -m data.generate_foil --input your.h5ad --out cache/foils/your.foil.h5ad
+python -m data.generate_foil --input your.h5ad --out cache/foils/your.clean.h5ad --clean
+```
+
+The generator core lives in `redline/foilgen/` (importable and tested in
+`tests/test_foilgen.py`), so a "generate a demonstration case" affordance can reuse
+it. It runs the real engine once per foil to confirm the planted flaw is genuinely
+caught before the foil is blessed.
+
 ## Dependencies
 
 Install the extras from `services/rigor/pyproject.toml`:

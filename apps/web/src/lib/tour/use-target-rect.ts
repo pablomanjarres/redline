@@ -29,14 +29,6 @@ function same(a: TourRect | null, b: TourRect | null): boolean {
   );
 }
 
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
 /**
  * Track a `data-tour` element's viewport rectangle.
  *
@@ -80,13 +72,15 @@ export function useTargetRect(
 
       if (el) {
         // Bring the target into view once per step, not on every frame.
+        //
+        // Deliberately instant. A smooth scroll would move the target for ~300ms
+        // while the spotlight is mid-glide, and since the rectangle is re-read
+        // every frame the scrim would ease toward a moving destination and trail
+        // behind it. Snapping the scroll leaves the glide as the only motion, so
+        // the light travels cleanly from the old control to the new one.
         if (scrolledFor.current !== target) {
           scrolledFor.current = target;
-          el.scrollIntoView({
-            block: 'center',
-            inline: 'nearest',
-            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-          });
+          el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
         }
         const r = el.getBoundingClientRect();
         const next: TourRect = { top: r.top, left: r.left, width: r.width, height: r.height };

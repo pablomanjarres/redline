@@ -27,6 +27,8 @@ export interface CoachMarkProps {
   rect: TourRect | null;
   viewport: { w: number; h: number };
   reducedMotion: boolean;
+  /** True for the moment after a step change, when the card is travelling. */
+  tween: boolean;
   /** 0 to 1, presenter mode only. */
   progress: number;
   onNext(): void;
@@ -131,7 +133,7 @@ const primaryBtn: CSSProperties = {
 };
 
 export function CoachMark(props: CoachMarkProps) {
-  const { step, index, total, mode, paused, rect, viewport, reducedMotion, progress } = props;
+  const { step, index, total, mode, paused, rect, viewport, reducedMotion, progress, tween } = props;
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(CARD_H_GUESS);
   const headingId = `rl-tour-h-${step.id}`;
@@ -181,10 +183,23 @@ export function CoachMark(props: CoachMarkProps) {
         boxShadow: '0 30px 70px -24px rgba(16,24,40,.45), 0 0 0 1px rgba(255,255,255,.6) inset',
         padding: '20px 22px 16px',
         outline: 'none',
+        // Rise once when the tour opens, then travel with the light on each
+        // step. Keeping both on the same easing as the scrim makes the card and
+        // the hole read as one object moving across the page.
         animation: reducedMotion ? undefined : 'rl-rise .22s ease both',
+        transition:
+          tween && !reducedMotion
+            ? 'top var(--rl-tour-glide) var(--rl-tour-ease), left var(--rl-tour-glide) var(--rl-tour-ease)'
+            : undefined,
         ...position(side, rect, viewport, cardH),
       }}
     >
+      {/* The copy changes per step while the card itself stays put, so the text
+          fades in on its own rather than teleporting. */}
+      <div
+        key={step.id}
+        style={{ animation: reducedMotion ? undefined : 'rl-tour-copy 260ms var(--rl-tour-ease) both' }}
+      >
       {/* chapter + counter */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span aria-hidden style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--red)', boxShadow: '0 0 8px var(--red)' }} />
@@ -297,12 +312,16 @@ export function CoachMark(props: CoachMarkProps) {
                   height: '100%',
                   width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%`,
                   background: 'var(--red)',
+                  // The store ticks this every 90ms. Smooth between ticks so the
+                  // rule creeps rather than stepping.
+                  transition: reducedMotion ? undefined : 'width 120ms linear',
                 }}
               />
             </div>
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

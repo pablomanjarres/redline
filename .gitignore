@@ -23,6 +23,8 @@ venv/
 *.h5
 data/cache/
 services/rigor/data/cache/
+# ...except the small synthetic benchmark fixtures, which ARE the deliverable
+!services/rigor/bench/cases/*.h5ad
 
 # env / secrets
 .env
@@ -39,3 +41,10 @@ services/rigor/data/cache/
 # logs
 *.log
 npm-debug.log*
+
+# generated foils, oracle outputs, probe scratch (regenerate via build_foils.py / oracle)
+services/rigor/cache/
+
+# The self-verification run is COMMITTED, not ignored: a deployed /verifications
+# that renders an empty state proves nothing to anyone who opens it. Regenerate
+# with `pnpm --filter @redline/verify run verify` and commit the result.

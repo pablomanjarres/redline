@@ -117,6 +117,7 @@ export function FieldMatrixRow({
           Meaning this field carries
         </span>
         <select
+          data-testid={`field-role-${field.id}`}
           data-tour={tourRoleId}
           aria-label={`Meaning for ${field.id}`}
           value={field.role}

@@ -217,6 +217,10 @@ function freshCore(scenarioId: ScenarioId): CoreState {
     prose: '',
     addingClaim: false,
     addClaimError: null,
+    // Each scenario loads with its own knob defaults (the tracked group, the unit,
+    // the nuisance column differ per dataset). defaultConfigFor reads the same
+    // SCENARIO_DEFAULTS record, which is typed Record<ScenarioId, ...> so a missing
+    // scenario is a typecheck error rather than an undefined config at runtime.
     cfg: cloneConfig(defaultConfigFor(scenarioId)),
     routedChecks: [],
     results: zeroResults(),

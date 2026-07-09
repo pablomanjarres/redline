@@ -25,7 +25,7 @@ import {
 } from '@react-pdf/renderer';
 import type { AuditReport, Chart, CheckResult, DatasetMeta, StatReadout } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
-import { fmt } from './format';
+import { ciLabel, fmt } from './format';
 
 // Canonical check names — mirrors CHECK_META in components/check/CheckStage.tsx,
 // inlined here so this module stays free of the client-only chart tree.
@@ -323,6 +323,8 @@ const S = StyleSheet.create({
   statRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2.5 },
   statLabel: { fontFamily: 'Helvetica', fontSize: 9.5, color: P.ink3 },
   statValue: { fontFamily: 'Courier', fontSize: 9.5, color: P.ink },
+  statValueCol: { flexDirection: 'column', alignItems: 'flex-end' },
+  statCI: { fontFamily: 'Courier', fontSize: 6.5, color: P.ink4, marginTop: 1 },
   // citation
   cite: { marginTop: 12, borderTopWidth: 1, borderTopColor: P.line, paddingTop: 10, flexDirection: 'row' },
   citeTag: { fontFamily: 'Courier-Bold', fontSize: 7, letterSpacing: 1, color: P.ink4, marginRight: 9, textTransform: 'uppercase' },
@@ -353,7 +355,12 @@ function StatTable({ stats }: { stats: StatReadout[] }) {
         return (
           <View key={i} style={S.statRow}>
             <Text style={S.statLabel}>{safe(s.label)}</Text>
-            <Text style={[S.statValue, { color: valueColor }]}>{safe(s.value)}</Text>
+            <View style={S.statValueCol}>
+              <Text style={[S.statValue, { color: valueColor }]}>{safe(s.value)}</Text>
+              {s.interval ? (
+                <Text style={S.statCI}>{safe(`${ciLabel(s.interval, s.value)} · ${s.interval.n} runs`)}</Text>
+              ) : null}
+            </View>
           </View>
         );
       })}

@@ -67,7 +67,9 @@ export function reasoningLines(id: CheckId, cfg: unknown, scenarioId?: ScenarioI
  * it. The counts match the curated extractedClaims for each scenario (three
  * auditable claims and one that sits outside the four checks).
  */
-const EXTRACTION_LINES: Record<ScenarioId, string[]> = {
+// Curated copy exists only for the two demo scenarios. The verification foils are
+// driven on a real compute target, where the reasoning layer writes these lines.
+const EXTRACTION_LINES: Partial<Record<ScenarioId, string[]>> = {
   marson: [
     'Reading the analysis: 51,842 cells, 3,200 genes, 9 resolved fields.',
     'Inspecting stored results under uns: a marker table over the leiden clusters and a differential-expression result by condition.',
@@ -92,7 +94,7 @@ const EXTRACTION_LINES: Record<ScenarioId, string[]> = {
 
 /** The streamed Claim Extraction copy for one scenario (spec section 6). */
 export function extractionLines(scenarioId: ScenarioId): string[] {
-  return EXTRACTION_LINES[scenarioId];
+  return EXTRACTION_LINES[scenarioId] ?? [];
 }
 
 /**

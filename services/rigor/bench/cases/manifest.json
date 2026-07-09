@@ -1,0 +1,2130 @@
+{
+  "generatedBy": "services/rigor/bench/generate.py",
+  "labeledBy": "services/rigor/bench/labeler.py (independent numpy/scipy)",
+  "n_cases": 46,
+  "n_label_mismatches": 0,
+  "pillars": {
+    "pseudoreplication": "Pseudoreplication",
+    "double_dipping": "Double dipping",
+    "fragility": "Clustering fragility",
+    "confounding": "Technical confounding"
+  },
+  "cases": [
+    {
+      "case_id": "p1_pos_00",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1000,
+      "filename": "p1_pos_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1000
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_pos_01",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1024,
+      "filename": "p1_pos_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1024
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_pos_02",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1048,
+      "filename": "p1_pos_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1048
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_pos_03",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1072,
+      "filename": "p1_pos_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1072
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_pos_04",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1096,
+      "filename": "p1_pos_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1096
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_pos_05",
+      "family": "p1",
+      "polarity": "pos",
+      "seed": 1120,
+      "filename": "p1_pos_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1120
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": true,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_00",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1500,
+      "filename": "p1_clean_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1500
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_01",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1524,
+      "filename": "p1_clean_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1524
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_02",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1548,
+      "filename": "p1_clean_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1548
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_03",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1572,
+      "filename": "p1_clean_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1572
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_04",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1596,
+      "filename": "p1_clean_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1596
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p1_clean_05",
+      "family": "p1",
+      "polarity": "neg",
+      "seed": 1620,
+      "filename": "p1_clean_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 1620
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_00",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2000,
+      "filename": "spurious_state_pos_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2000
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_01",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2024,
+      "filename": "spurious_state_pos_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2024
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_02",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2048,
+      "filename": "spurious_state_pos_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2048
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_03",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2072,
+      "filename": "spurious_state_pos_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2072
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_04",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2096,
+      "filename": "spurious_state_pos_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2096
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "spurious_state_pos_05",
+      "family": "spurious_state",
+      "polarity": "pos",
+      "seed": 2120,
+      "filename": "spurious_state_pos_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Reactive",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2120
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": true,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_00",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2500,
+      "filename": "real_state_clean_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2500
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_01",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2524,
+      "filename": "real_state_clean_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2524
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_02",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2548,
+      "filename": "real_state_clean_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2548
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_03",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2572,
+      "filename": "real_state_clean_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2572
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_04",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2596,
+      "filename": "real_state_clean_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2596
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "real_state_clean_05",
+      "family": "real_state",
+      "polarity": "neg",
+      "seed": 2620,
+      "filename": "real_state_clean_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 2620
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_00",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3003,
+      "filename": "continuum_pos_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3003
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_01",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3038,
+      "filename": "continuum_pos_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3038
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_02",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3048,
+      "filename": "continuum_pos_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3048
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_03",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3073,
+      "filename": "continuum_pos_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3073
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_04",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3096,
+      "filename": "continuum_pos_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3096
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "continuum_pos_05",
+      "family": "continuum",
+      "polarity": "pos",
+      "seed": 3125,
+      "filename": "continuum_pos_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "High",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 3125
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": true,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_00",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4000,
+      "filename": "p4_pos_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4000
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_01",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4024,
+      "filename": "p4_pos_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4024
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_02",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4048,
+      "filename": "p4_pos_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4048
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_03",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4072,
+      "filename": "p4_pos_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4072
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_04",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4096,
+      "filename": "p4_pos_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4096
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_pos_05",
+      "family": "p4",
+      "polarity": "pos",
+      "seed": 4120,
+      "filename": "p4_pos_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4120
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": true
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_00",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4500,
+      "filename": "p4_clean_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4500
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_01",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4524,
+      "filename": "p4_clean_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4524
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_02",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4548,
+      "filename": "p4_clean_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4548
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_03",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4572,
+      "filename": "p4_clean_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4572
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_04",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4596,
+      "filename": "p4_clean_04.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4596
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "p4_clean_05",
+      "family": "p4",
+      "polarity": "neg",
+      "seed": 4620,
+      "filename": "p4_clean_05.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 4620
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "clean_control_clean_00",
+      "family": "clean_control",
+      "polarity": "neg",
+      "seed": 9000,
+      "filename": "clean_control_clean_00.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 9000
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "clean_control_clean_01",
+      "family": "clean_control",
+      "polarity": "neg",
+      "seed": 9024,
+      "filename": "clean_control_clean_01.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 9024
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "clean_control_clean_02",
+      "family": "clean_control",
+      "polarity": "neg",
+      "seed": 9048,
+      "filename": "clean_control_clean_02.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 9048
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    },
+    {
+      "case_id": "clean_control_clean_03",
+      "family": "clean_control",
+      "polarity": "neg",
+      "seed": 9072,
+      "filename": "clean_control_clean_03.h5ad",
+      "claim": {
+        "focus_gene": "MARKERGENE",
+        "condition_col": "condition",
+        "unit_col": "donor_id",
+        "state_col": "cell_state",
+        "target_state": "Rare",
+        "nuisance_col": "batch",
+        "resolution": 1.0,
+        "label_seed": 9072
+      },
+      "design": {
+        "n_cells": 720,
+        "n_genes": 103,
+        "donors": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6"
+        ],
+        "per_group_donors": 3,
+        "condition_levels": [
+          "control",
+          "treated"
+        ],
+        "nuisance_levels": [
+          "chip-A",
+          "chip-B"
+        ],
+        "resolution": 1.0
+      },
+      "intended": {
+        "pseudoreplication": false,
+        "double_dipping": false,
+        "fragility": false,
+        "confounding": false
+      },
+      "label_matches_intended": true
+    }
+  ]
+}

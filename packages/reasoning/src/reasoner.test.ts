@@ -90,6 +90,30 @@ describe('buildNarrativePrompt', () => {
     expect(system).toContain('Pseudoreplication');
     expect(system).toContain('Squair');
   });
+
+  it('carries a held-out AUC interval into the check-2 prompt and asks the model to cite it', () => {
+    const req: NarrativeRequest = {
+      checkId: 2,
+      state: 'flagged',
+      claim: 'A distinct activated Treg-like state, defined by 4 markers.',
+      datasetTitle: narrativeReq.datasetTitle,
+      evidence: {
+        holdAUC: 0.57,
+        holdAUCMedian: 0.57,
+        holdAUCCILow: 0.54,
+        holdAUCCIHigh: 0.61,
+        splitReps: 200,
+      },
+    };
+    const { system, user } = buildNarrativePrompt(req);
+    // the interval bounds and the repetition count reach the model
+    expect(user).toContain('holdAUCCILow');
+    expect(user).toContain('0.54');
+    expect(user).toContain('200');
+    // and the prompt instructs it to report the interval, not one point
+    expect(system).toContain('95 percent interval');
+    expect(user).toContain('95 percent interval');
+  });
 });
 
 describe('buildFieldProposalPrompt', () => {

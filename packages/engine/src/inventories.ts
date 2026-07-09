@@ -208,8 +208,16 @@ export const KETAMINE_INVENTORY: DatasetInventory = {
   ],
 };
 
-/** Inventory by scenario, so a compute target can inspect one by id. */
-export const INVENTORIES: Record<ScenarioId, DatasetInventory> = {
+/**
+ * Inventory by scenario, so a compute target can inspect one by id.
+ *
+ * Partial on purpose. Only the two demo scenarios carry a locked inventory. The
+ * verification foils (pfc, clean, nocounts) have no fixture numbers at all: their
+ * inventory only exists on a real compute target, which reads the .h5ad. Typing
+ * this as a total Record would force us to invent one, and an invented inventory
+ * is a fabricated dataset description shown to a scientist.
+ */
+export const INVENTORIES: Partial<Record<ScenarioId, DatasetInventory>> = {
   marson: MARSON_INVENTORY,
   ketamine: KETAMINE_INVENTORY,
 };
