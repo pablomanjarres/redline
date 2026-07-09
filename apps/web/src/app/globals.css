@@ -2,6 +2,13 @@
    and the rl-* keyframes all live in @redline/ui/tokens.css (imported first in
    the root layout). Keep this file to what tokens.css does not cover. */
 
+/* The keyboard focus ring below reads --accent, which tokens.css never defined,
+   so the rule was invalid at computed-value time and every focus ring fell back
+   to currentColor. Bind it to the interaction blue. */
+:root {
+  --accent: var(--signal);
+}
+
 /* Reduced-motion global guard. Complements the session store, which reveals
    reasoning lines all at once for these users; here we neutralize the rl-*
    SVG draw / pulse / rise animations everywhere they appear. */
