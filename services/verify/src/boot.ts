@@ -4,7 +4,7 @@
  * command. Set REDLINE_VERIFY_BASE_URL to skip the boot and drive an app that is
  * already running.
  */
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { chmodSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -38,7 +38,18 @@ export function bootApp(): Booted {
     REDLINE_BEDROCK_MODEL_ID: BEDROCK_MODEL,
     AWS_PROFILE,
   };
-  const child: ChildProcess = spawn('pnpm', ['exec', 'next', 'dev', '--webpack', '--port', String(PORT)], {
+  // A production build plus `next start` is far more stable than the dev server
+  // for a long run: no per-route webpack recompiles while the Python engine is
+  // spawning subprocesses, and a much smaller memory footprint. The dev server
+  // died mid-run; this does not.
+  if (!process.env.REDLINE_VERIFY_SKIP_BUILD) {
+    console.error('[verify] building the app (once) for a stable server...');
+    const build = spawnSync('pnpm', ['exec', 'next', 'build', '--webpack'], { cwd: WEB_DIR, env, stdio: 'ignore' });
+    if (build.status !== 0) {
+      throw new Error(`next build failed (${build.status}); cannot boot the app`);
+    }
+  }
+  const child: ChildProcess = spawn('pnpm', ['exec', 'next', 'start', '--port', String(PORT)], {
     cwd: WEB_DIR,
     env,
     stdio: 'ignore',
