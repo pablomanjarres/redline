@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CriticConfidence, CriticVerdict } from './critic.js';
 import { CheckId } from './primitives.js';
 
 /**
@@ -96,8 +97,60 @@ export const DeadControl = z.object({
 export type DeadControl = z.infer<typeof DeadControl>;
 
 /**
+ * One candidate finding put through the critic: which case and check it came from,
+ * the actor's pre-critic verdict, the critic's ruling and the number it keyed on,
+ * whether that critic call was a real model call, and the effective verdict after
+ * the gate. `expected` is the ruling the harness required, so a run is graded.
+ */
+export const CriticFindingOutcome = z.object({
+  caseId: CaseId,
+  checkId: CheckId,
+  label: z.string(),
+  computeState: z.string(),
+  verdict: CriticVerdict,
+  expected: CriticVerdict,
+  keysOn: z.string(),
+  justification: z.string(),
+  confidence: CriticConfidence,
+  effectiveState: z.string(),
+  realModelCall: z.boolean(),
+  passed: z.boolean(),
+});
+export type CriticFindingOutcome = z.infer<typeof CriticFindingOutcome>;
+
+/**
+ * The self-honesty injection: a rubber-stamp critic (always confirm) is run over
+ * the adversarial cases. A trustworthy harness must catch it (report it unable to
+ * veto or downgrade). If `caught` is false the harness itself is decorative.
+ */
+export const CriticSelfTest = z.object({
+  name: z.string(),
+  caught: z.boolean(),
+  detail: z.string(),
+});
+export type CriticSelfTest = z.infer<typeof CriticSelfTest>;
+
+/**
+ * The actor-critic slice of the self-verification harness: whether a real model
+ * call fired per finding, whether the critic vetoed the over-fired flag on the
+ * clean case (green), whether it downgraded the underpowered split, the
+ * per-finding outcomes, and the rubber-stamp self-test.
+ */
+export const CriticVerification = z.object({
+  ready: z.boolean(),
+  model: z.string(),
+  realModelCalls: z.number().int(),
+  cleanCaseGreen: z.boolean(),
+  outcomes: z.array(CriticFindingOutcome),
+  selfTests: z.array(CriticSelfTest),
+});
+export type CriticVerification = z.infer<typeof CriticVerification>;
+
+/**
  * The whole harness run: readiness, the per-case verdicts, the AI wiring status,
- * the dead controls found, and any failure strings collected along the way.
+ * the dead controls found, the actor-critic slice, and any failure strings
+ * collected along the way. `critic` is optional so a base-harness run that has
+ * not built the critic slice still parses.
  */
 export const VerificationRun = z.object({
   ready: z.boolean(),
@@ -106,5 +159,6 @@ export const VerificationRun = z.object({
   aiWiring: AiWiring,
   deadControls: z.array(DeadControl),
   failures: z.array(z.string()),
+  critic: CriticVerification.optional(),
 });
 export type VerificationRun = z.infer<typeof VerificationRun>;

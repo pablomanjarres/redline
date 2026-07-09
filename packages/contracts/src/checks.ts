@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Chart, Interval } from './charts.js';
+import { CriticAssessment } from './critic.js';
 import { CheckId, CheckState } from './primitives.js';
 
 export const Citation = z.object({
@@ -65,8 +66,17 @@ export const Narrative = z.object({
 });
 export type Narrative = z.infer<typeof Narrative>;
 
-/** What the UI renders per check: numbers ⊕ narrative. */
-export const CheckResult = ComputeResult.merge(Narrative);
+/**
+ * What the UI renders per check: numbers ⊕ narrative, plus the actor-critic layer.
+ * `state` is the effective, post-critic verdict (a veto flips a flag to clean).
+ * `computeState` preserves the actor's pre-critic verdict for audit, and `critic`
+ * carries the second pass so the card can show "confirmed / downgraded / vetoed".
+ * Both are optional so fixture and pre-critic payloads still parse.
+ */
+export const CheckResult = ComputeResult.merge(Narrative).extend({
+  computeState: CheckState.optional(),
+  critic: CriticAssessment.optional(),
+});
 export type CheckResult = z.infer<typeof CheckResult>;
 
 // ── Per-check knob configs ───────────────────────────────────────────────────

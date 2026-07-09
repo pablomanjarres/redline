@@ -12,6 +12,7 @@ import type {
   Verdict,
 } from '@redline/contracts';
 import { C } from '@redline/ui';
+import { CriticPanel } from './CriticPanel';
 import { RerunButton } from './RerunButton';
 
 /**
@@ -97,6 +98,10 @@ export default async function VerificationsPage() {
       </div>
 
       {'run' in result ? <RunView run={result.run} /> : <EmptyState kind={result.error} detail={result.detail} />}
+
+      {/* The actor-critic slice. Independent of the harness run above: this one is
+          committed, that one is written by `pnpm --filter @redline/verify verify`. */}
+      <CriticPanel />
     </div>
   );
 }
