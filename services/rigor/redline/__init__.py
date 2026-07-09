@@ -13,7 +13,9 @@ imported only inside the pillars that use them.
 
 from __future__ import annotations
 
+import sys
 from importlib import import_module
+from types import ModuleType
 from typing import Any
 
 # Eager, dependency-free: the contract shapes and builders.
@@ -63,16 +65,39 @@ _LAZY = {
 }
 
 
+# Three of the public callables share a name with a submodule: ``audit`` the
+# function lives in ``redline.audit`` the module. Any import of that submodule,
+# including the one a lazy load triggers under the hood, runs
+# ``setattr(redline, "audit", <module>)`` and buries the function. A plain
+# module ``__getattr__`` cannot rescue it, because ``__getattr__`` only fires
+# when normal lookup fails and the buried module makes lookup succeed.
+#
+# Resolving the lazy names through the module type instead keeps the callable
+# winning whatever the import order was. ``__getattribute__`` runs ahead of the
+# instance ``__dict__``, so ``redline.audit`` and ``from redline import audit``
+# both hand back the function even after ``import redline.audit`` has stashed the
+# module in the package dict. Names outside ``_LAZY`` fall through to the normal
+# module machinery, so ``redline.contracts`` stays stdlib-only and the heavy
+# stack loads only when a lazy name is first read.
+class _EngineModule(ModuleType):
+    def __getattribute__(self, name: str) -> Any:
+        target = _LAZY.get(name)
+        if target is not None:
+            return getattr(import_module(target[0], __name__), target[1])
+        return super().__getattribute__(name)
+
+
 def __getattr__(name: str) -> Any:
-    target = _LAZY.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    module = import_module(target[0], __name__)
-    return getattr(module, target[1])
+    # Reached only for names outside _LAZY (those are served by _EngineModule).
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def __dir__() -> list[str]:
     return sorted(set(list(globals().keys()) + list(_LAZY.keys())))
+
+
+# Swap the running module's type in place so the resolver above takes effect.
+sys.modules[__name__].__class__ = _EngineModule
 
 
 __all__ = [

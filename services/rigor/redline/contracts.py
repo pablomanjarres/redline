@@ -418,10 +418,12 @@ class Recommendation:
 class CorrectedCode:
     """A runnable script that reproduces the honest re-analysis.
 
-    The executable skeleton comes from a hand-written template; only comments
-    and prose are ever model-written. ``params`` records what was injected, so
-    the harness can prove the script is parameterized rather than hardcoded to
-    the canonical case.
+    No model writes any part of it. The whole script, comments included, is a
+    hand-written template, and the only thing injected is ``params``. The script
+    inlines the engine's own computation kernel verbatim, so what it prints is
+    what Redline reported. ``params`` records what was injected, so the harness
+    can prove the script is parameterized rather than hardcoded to the canonical
+    case.
     """
 
     filename: str

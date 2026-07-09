@@ -6,6 +6,13 @@ stdout:
 
     {"op": "resolve_fields", "scenarioId": "marson"}
     {"op": "check", "scenarioId": "marson", "checkId": 1, "config": {...}, "fields": [...]}
+    {"op": "preview", "scenarioId": "marson", "checkId": 1, "config": {...}, "fields": [...]}
+
+``check`` returns the flat ``EngineResult`` (the ``ComputeResult`` keys plus the
+additive ``correctedCode`` / ``recommendations`` / ``preview`` when present).
+``preview`` returns just that one check's ``preview`` object, so the TS side can
+dispatch a heavier preview as its own job without recomputing the whole check
+(it is ``null`` for a check that proved nothing, e.g. ``flag_only``).
 
 The engine's `job_runner`, on the other hand, is keyed by a concrete `.h5ad`
 path. This adapter is the missing glue: it reads the RemoteTarget envelope on
@@ -32,6 +39,7 @@ import json
 import os
 import sys
 
+from redline.contracts import CHECK_IDS
 from redline.job_runner import compute_result, resolve_fields, to_json
 
 # scenarioId -> the env var that holds that scenario's built .h5ad path.
@@ -59,12 +67,16 @@ def handle(req: dict) -> object:
 
     if op == "resolve_fields":
         return {"fields": resolve_fields(h5ad)}
-    if op == "check":
+    if op in ("check", "preview"):
         check_id = req.get("checkId")
-        if check_id not in (1, 2, 3, 4):
-            raise ValueError("'checkId' must be one of 1, 2, 3, 4")
-        return compute_result(int(check_id), h5ad, req.get("config") or {}, req.get("fields"))
-    raise ValueError(f"unknown op '{op}' (expected 'resolve_fields' or 'check')")
+        if check_id not in CHECK_IDS:
+            allowed = ", ".join(str(i) for i in CHECK_IDS)
+            raise ValueError(f"'checkId' must be one of {allowed}")
+        result = compute_result(int(check_id), h5ad, req.get("config") or {}, req.get("fields"))
+        if op == "preview":
+            return result.get("preview")
+        return result
+    raise ValueError(f"unknown op '{op}' (expected 'resolve_fields', 'check', or 'preview')")
 
 
 def main(argv: list[str] | None = None) -> int:
