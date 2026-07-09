@@ -10,8 +10,10 @@ import type {
   Check4Config,
   CheckConfigMap,
   UnitProfile,
+  ExtractedClaim,
 } from '@redline/contracts';
 import { buildSteps, cit, groupInt, type FullCheck } from './shared.js';
+import { MARSON_INVENTORY } from '../inventories.js';
 
 // ---------------------------------------------------------------------------
 // Scenario `marson` - the HERO (default). A naive-foil analysis constructed on
@@ -462,10 +464,111 @@ export const MARSON_DEFAULTS: CheckConfigMap = {
   4: { interest: 'condition', nuisance: ['lane'] },
 };
 
+// ---------------------------------------------------------------------------
+// The curated extracted claims (spec section 5). These reproduce the worked
+// example: the FOXP3 significance claim fans to Check 1 and Check 4; the
+// activated Treg-like state fans to Check 2 and Check 3; the Effector state
+// routes to Check 3; and one pseudotime claim sits outside the four checks so
+// the Claim Review screen's out-of-scope group is exercised on the fixture path.
+//
+// This is the single home for the curated claim list. Both fallback paths read
+// it through curatedClaimsFor() in scenarios.ts (the /api/audit/claims route
+// when no model backend is wired, and the session store if that POST fails), so
+// every path shows the same claims and the two can never drift.
+//
+// Every claim is built to pass enforceClaimHonesty against MARSON_INVENTORY
+// unchanged: the cited obs columns, uns keys, and genes all exist, the routed
+// column params name real columns, and no check id repeats within a claim.
+export const MARSON_CLAIMS: ExtractedClaim[] = [
+  {
+    id: 'marson-foxp3-significance',
+    text: 'IL2RA knockdown significantly upregulates FOXP3 across CD4 T cells (p < 0.001).',
+    source: 'stored_result',
+    restsOn:
+      'The stored differential-expression result de_KD_vs_NT, comparing IL2RA-KD against non-targeting on the condition field.',
+    evidenceRefs: {
+      obsColumns: ['condition', 'donor_id', 'lane'],
+      unsKeys: ['de_KD_vs_NT'],
+      genes: ['FOXP3'],
+    },
+    checks: [
+      {
+        check: 1,
+        params: {
+          grouping: 'condition',
+          unit: 'donor_id',
+          gene: 'FOXP3',
+          reported: 'p = 6.2e-11',
+        },
+      },
+      { check: 4, params: { interest: 'condition', nuisance: 'lane' } },
+    ],
+    confidence: 'high',
+    status: 'proposed',
+  },
+  {
+    id: 'marson-activated-treg-state',
+    text: 'An activated Treg-like state defined by TNFRSF9, ICOS, TIGIT, and CTLA4, enriched under knockdown.',
+    source: 'stored_result',
+    restsOn:
+      'The stored marker table rank_genes_groups, which defines the Activated Treg-like state over the leiden clustering.',
+    evidenceRefs: {
+      obsColumns: ['leiden', 'condition'],
+      unsKeys: ['rank_genes_groups'],
+      genes: ['TNFRSF9', 'ICOS', 'TIGIT', 'CTLA4'],
+    },
+    checks: [
+      {
+        check: 2,
+        params: {
+          grouping: 'leiden',
+          cluster: 'Activated Treg-like',
+          markers: ['TNFRSF9', 'ICOS', 'TIGIT', 'CTLA4'],
+        },
+      },
+      { check: 3, params: { cluster: 'Activated Treg-like' } },
+    ],
+    confidence: 'high',
+    status: 'proposed',
+  },
+  {
+    id: 'marson-effector-state',
+    text: 'A distinct knockdown-responsive Effector T-cell state.',
+    source: 'stored_result',
+    restsOn: 'The Effector cluster in the leiden clustering.',
+    evidenceRefs: {
+      obsColumns: ['leiden'],
+      unsKeys: [],
+      genes: [],
+    },
+    checks: [{ check: 3, params: { cluster: 'Effector' } }],
+    confidence: 'medium',
+    status: 'proposed',
+  },
+  {
+    id: 'marson-pseudotime-trajectory',
+    text: 'IL2RA knockdown accelerates a pseudotime trajectory toward an exhausted state.',
+    source: 'stored_result',
+    restsOn: 'A diffusion-pseudotime ordering computed from the UMAP embedding.',
+    evidenceRefs: {
+      obsColumns: [],
+      unsKeys: [],
+      genes: [],
+    },
+    checks: [],
+    confidence: 'medium',
+    status: 'out_of_scope',
+    outOfScopeReason:
+      "Redline's four checks cover pseudoreplication, double dipping, clustering fragility, and technical confounding. A pseudotime trajectory claim needs trajectory-specific validation these checks do not provide, so it is labeled and set aside.",
+  },
+];
+
 export const marsonScenario: Scenario = {
   id: 'marson',
   name: 'IL2RA knockdown (CD4+ T cells)',
   dataset,
   claims,
   fields,
+  inventory: MARSON_INVENTORY,
+  extractedClaims: MARSON_CLAIMS,
 };
