@@ -57,6 +57,7 @@ export default function ReportPage() {
           </div>
         </div>
         <button
+          data-tour="report.export"
           type="button"
           onClick={onExport}
           disabled={exporting}
@@ -83,6 +84,7 @@ export default function ReportPage() {
 
       {/* verdict band */}
       <section
+        data-tour="report.band"
         aria-label="Audit summary"
         style={{
           marginTop: 24,

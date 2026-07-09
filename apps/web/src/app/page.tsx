@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ScenarioId } from '@redline/contracts';
 import { useSession } from '@/state/session';
+import { TourLauncher } from '@/components/tour/TourLauncher';
 import { fmt } from '@/lib/format';
 
 /**
@@ -55,8 +56,9 @@ export default function IntakePage() {
           STATISTICAL AUDITOR
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TourLauncher />
           <span style={{ font: '500 9px/1 var(--mono)', letterSpacing: '.16em', color: 'var(--ink-4)' }}>SCENARIO</span>
-          <div role="group" aria-label="Choose scenario" style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--panel-2)', border: '1px solid var(--edge-2)', borderRadius: 8 }}>
+          <div data-tour="intake.scenario" role="group" aria-label="Choose scenario" style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--panel-2)', border: '1px solid var(--edge-2)', borderRadius: 8 }}>
             {SCENARIOS.map((s) => {
               const active = scenarioId === s.id;
               return (
@@ -73,7 +75,7 @@ export default function IntakePage() {
       {/* hero */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: 1080, width: '100%', margin: '0 auto', padding: '48px 40px' }}>
         <div style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.24em', textTransform: 'uppercase', color: 'var(--red)' }}>Built with Claude · Life Sciences</div>
-        <h1 style={{ margin: '20px 0 0', font: '900 56px/1.02 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)', maxWidth: 900 }}>
+        <h1 data-tour="intake.hero" style={{ margin: '20px 0 0', font: '900 56px/1.02 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)', maxWidth: 900 }}>
           Break your own analysis<br />before Reviewer 2 does.
         </h1>
         <p style={{ margin: '20px 0 0', maxWidth: 640, font: '400 15.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
@@ -83,7 +85,7 @@ export default function IntakePage() {
         {/* two slabs */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 40 }}>
           {/* dataset */}
-          <div style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
+          <div data-tour="intake.dataset" style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ font: '700 11px/1 var(--mono)', color: 'var(--red)' }}>01</span>
               <span style={{ font: '700 12px/1 var(--sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink)' }}>Dataset</span>
@@ -94,7 +96,7 @@ export default function IntakePage() {
                 <div style={{ font: '500 12.5px/1.2 var(--mono)', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataset.file}</div>
                 <div style={{ marginTop: 3, font: '400 11px/1 var(--mono)', color: 'var(--ink-4)' }}>{dataset.sizeGB} GB · loaded</div>
               </div>
-              <span title={computeTargetAvailable ? '' : 'connect a compute target to audit your own data'} style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: computeTargetAvailable ? 'pointer' : 'not-allowed' }}>
+              <span data-tour="intake.upload" title={computeTargetAvailable ? '' : 'connect a compute target to audit your own data'} style={{ marginLeft: 'auto', font: '500 10px/1.3 var(--mono)', color: computeTargetAvailable ? 'var(--signal)' : 'var(--ink-4)', textAlign: 'right', cursor: computeTargetAvailable ? 'pointer' : 'not-allowed' }}>
                 {computeTargetAvailable ? 'Upload .h5ad' : 'connect a compute\ntarget for your own'}
               </span>
             </div>
@@ -109,7 +111,7 @@ export default function IntakePage() {
           </div>
 
           {/* analysis */}
-          <div style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
+          <div data-tour="intake.analysis" style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 14, padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ font: '700 11px/1 var(--mono)', color: 'var(--red)' }}>02</span>
               <span style={{ font: '700 12px/1 var(--sans)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink)' }}>Analysis</span>
@@ -137,7 +139,7 @@ export default function IntakePage() {
 
         {/* begin */}
         <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button type="button" onClick={onBegin} disabled={pending}
+          <button data-tour="intake.begin" type="button" onClick={onBegin} disabled={pending}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 10, font: '800 13px/1 var(--sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--surface)', background: 'var(--signal)', padding: '16px 26px', borderRadius: 10, border: 'none', cursor: pending ? 'default' : 'pointer', opacity: pending ? 0.7 : 1, boxShadow: '0 10px 24px -8px rgba(37,99,235,.45)' }}>
             {pending ? 'Resolving fields' : 'Begin audit'}
             <span style={{ fontSize: 15 }}>→</span>

@@ -18,6 +18,8 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { SessionProvider } from '@/state/session';
+import { TourProvider } from '@/state/tour';
+import { TourOverlay } from '@/components/tour/TourOverlay';
 
 export const metadata: Metadata = {
   title: 'Redline',
@@ -32,7 +34,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <TourProvider>
+            {children}
+            <TourOverlay />
+          </TourProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -28,7 +28,7 @@ QC is a solved, commoditized layer, and a generic reviewer reads a finished manu
 
 ## What it catches
 
-- **Fake significance from non-independent data (pseudoreplication).** Cells from one donor are not independent samples. Testing 40,000 cells as 40,000 observations when they came from four donors inflates type-1 error massively. Redline aggregates counts to one profile per biological replicate and re-runs the comparison correctly with PyDESeq2 (Squair et al. 2021). On screen the tiny p-value gets struck through, the corrected value drops in beside it, and the volcano deflates from fireworks to nearly empty. If a group has fewer than two real replicates, no valid test exists by any method, and Redline states that flatly instead of printing a number. This is the one check where Redline asserts the corrected result.
+- **Fake significance from non-independent data (pseudoreplication).** Cells from one donor are not independent samples. Testing 40,000 cells as 40,000 observations when they came from four donors inflates type-1 error massively. Redline aggregates counts to one profile per biological replicate and re-runs the comparison correctly with PyDESeq2 (Squair et al. 2021). On screen the tiny p-value gets struck through, the corrected value drops in beside it, and the tall reported bar collapses below the significance line. If a group has fewer than two real replicates, no valid test exists by any method, and Redline states that flatly instead of printing a number. This is the one check where Redline asserts the corrected result.
 - **Fake groups (double dipping).** Clusters defined on the data and then tested for their own marker genes on that same data manufacture false positives. It is the default in standard pipelines, and Seurat itself warns about it. Redline splits the counts into two statistically independent halves (Poisson thinning), clusters on one half, tests markers on the other, and reports how many of the claimed markers survive. The claimed marker list collapses on screen. Count splitting is evidence, not a certified FDR correction, and Redline says so and names ClusterDE as the stronger method on the roadmap.
 - **Fragile conclusions (clustering instability).** The biological story often rides on an arbitrary clustering resolution the scientist never justified. Redline sweeps the resolution across a range, measures agreement between settings with the adjusted Rand index, and tracks whether a named cluster survives the sweep. A slider re-runs clustering live and the claimed cell state appears and vanishes.
 - **Confounded comparisons.** The comparison of interest can be inseparable from a technical variable, for instance when the treated and control samples were processed on different days. Redline builds the design matrix from the confirmed columns, checks whether condition and batch are collinear or fully nested, then re-fits with the technical variable included to see if the effect survives. It flags what cannot be concluded, in plain language. (v1 covers technical-biological confounding; composition shifts are out of scope.)
@@ -42,7 +42,7 @@ QC is a solved, commoditized layer, and a generic reviewer reads a finished manu
 
 One engine, every surface. The core is a rigor engine that exposes a foundation step plus the four checks, each as an independent MCP tool, and packages as a Claude Skill so the same code drops into Claude Science. A plots-first web workbench renders the scientist's figures and overlays the findings on them.
 
-Before any check runs, a **foundation step** resolves the design. Column names in an `.h5ad` are arbitrary (`donor`, `orig.ident`, `stim`, `batch`, guide IDs), so Claude inspects the `obs` columns and proposes which one is the biological replicate, which is the grouping variable being compared, and which are technical nuisances, each with reasoning and a confidence level. The scientist confirms or corrects it. Nothing else runs until the design is confirmed, because a wrong role makes every downstream flag wrong. Every pillar operates on that resolved role, never on a hardcoded "cell type."
+Before any check runs, a **foundation step** resolves the design. Column names in an `.h5ad` are arbitrary (`donor`, `orig.ident`, `stim`, `batch`, guide IDs), so Redline's foundation step inspects the `obs` columns and proposes which one is the biological replicate, which is the grouping variable being compared, and which are technical nuisances, each with a reason and a confidence level. The scientist confirms or corrects it. Nothing else runs until the design is confirmed, because a wrong role makes every downstream flag wrong. Every pillar operates on that resolved role, never on a hardcoded "cell type."
 
 A `ComputeTarget` seam decides where the statistics actually run, behind one return contract:
 
@@ -107,8 +107,18 @@ cd redline
 pnpm install
 pnpm build        # builds the four packages, then the Next.js workbench
 pnpm typecheck
-pnpm test         # engine fixtures (26) + reasoning (7)
+pnpm test         # engine fixtures (26) + reasoning (7) + guided tour (32)
 ```
+
+### Take the tour
+
+Open the workbench and it offers a guided walkthrough on the first visit. It darkens
+everything except the control you should touch next and explains what that control does,
+what to put there, and why the check behind it matters, across all four catches, the clean
+verdict, the report, and the engine surface.
+
+Pick **Walk me through it** to drive, or **Play it for me** to watch it run hands free.
+Append `?tour=1` to reopen it, or `?tour=0` to keep it shut. See `docs/guided-tour.md`.
 
 ### Configuration
 

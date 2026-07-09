@@ -7,7 +7,7 @@
  */
 export function ReasoningConsole({ lines, running }: { lines: string[]; running: boolean }) {
   return (
-    <section style={{ background: 'var(--void)', border: '1px solid var(--edge)', borderRadius: 12, overflow: 'hidden' }}>
+    <section data-tour="check.reasoning" style={{ background: 'var(--void)', border: '1px solid var(--edge)', borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--edge)', background: 'var(--panel)' }}>
         <span style={{ font: '700 10px/1 var(--mono)', letterSpacing: '.18em', color: 'var(--ink)' }}>REASONING</span>
         {running && (
