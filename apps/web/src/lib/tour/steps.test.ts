@@ -177,7 +177,7 @@ describe('the tour script is structurally sound', () => {
   });
 
   it('only routes to real app routes', () => {
-    const routes = /^\/(fields|workbench|report|environment|checks\/[1-4])?$/;
+    const routes = /^\/(fields|workbench|report|corrected|environment|checks\/[1-8])?$/;
     const bad = TOUR_STEPS.filter((s) => !routes.test(s.route));
     expect(bad.map((s) => `${s.id} -> ${s.route}`)).toEqual([]);
   });
