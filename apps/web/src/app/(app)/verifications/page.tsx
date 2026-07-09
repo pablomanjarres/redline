@@ -107,6 +107,13 @@ function RunView({ run }: { run: VerificationRun }) {
       <div style={{ marginTop: 16, font: '400 12px/1 var(--mono)', color: 'var(--ink-4)' }}>
         Ran <span style={{ color: 'var(--ink-2)' }}>{formatTimestamp(run.timestamp)}</span>
       </div>
+      {/* Honesty rule 6, applied to this page: the banner below reports a run that
+          already happened. It is not a live check of the server you are reading it on. */}
+      <div style={{ marginTop: 6, font: '400 12px/1.5 var(--sans)', color: 'var(--ink-4)', maxWidth: 660 }}>
+        This is a committed snapshot of the last harness run, not a live check of this
+        deployment. Press <span style={{ color: 'var(--ink-2)' }}>Re-run harness</span> to
+        drive the app you are looking at.
+      </div>
 
       <ReadyBanner run={run} />
 
