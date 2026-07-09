@@ -88,12 +88,24 @@ export type ExtractedClaim = z.infer<typeof ExtractedClaim>;
 // ── Extraction I/O envelopes (spec sections 5, 7) ────────────────────────────
 
 /** Everything the extraction agent reads: the inventory plus optional text. */
+/**
+ * Caps on the untrusted text a scientist can hand the extraction model.
+ *
+ * `/api/audit/*` is unauthenticated and every one of these strings is forwarded
+ * into a paid model call, and re-sent on retry. Without a bound, a 10 MB notebook
+ * is a cost and availability problem before it is anything else. The prompt layer
+ * truncates what it renders; these bounds reject the payload at the door.
+ */
+export const MAX_NOTEBOOK_LENGTH = 200_000;
+export const MAX_PROSE_LENGTH = 100_000;
+export const MAX_CLAIM_TEXT_LENGTH = 4_000;
+
 export const ClaimExtractionRequest = z.object({
-  datasetTitle: z.string(),
+  datasetTitle: z.string().max(500),
   inventory: DatasetInventory,
   fields: z.array(FieldSpec),
-  notebook: z.string().optional(),
-  prose: z.string().optional(),
+  notebook: z.string().max(MAX_NOTEBOOK_LENGTH).optional(),
+  prose: z.string().max(MAX_PROSE_LENGTH).optional(),
 });
 export type ClaimExtractionRequest = z.infer<typeof ClaimExtractionRequest>;
 
@@ -104,10 +116,11 @@ export type ClaimExtractionResponse = z.infer<typeof ClaimExtractionResponse>;
 
 /** Manual claim entry (spec section 7): the user types one sentence, the agent maps it. */
 export const ClaimMappingRequest = z.object({
-  datasetTitle: z.string(),
+  datasetTitle: z.string().max(500),
   inventory: DatasetInventory,
   fields: z.array(FieldSpec),
-  text: z.string(),
+  // One typed claim is a sentence, not a document.
+  text: z.string().min(1).max(MAX_CLAIM_TEXT_LENGTH),
 });
 export type ClaimMappingRequest = z.infer<typeof ClaimMappingRequest>;
 

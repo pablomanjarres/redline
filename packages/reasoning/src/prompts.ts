@@ -317,6 +317,8 @@ export const CLAIMS_SYSTEM_PROMPT = [
 /** A notebook and pasted prose are unbounded user input. Cap what reaches a prompt. */
 export const MAX_NOTEBOOK_CHARS = 24_000;
 export const MAX_PROSE_CHARS = 12_000;
+/** One typed claim. A sentence, not a document. */
+export const MAX_CLAIM_CHARS = 2_000;
 
 /** Render the thin inventory as legible context for the extraction model. */
 function renderInventory(inv: DatasetInventory): string {
@@ -401,7 +403,7 @@ export function buildClaimMappingPrompt(req: ClaimMappingRequest): PromptPair {
     renderClaimFields(req.fields),
     '',
     'The scientist typed this claim:',
-    `"${req.text}"`,
+    `${fenced(req.text, MAX_CLAIM_CHARS)}`,
     '',
     'Classify it, route it to the checks that can test it, and extract the params from',
     'the data, exactly as you would for an extracted claim. Set source to "user_added".',
