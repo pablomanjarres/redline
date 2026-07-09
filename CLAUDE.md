@@ -45,6 +45,7 @@ The `docs/` index:
 | Know the hero dataset and its framing rule | `docs/dataset.md` |
 | Manufacture naive foils on any dataset (fixtures, prevalence study) | `docs/foil-generator.md` |
 | Run the three-minute demo | `docs/demo-storyboard.md` |
+| Add a step to the guided tour, or run it hands-free | `docs/guided-tour.md` |
 | Deploy the app or point at the real engine | `docs/deploy.md` |
 | Integrate with the other build agents | `docs/build/INTERFACES.md` |
 

@@ -27,7 +27,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
   const knobs = knobsFor(scenarioId);
 
   return (
-    <section style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 12 }}>
+    <section data-tour="check.instruments" style={{ background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 16px', borderBottom: '1px solid var(--edge)' }}>
         <span style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)' }} />
         <span style={{ font: '700 10px/1 var(--mono)', letterSpacing: '.18em', color: 'var(--ink)' }}>INSTRUMENTS</span>
@@ -38,7 +38,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head>Independent unit</Head>
               <div style={desc}>The field that is one true replicate. Cells nested inside it are not independent.</div>
-              <select value={cfg[1].unit} onChange={(e) => setCfg(1, { unit: e.target.value })} style={{ width: '100%' }} aria-label="Independent unit">
+              <select data-tour="check1.unit" value={cfg[1].unit} onChange={(e) => setCfg(1, { unit: e.target.value })} style={{ width: '100%' }} aria-label="Independent unit">
                 {knobs.units.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -56,7 +56,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head value={`${Math.round(cfg[2].split * 100)}% held out`}>Held-out split</Head>
               <div style={desc}>Fraction of cells reserved to re-test the markers on data they never saw. Below 15% is too small to validate.</div>
-              <input type="range" min={0.05} max={0.5} step={0.05} value={cfg[2].split} onChange={(e) => setCfg(2, { split: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Held-out split" />
+              <input data-tour="check2.split" type="range" min={0.05} max={0.5} step={0.05} value={cfg[2].split} onChange={(e) => setCfg(2, { split: parseFloat(e.target.value) })} style={{ width: '100%' }} aria-label="Held-out split" />
             </div>
             <div>
               <Head>Grouping</Head>
@@ -71,7 +71,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head>Group to track</Head>
               <div style={desc}>Which cluster to test for stability across settings.</div>
-              <select value={cfg[3].track} onChange={(e) => setCfg(3, { track: e.target.value })} style={{ width: '100%' }} aria-label="Group to track">
+              <select data-tour="check3.track" value={cfg[3].track} onChange={(e) => setCfg(3, { track: e.target.value })} style={{ width: '100%' }} aria-label="Group to track">
                 {knobs.tracks.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -91,7 +91,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div style={{ background: 'var(--signal-soft)', border: '1px solid color-mix(in srgb, var(--signal) 30%, transparent)', borderRadius: 10, padding: '13px 14px' }}>
               <Head value={`res ${cfg[3].scrub.toFixed(2)}`}>Scrub · live</Head>
               <div style={{ ...desc, color: 'var(--ink-3)' }}>Drag to watch the group appear and vanish. Does not re-run the test.</div>
-              <input type="range" min={cfg[3].min} max={cfg[3].max} step={0.05} value={cfg[3].scrub} onChange={(e) => setCfg(3, { scrub: parseFloat(e.target.value) }, { rerun: false })} style={{ width: '100%' }} aria-label="Scrub resolution" />
+              <input data-tour="check3.scrub" type="range" min={cfg[3].min} max={cfg[3].max} step={0.05} value={cfg[3].scrub} onChange={(e) => setCfg(3, { scrub: parseFloat(e.target.value) }, { rerun: false })} style={{ width: '100%' }} aria-label="Scrub resolution" />
             </div>
           </>
         )}
@@ -105,7 +105,7 @@ export function InstrumentRail({ checkId }: { checkId: CheckId }) {
             <div>
               <Head>Nuisance variables</Head>
               <div style={desc}>Technical fields to test against the comparison for confounding.</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div data-tour="check4.nuisance" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {knobs.nuisance.map((n) => {
                   const on = cfg[4].nuisance.indexOf(n.value) !== -1;
                   return (
