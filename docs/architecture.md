@@ -39,7 +39,7 @@ redline/
         report/              The assembled audit across all four checks.
         environment/         The compute-target surface (fixture / local / cloudrun / endpoint).
         verifications/       The self-verification surface: the actor-critic run record.
-      src/app/api/audit/     Route handlers: /fields, /inspect, /claims, /claims/map, /check
+      src/app/api/audit/     Route handlers: /fields, /inspect, /claims, /claims/map, and /check
                              (the /check path runs the critic).
       src/state/session.tsx  Client session store (React context + localStorage).
       src/components/         shell, intake, fields, claims, workbench, check, charts, report.

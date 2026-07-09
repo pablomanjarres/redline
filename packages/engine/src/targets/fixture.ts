@@ -16,11 +16,10 @@ export class FixtureTarget implements ComputeTarget {
   async inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
     const inventory = INVENTORIES[input.scenarioId];
     if (!inventory) {
-      // The verification foils carry no locked inventory. Refuse, the way
-      // `verifyFull` refuses to fabricate their numbers, rather than hand back
-      // undefined and let it surface as a dataset description of nothing.
+      // The foil scenarios have no locked fixture. They are inspected for real by
+      // the Python engine on `local`. Refusing is the honest answer here.
       throw new Error(
-        `scenario '${input.scenarioId}' has no fixture inventory; inspect it on REDLINE_COMPUTE_TARGET=local`,
+        `scenario '${input.scenarioId}' has no fixture inventory; run it on REDLINE_COMPUTE_TARGET=local`,
       );
     }
     return inventory;
