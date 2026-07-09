@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type * as RC from '@redline/contracts';
 import { C } from '@redline/ui';
+import { markerSurvives } from '@/lib/markers';
 import { Svg, txt, keyer, fSans, fMono } from './svg';
 
 /**
@@ -25,7 +26,8 @@ export function GroupsChart({ chart }: { chart: RC.GroupsChart }): ReactElement 
   add(txt(28, 34, 'Marker separation (AUC)', { fill: C.ink3, style: { font: fSans(600, 11) } }));
   add(<circle cx={356} cy={30} r={5} fill={C.ink} />);
   add(txt(366, 34, 'discovery', { fill: C.ink3, style: { font: fSans(500, 10.5) } }));
-  add(<circle cx={452} cy={30} r={5} fill="#fff" stroke={verified ? C.red : C.ink4} strokeWidth={2.5} />);
+  const anyCollapsed = verified && markers.some((m) => !markerSurvives(m));
+  add(<circle cx={452} cy={30} r={5} fill="#fff" stroke={anyCollapsed ? C.red : verified ? C.pass : C.ink4} strokeWidth={2.5} />);
   add(txt(462, 34, 'held-out', { fill: C.ink3, style: { font: fSans(500, 10.5) } }));
 
   // gridlines + x ticks
@@ -41,18 +43,30 @@ export function GroupsChart({ chart }: { chart: RC.GroupsChart }): ReactElement 
     const y = rowY(i);
     const xd = X(m.disc);
     const xh = X(verified ? m.hold : m.disc);
+    // `verified` says the held-out test ran, not that the marker failed it. A
+    // marker is struck through only when its own held-out AUC collapsed. Keying
+    // the emphasis off `verified` painted surviving markers red, which is how a
+    // finding the critic overturned still rendered as a red figure beside a
+    // green verdict.
+    const collapsed = verified && !markerSurvives(m);
     add(
       txt(x0 - 16, y + 4, m.gene, {
         textAnchor: 'end',
-        fill: verified ? C.redDeep : C.ink,
-        style: { font: fMono(500, 12), textDecoration: verified ? 'line-through' : 'none' },
+        fill: collapsed ? C.redDeep : C.ink,
+        style: { font: fMono(500, 12), textDecoration: collapsed ? 'line-through' : 'none' },
       }),
     );
     if (verified) add(<line x1={xh} y1={y} x2={xd} y2={y} stroke={C.line2} strokeWidth={2} strokeLinecap="round" />);
     add(<circle cx={xd} cy={y} r={6} fill={C.ink} />);
     if (verified) {
-      add(<circle cx={xh} cy={y} r={6} fill="#fff" stroke={C.red} strokeWidth={2.5} />);
-      add(txt(xh - 12, y + 4, m.hold.toFixed(2), { textAnchor: 'end', fill: C.redDeep, style: { font: fMono(500, 10) } }));
+      add(<circle cx={xh} cy={y} r={6} fill="#fff" stroke={collapsed ? C.red : C.pass} strokeWidth={2.5} />);
+      add(
+        txt(xh - 12, y + 4, m.hold.toFixed(2), {
+          textAnchor: 'end',
+          fill: collapsed ? C.redDeep : C.ink3,
+          style: { font: fMono(500, 10) },
+        }),
+      );
     } else {
       add(txt(xd + 14, y + 4, '?', { fill: C.amber, style: { font: fMono(600, 12) } }));
     }
