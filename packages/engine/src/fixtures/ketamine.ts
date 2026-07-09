@@ -227,7 +227,7 @@ function k2(cfg: Check2Config): FullCheck {
       Math.round((1 - cfg.split) * 100) +
       '/' +
       Math.round(cfg.split * 100) +
-      ' split the four markers separate the group at AUC 0.58 — near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
+      ' split the four markers separate the group at AUC 0.58, near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
     stats: [
       { label: 'Discovery AUC', value: discAUC.toFixed(2) },
       { label: 'Held-out AUC', value: holdAUC.toFixed(2), bad: true },

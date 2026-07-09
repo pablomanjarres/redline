@@ -5,6 +5,7 @@ import {
   inventoryKnowsGene,
 } from './inventory.js';
 import { ExtractedClaim, enforceClaimHonesty } from './claims.js';
+import type { CheckId } from './primitives.js';
 
 // A small but realistic inventory: the naive-foil CD4 T-cell scenario, thinned
 // to just the fields these tests need. It parses through the Zod schema so the
@@ -153,15 +154,21 @@ describe('enforceClaimHonesty', () => {
   });
 
   it('drops a route with an out-of-range check id, keeps the valid one', () => {
-    // The guard exists for unvalidated model JSON, so this claim bypasses
-    // ExtractedClaim.parse (which would reject check 9) via a raw cast.
-    const c = {
+    // Defense in depth. Production validates model JSON with ExtractedClaim.parse
+    // before this gate runs (see packages/reasoning/src/claims.ts), so a check id
+    // outside 1..4 cannot reach enforceClaimHonesty through the typed API. The
+    // VALID_CHECK_IDS filter still guards any caller that skips that validation.
+    // To exercise it we hold the out-of-range id as a plain number, so a single
+    // CheckId assertion is legal here (no `as unknown as`, no `any`), and we set
+    // `checks` after claim() has parsed, so the invalid id survives to the gate.
+    const outOfRangeCheck: number = 9;
+    const c: ExtractedClaim = {
       ...claim(),
       checks: [
-        { check: 9, params: {} },
+        { check: outOfRangeCheck as CheckId, params: {} },
         { check: 2, params: { grouping: 'condition' } },
       ],
-    } as unknown as ExtractedClaim;
+    };
     const [got] = enforceClaimHonesty(inv, [c]);
     expect(got?.checks.map((r) => r.check)).toEqual([2]);
   });
