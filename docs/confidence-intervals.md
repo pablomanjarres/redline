@@ -1,4 +1,4 @@
-# Confidence intervals on the stochastic checks
+# Repeat intervals on the stochastic checks
 
 Two of the four checks contain randomness. Check 2 (double dipping) splits the
 counts with Poisson thinning; Check 3 (fragility) re-clusters under a random
@@ -7,9 +7,23 @@ number from one run. It repeats each stochastic check many times and reports the
 distribution: a median with a 95% interval and the repetition count behind it.
 
 This closes the sharpest statistics critique a judge can make, "your one split
-could be luck," before it is asked, and it demonstrates the checks are understood
-at the level of their sampling behavior. Point estimates are attackable;
-distributions are not.
+could be luck," before it is asked.
+
+## What this interval is, and what it is not
+
+It is the 2.5th to 97.5th percentile of the estimate across repeated runs of the
+**algorithm's own randomness** on a **fixed dataset**. It quantifies one thing:
+how much the answer moves when only the split seed or the clustering seed moves.
+
+It is **not a confidence interval**. It carries none of the sampling variability
+of the data. Resampling the donors would produce a much wider interval, and on a
+four-donor study it would dominate. Nothing here estimates a population
+parameter, and the interval has no coverage guarantee.
+
+Redline audits people for calling one number more certain than it is, so it does
+not name this a confidence interval. The surfaces say "95% interval over N
+splits" and the repetition count is always shown beside it. Read a tight interval
+as "the seed did not matter," never as "the effect is certain."
 
 ## What repeats, and what does not
 
@@ -38,10 +52,10 @@ is reproducible: same seed in, same interval out.
 - **The metric cards.** Each stat tile shows the median value, its 95% interval,
   the repetition count, and a small `DistributionStrip` (the samples as ticks,
   the interval as a band, the median as a mark).
-- **The figures.** Check 2 draws a held-out CI band on the AUC axis; Check 3
+- **The figures.** Check 2 draws a held-out interval band on the AUC axis; Check 3
   shades each presence tile by the fraction of runs the group is present there.
 - **The finding text and the rewritten conclusion.** The curated fallback weaves
-  the interval into `corrected` ("AUC 0.57 (95% CI 0.54-0.61 over 200 splits),
+  the interval into `corrected` ("AUC 0.57 (95% interval 0.54-0.61 over 200 splits),
   near chance"). The LLM path gets the interval bounds and the repetition count
   as evidence keys and is instructed to cite them (`prompts.ts`).
 - **The report.** Both the on-screen `ReportRow` and the downloadable PDF carry
@@ -66,7 +80,7 @@ matrix is needed to prove it is real:
 
 ```bash
 cd services/rigor
-# print the real intervals the checks compute (median, 95% CI, repetition count)
+# print the real intervals the checks compute (median, 95% interval, repetition count)
 python data/build_ci_reference.py --c2-reps 200 --c3-reps 40
 
 # the acceptance proof: same seed => byte-identical interval; well formed; and a

@@ -30,7 +30,7 @@ export function counts(n: number, total: number): string {
   return `${n} of ${total}`;
 }
 
-// ── Confidence intervals (Add-on 3) ───────────────────────────────────────────
+// ── Repeat intervals (Add-on 3) ───────────────────────────────────────────────
 
 /**
  * Format an interval bound the way its stat card shows the value, inferred from
@@ -49,9 +49,9 @@ export function ciRange(iv: Interval, valueStr = ''): string {
   return `${formatLike(iv.lo, valueStr)}–${formatLike(iv.hi, valueStr)}`;
 }
 
-/** The full CI clause, e.g. "95% CI 0.54–0.61". */
+/** The full interval clause, e.g. "95% interval 0.54–0.61". */
 export function ciLabel(iv: Interval, valueStr = ''): string {
-  return `${Math.round(iv.level * 100)}% CI ${ciRange(iv, valueStr)}`;
+  return `${Math.round(iv.level * 100)}% interval ${ciRange(iv, valueStr)}`;
 }
 
 /** The repetition-count clause, e.g. "over 200 runs". */

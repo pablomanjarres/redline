@@ -271,4 +271,4 @@ def _ci_phrase(dist: Optional[Any], repeats: int) -> str:
     """A parenthetical CI clause for a headline, or empty when there is no interval."""
     if not dist:
         return ""
-    return f" (95% CI {dist['lo']:.2f}-{dist['hi']:.2f} over {int(repeats)} splits)"
+    return f" (95% interval {dist['lo']:.2f}-{dist['hi']:.2f} over {int(repeats)} splits)"

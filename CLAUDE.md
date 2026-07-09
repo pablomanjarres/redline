@@ -43,8 +43,9 @@ The `docs/` index:
 | Understand the system | `docs/architecture.md` |
 | Not break an honesty invariant | `docs/honesty-rules.md` |
 | Know the hero dataset and its framing rule | `docs/dataset.md` |
-| Read a confidence interval on a stochastic check | `docs/confidence-intervals.md` |
+| Read a repeat interval on a stochastic check | `docs/confidence-intervals.md` |
 | Run the three-minute demo | `docs/demo-storyboard.md` |
+| Add a step to the guided tour, or run it hands-free | `docs/guided-tour.md` |
 | Deploy the app or point at the real engine | `docs/deploy.md` |
 | Integrate with the other build agents | `docs/build/INTERFACES.md` |
 

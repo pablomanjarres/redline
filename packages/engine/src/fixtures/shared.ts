@@ -17,7 +17,7 @@ import type {
 export type FullCheck = CheckResult;
 
 /**
- * A confidence interval literal for the fixtures. These demo intervals are
+ * A repeat-interval literal for the fixtures. These demo intervals are
  * illustrative reference values, the same status as the point estimates they
  * surround: the real numbers come from repeating the stochastic check on the
  * built foil (`services/rigor`, `build_ci_reference.py`), which the fixture

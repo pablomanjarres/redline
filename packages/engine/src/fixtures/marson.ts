@@ -258,7 +258,7 @@ function m2(cfg: Check2Config): FullCheck {
       Math.round((1 - cfg.split) * 100) +
       '/' +
       Math.round(cfg.split * 100) +
-      ' split the four markers separate the group at AUC 0.57 (95% CI 0.54–0.61 over 200 splits), near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
+      ' split the four markers separate the group at AUC 0.57 (95% interval 0.54–0.61 over 200 splits), near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
     stats: [
       { label: 'Discovery AUC', value: discAUC.toFixed(2), interval: discDist },
       { label: 'Held-out AUC', value: holdAUC.toFixed(2), bad: true, interval: holdDist },
@@ -319,7 +319,7 @@ function m3(cfg: Check3Config): FullCheck {
         steps.length +
         ' settings tested (stability ' +
         pct +
-        '%, 95% CI ' +
+        '%, 95% interval ' +
         sCI +
         ' over 40 runs). It is a boundary of the algorithm, not a discrete population.',
       stats: [
@@ -345,7 +345,7 @@ function m3(cfg: Check3Config): FullCheck {
       steps.length +
       ' resolution settings (' +
       pct +
-      '%, 95% CI ' +
+      '%, 95% interval ' +
       sCI +
       ' over 40 runs). It is stable to the clustering parameter and safe to report as a discrete population.',
     stats: [

@@ -37,6 +37,7 @@ export default function EnvironmentPage() {
 
       {/* terminal block — void body, raised title bar, like the reasoning console */}
       <div
+        data-tour="env.terminal"
         style={{
           marginTop: 30,
           background: 'var(--void)',
@@ -114,9 +115,9 @@ export default function EnvironmentPage() {
           15–148 GiB expression matrices; run them through the engine with <Mono>REDLINE_COMPUTE_TARGET=local</Mono>.
         </p>
         <p style={{ margin: '12px 0 0', maxWidth: 660, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-3)' }}>
-          The two stochastic checks report a confidence interval, not one number: the count-split (Check 2) and the
+          The two stochastic checks report an interval, not one number: the count-split (Check 2) and the
           resolution sweep (Check 3) rerun hundreds of times and report the median with a 95% interval and the
-          repetition count, so a single lucky run cannot carry a finding. The interval is real and reproducible from a
+          repetition count, so a single lucky run cannot carry a finding. It is the spread across re-runs of the algorithm's randomness on a fixed dataset, not a confidence interval: it carries no sampling variability of the data itself. The interval is real and reproducible from a
           seeded reference foil with no expression matrix at all (<Mono>services/rigor/data/build_ci_reference.py</Mono>,
           proven in <Mono>tests/test_ci_intervals.py</Mono>). The interval values shown on the demo fixtures are
           illustrative reference figures, the same status as the point estimates they surround, pending the
@@ -125,7 +126,7 @@ export default function EnvironmentPage() {
       </section>
 
       {/* three places it runs */}
-      <section aria-label="Where Redline runs">
+      <section data-tour="env.surfaces" aria-label="Where Redline runs">
         <div style={{ marginTop: 34, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)', flex: 'none' }}
