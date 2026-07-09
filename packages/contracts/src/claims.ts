@@ -71,6 +71,17 @@ export const ExtractedClaim = z.object({
   outOfScopeReason: z.string().optional(),
   /** Surfaced when routing is uncertain; never resolved silently (spec 8). */
   ambiguousRouting: z.string().optional(),
+  /**
+   * Set at extraction time when the inventory shows the claim cannot be
+   * re-tested, so it is marked flag-only rather than audited against data that
+   * cannot support the check (spec section 8, consistent with the engine's
+   * degradation rule in docs/honesty-rules.md rule 7). The example case is a
+   * claim routed to Check 1 or Check 2, which both require raw integer counts,
+   * when `hasRawCounts === false` on the inventory. `reason` states what is
+   * missing. This is the shape only: the detection at extraction time and the
+   * UI that renders it land in a later stage, so nothing sets this field yet.
+   */
+  flagOnly: z.object({ reason: z.string() }).optional(),
 });
 export type ExtractedClaim = z.infer<typeof ExtractedClaim>;
 

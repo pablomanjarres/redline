@@ -5,6 +5,12 @@ import {
   inventoryKnowsGene,
 } from './inventory.js';
 import { ExtractedClaim, enforceClaimHonesty } from './claims.js';
+import {
+  Check1Config,
+  Check2Config,
+  Check3Config,
+  Check4Config,
+} from './checks.js';
 import type { CheckId } from './primitives.js';
 
 // A small but realistic inventory: the naive-foil CD4 T-cell scenario, thinned
@@ -386,5 +392,121 @@ describe('enforceClaimHonesty: id uniqueness and backfill (finding 2)', () => {
     // routes de-duplicated by check id, first wins.
     expect(got[2]?.checks.map((r) => r.check)).toEqual([1]);
     expect(got[2]?.checks[0]?.params).toEqual({ grouping: 'condition', gene: 'FOXP3' });
+  });
+});
+
+// ── The identifying check-config knobs are optional and absent-by-default ─────
+// Each knob name is the exact string the matching Python pillar reads via
+// cfg_get, so a route param can reach the engine instead of being dropped. Every
+// knob is optional: a base config that omits it still parses (no existing config
+// breaks), and a config that carries it parses and round-trips unchanged.
+describe('check configs: optional identifying knobs (F1 foundation)', () => {
+  // Base configs exactly as the engine ships them today, with none of the new
+  // optional knobs set. All four must still parse, so nothing existing breaks.
+  const base1 = { unit: 'donor_id', grouping: 'condition', alpha: 0.05 };
+  const base2 = { split: 0.5, grouping: 'leiden' };
+  const base3 = { min: 0.2, max: 2.0, step: 0.2, track: 'Effector', scrub: 0.9 };
+  const base4 = { interest: 'condition', nuisance: ['lane'] };
+
+  it('Check1Config parses without gene, and the key stays absent (not undefined)', () => {
+    const parsed = Check1Config.parse(base1);
+    expect(parsed).toEqual(base1);
+    expect('gene' in parsed).toBe(false);
+  });
+
+  it('Check1Config parses with gene and round-trips (Pillar 1 reads `gene`)', () => {
+    const withGene = { ...base1, gene: 'FOXP3' };
+    const parsed = Check1Config.parse(withGene);
+    expect(parsed.gene).toBe('FOXP3');
+    expect(parsed).toEqual(withGene);
+    // Idempotent round-trip: parsing the parsed value changes nothing.
+    expect(Check1Config.parse(parsed)).toEqual(parsed);
+  });
+
+  it('Check2Config parses without markers or target_group; both keys stay absent', () => {
+    const parsed = Check2Config.parse(base2);
+    expect(parsed).toEqual(base2);
+    expect('markers' in parsed).toBe(false);
+    expect('target_group' in parsed).toBe(false);
+  });
+
+  it('Check2Config parses with markers[] and target_group and round-trips', () => {
+    // target_group is the exact name double_dipping.py reads; markers is the
+    // exact name it reads for the marker set.
+    const withState = {
+      ...base2,
+      markers: ['TNFRSF9', 'ICOS', 'TIGIT', 'CTLA4'],
+      target_group: 'Activated Treg-like',
+    };
+    const parsed = Check2Config.parse(withState);
+    expect(parsed.markers).toEqual(['TNFRSF9', 'ICOS', 'TIGIT', 'CTLA4']);
+    expect(parsed.target_group).toBe('Activated Treg-like');
+    expect(parsed).toEqual(withState);
+    expect(Check2Config.parse(parsed)).toEqual(parsed);
+  });
+
+  it('Check3Config still carries track and gains no new knob (cluster -> track alias is engine-side)', () => {
+    const parsed = Check3Config.parse(base3);
+    expect(parsed).toEqual(base3);
+    expect(parsed.track).toBe('Effector');
+  });
+
+  it('Check4Config parses without grouping; the key stays absent', () => {
+    const parsed = Check4Config.parse(base4);
+    expect(parsed).toEqual(base4);
+    expect('grouping' in parsed).toBe(false);
+  });
+
+  it('Check4Config parses with grouping and round-trips (Pillar 4 falls back to `grouping`)', () => {
+    const withGrouping = { ...base4, grouping: 'condition' };
+    const parsed = Check4Config.parse(withGrouping);
+    expect(parsed.grouping).toBe('condition');
+    expect(parsed).toEqual(withGrouping);
+    expect(Check4Config.parse(parsed)).toEqual(parsed);
+  });
+});
+
+// ── ExtractedClaim.flagOnly: additive optional shape (spec section 8) ─────────
+// The shape a later stage sets when the inventory shows a claim cannot be
+// re-tested (for example no raw counts for a Check 1 or Check 2 claim). Nothing
+// sets it in this stage, so a claim without it parses exactly as before, and the
+// honesty backstop passes it through untouched when it is present.
+describe('ExtractedClaim.flagOnly (spec section 8, shape only)', () => {
+  const groundedClaim = {
+    id: 'c1',
+    text: 'IL2RA knockdown upregulates FOXP3 across CD4 T cells.',
+    source: 'stored_result',
+    restsOn: 'stored DE result rank_genes_groups, grouping condition, gene FOXP3',
+    evidenceRefs: { obsColumns: ['condition'], unsKeys: ['rank_genes_groups'], genes: ['FOXP3'] },
+    checks: [{ check: 1, params: { grouping: 'condition', gene: 'FOXP3' } }],
+    confidence: 'high',
+    status: 'proposed',
+  };
+
+  it('a claim without flagOnly parses and the key stays absent', () => {
+    const parsed = ExtractedClaim.parse(groundedClaim);
+    expect('flagOnly' in parsed).toBe(false);
+  });
+
+  it('a claim with flagOnly parses and round-trips', () => {
+    const withFlagOnly = {
+      ...groundedClaim,
+      flagOnly: { reason: 'No raw counts, so pseudoreplication cannot be re-run.' },
+    };
+    const parsed = ExtractedClaim.parse(withFlagOnly);
+    expect(parsed.flagOnly).toEqual({
+      reason: 'No raw counts, so pseudoreplication cannot be re-run.',
+    });
+    expect(parsed).toEqual(withFlagOnly);
+    expect(ExtractedClaim.parse(parsed)).toEqual(parsed);
+  });
+
+  it('enforceClaimHonesty preserves flagOnly on an active claim it keeps', () => {
+    const c = ExtractedClaim.parse({
+      ...groundedClaim,
+      flagOnly: { reason: 'No raw counts to redo the test.' },
+    });
+    const [got] = enforceClaimHonesty(inv, [c]);
+    expect(got?.flagOnly).toEqual({ reason: 'No raw counts to redo the test.' });
   });
 });
