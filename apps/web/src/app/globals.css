@@ -9,6 +9,11 @@
 :root {
   --rl-tour-scrim: color-mix(in srgb, var(--ink) 74%, transparent);
 
+  /* One easing and one duration for every move the tour makes, so the scrim,
+     the ring, and the card travel together and read as a single object. */
+  --rl-tour-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --rl-tour-glide: 340ms;
+
   /* The keyboard focus ring below reads --accent, which tokens.css never
      defined, so the rule was invalid at computed-value time and every focus
      ring fell back to currentColor. Bind it to the interaction blue. */
@@ -26,6 +31,41 @@
     box-shadow:
       0 0 0 3px var(--red-line),
       0 0 34px 2px color-mix(in srgb, var(--red) 70%, transparent);
+  }
+}
+
+/* The scrim arriving when the tour opens. The room dims. */
+@keyframes rl-tour-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The ring landing on a control: it settles in from slightly wide, so the eye
+   is pulled to the edge of the hole rather than to its middle. */
+@keyframes rl-tour-land {
+  from {
+    opacity: 0;
+    transform: scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The coach mark's content changing between steps, without moving the card. */
+@keyframes rl-tour-copy {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
