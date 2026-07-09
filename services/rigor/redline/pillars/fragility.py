@@ -27,11 +27,12 @@ from ..contracts import (
     fragility_chart,
     stat,
 )
-from . import cfg_get, lognorm, obs_series
+from . import cfg_get, interval, lognorm, obs_series, seed_stream
 
 _PRESENT_COVERAGE = 0.5  # a cluster must hold this share of the tracked group's cells
 _PRESENT_PURITY = 0.5  # ... and be at least this pure, to count as "the group is present"
 _STABLE_FRACTION = 0.8  # present in at least this share of settings => stable
+_DEFAULT_REPEATS = 40  # re-seeded sweeps behind the stability interval (each is a full sweep)
 
 
 def _embedding(adata: Any) -> np.ndarray:
@@ -157,73 +158,119 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
     hi = float(cfg_get(config, "max", 2.0))
     step = float(cfg_get(config, "step", 0.2))
     track = cfg_get(config, "track", None)
-    seed = int(cfg_get(config, "seed", 0))
+    base_seed = int(cfg_get(config, "seed", 0))
+    repeats = int(cfg_get(config, "repeats", cfg_get(config, "reps", _DEFAULT_REPEATS)) or _DEFAULT_REPEATS)
+    repeats = max(1, min(repeats, 200))
 
     resolutions = _resolutions(lo, hi, step)
-    emb = _embedding(adata)
-    labels, cluster_engine = _cluster_sweep(emb, resolutions, seed)
-    cluster_counts = [int(np.unique(l).size) for l in labels]
-    mean_ari = _adjacent_ari(labels)
+    emb = _embedding(adata)  # deterministic PCA; reused so only the clustering RNG varies
+    seeds = seed_stream(base_seed, repeats)
+    cluster_engine = "unknown"  # set by the first sweep below; identical across seeds
 
     def _finish(state: str, head: str, stats: list, chart: Any) -> ComputeResult:
         # Surface the clustering backend, so a Leiden -> KMeans downgrade is
         # visible rather than silent. Mirrors Pillar 1's "Honest engine" stat.
+        # It also tells the reader what the interval is an interval over.
         stats.append(stat("Clustering engine", cluster_engine))
         return compute_result(3, state, head, stats, chart)
 
     track_col = _find_track_column(adata, track, fields) if track else None
 
-    # Claim-specific mode: follow a named group across the sweep.
+    # Claim-specific mode: follow a named group across the sweep, repeated over
+    # re-seeded clusterings. The spread of the stability fraction is the interval:
+    # it answers "your one clustering could be luck" with a distribution.
     if track and track_col is not None:
         tracked = obs_series(adata, track_col)
         tracked = np.asarray([str(x) for x in tracked]) == str(track)
+
+        present_counts = [0] * len(resolutions)  # runs present at each resolution
+        cluster_counts_acc: list[list[int]] = [[] for _ in resolutions]
+        stability_samples: list[float] = []
+        ari_samples: list[float] = []
+        for sd in seeds:
+            labels, cluster_engine = _cluster_sweep(emb, resolutions, sd)
+            ari_samples.append(_adjacent_ari(labels))
+            n_present = 0
+            for i in range(len(resolutions)):
+                cluster_counts_acc[i].append(int(np.unique(labels[i]).size))
+                if _present(labels[i], tracked):
+                    present_counts[i] += 1
+                    n_present += 1
+            stability_samples.append(n_present / len(resolutions) if resolutions else 0.0)
+
+        presence = [present_counts[i] / len(seeds) for i in range(len(resolutions))]
+        cluster_counts = [int(np.median(c)) if c else 0 for c in cluster_counts_acc]
+        stability_dist = interval(stability_samples)
+        stability = float(stability_dist["median"]) if stability_dist else float(np.median(stability_samples))
+        mean_ari = float(np.nanmean(ari_samples)) if ari_samples else float("nan")
+
         steps = [
-            FragilityStep(r=r, present=_present(labels[i], tracked), clusters=cluster_counts[i])
+            FragilityStep(r=r, present=(presence[i] >= 0.5), clusters=cluster_counts[i], presence=presence[i])
             for i, r in enumerate(resolutions)
         ]
-        present_res = [s.r for s in steps if s.present]
-        stability = len(present_res) / len(steps) if steps else 0.0
+        present_res = [resolutions[i] for i in range(len(resolutions)) if presence[i] >= 0.5]
+        n_present_settings = len(present_res)
         present_range = (min(present_res), max(present_res)) if present_res else (lo, lo)
-        chart = fragility_chart(steps, present_range, str(track), stability)
+        chart = fragility_chart(steps, present_range, str(track), stability, stability_dist)
+        ci = _ci_pct_phrase(stability_dist, repeats)
 
         if stability >= _STABLE_FRACTION:
-            head = f"'{track}' holds as a discrete cluster across the resolution sweep."
+            head = (
+                f"'{track}' holds as a discrete cluster across the resolution sweep "
+                f"(present in {n_present_settings} of {len(resolutions)} settings{ci})."
+            )
             stats = [
-                stat("Stability", fmt_pct(stability), good=True),
-                stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
+                stat("Stability", fmt_pct(stability), good=True, interval=stability_dist),
+                stat("Appears in", f"{n_present_settings} / {len(resolutions)} settings"),
                 stat("Adjacent ARI", f"{mean_ari:.2f}" if np.isfinite(mean_ari) else "n/a"),
             ]
             return _finish(CLEAN, head, stats, chart)
 
         head = (
             f"'{track}' appears only between resolution {present_range[0]:.1f} and "
-            f"{present_range[1]:.1f}; it is a boundary of the algorithm, not a discrete population."
+            f"{present_range[1]:.1f}, in {n_present_settings} of {len(resolutions)} settings{ci}; "
+            f"it is a boundary of the algorithm, not a discrete population."
         )
         stats = [
-            stat("Stability", fmt_pct(stability), bad=True),
-            stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
+            stat("Stability", fmt_pct(stability), bad=True, interval=stability_dist),
+            stat("Appears in", f"{n_present_settings} / {len(resolutions)} settings"),
             stat("Present range", f"{present_range[0]:.1f}-{present_range[1]:.1f}"),
         ]
         return _finish(FLAGGED, head, stats, chart)
 
-    # Mechanical mode: overall stability of the clustering to the resolution knob.
-    stability = float(mean_ari) if np.isfinite(mean_ari) else 0.0
-    steps = [
-        FragilityStep(r=r, present=True, clusters=cluster_counts[i]) for i, r in enumerate(resolutions)
-    ]
+    # Mechanical mode: overall stability of the clustering to the resolution knob,
+    # repeated over re-seeded sweeps so the adjacent-ARI stability carries a spread.
+    ari_samples = []
+    cluster_counts_acc = [[] for _ in resolutions]
+    for sd in seeds:
+        labels, cluster_engine = _cluster_sweep(emb, resolutions, sd)
+        ari_samples.append(_adjacent_ari(labels))
+        for i in range(len(resolutions)):
+            cluster_counts_acc[i].append(int(np.unique(labels[i]).size))
+    cluster_counts = [int(np.median(c)) if c else 0 for c in cluster_counts_acc]
+    ari_dist = interval([a for a in ari_samples if np.isfinite(a)])
+    stability = float(ari_dist["median"]) if ari_dist else 0.0
+    steps = [FragilityStep(r=r, present=True, clusters=cluster_counts[i]) for i, r in enumerate(resolutions)]
     label = str(track) if track else "clustering"
-    chart = fragility_chart(steps, (lo, hi), label, stability)
+    chart = fragility_chart(steps, (lo, hi), label, stability, ari_dist)
     if stability >= _STABLE_FRACTION:
         head = "The clustering is stable across the resolution range tested."
         stats = [
-            stat("Adjacent ARI", f"{stability:.2f}", good=True),
+            stat("Adjacent ARI", f"{stability:.2f}", good=True, interval=ari_dist),
             stat("Cluster count", f"{cluster_counts[0]}-{cluster_counts[-1]}"),
         ]
         return _finish(CLEAN, head, stats, chart)
 
     head = "The clustering reshuffles as the resolution changes; conclusions that ride on it are fragile."
     stats = [
-        stat("Adjacent ARI", f"{stability:.2f}", bad=True),
+        stat("Adjacent ARI", f"{stability:.2f}", bad=True, interval=ari_dist),
         stat("Cluster count", f"{cluster_counts[0]}-{cluster_counts[-1]}"),
     ]
     return _finish(FLAGGED, head, stats, chart)
+
+
+def _ci_pct_phrase(dist: Optional[Any], repeats: int) -> str:
+    """A parenthetical percent-interval clause for a headline, or empty with no interval."""
+    if not dist:
+        return ""
+    return f", stability 95% interval {round(dist['lo'] * 100)}-{round(dist['hi'] * 100)}% over {int(repeats)} runs"

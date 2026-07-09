@@ -128,6 +128,50 @@ def rng(seed: Any = 0) -> "np.random.Generator":
         return np.random.default_rng(0)
 
 
+def seed_stream(base_seed: Any, reps: int) -> list[int]:
+    """Distinct, deterministic seeds for repeated stochastic runs off one base.
+
+    A stochastic check reruns its randomized step under each of these seeds; the
+    spread of the results is the interval. Deterministic in ``base_seed`` so the
+    interval itself is reproducible.
+    """
+    try:
+        base = int(base_seed)
+    except Exception:
+        base = 0
+    return [base + i for i in range(max(1, int(reps)))]
+
+
+def interval(samples: Sequence[float], level: float = 0.95, cap: int = 200) -> Optional[Any]:
+    """Summarize repeated stochastic runs as a median + percentile interval.
+
+    Returns the camelCase ``Interval`` JSON (see ``redline.contracts.interval_json``)
+    or ``None`` when no finite samples are given. ``level`` is the interval mass
+    (0.95 => the 2.5th and 97.5th percentiles). The median and bounds use every
+    sample; ``cap`` only bounds the per-run values carried for the strip/density,
+    evenly downsampled from the sorted samples so the visual still spans the range
+    and stays deterministic.
+    """
+    from ..contracts import interval_json
+
+    arr = np.asarray(
+        [float(s) for s in samples if s is not None and np.isfinite(float(s))], dtype=float
+    )
+    if arr.size == 0:
+        return None
+    lo_q = (1.0 - float(level)) / 2.0
+    hi_q = 1.0 - lo_q
+    median = float(np.median(arr))
+    lo = float(np.quantile(arr, lo_q))
+    hi = float(np.quantile(arr, hi_q))
+    ordered = np.sort(arr)
+    if arr.size > cap:
+        idx = np.linspace(0, arr.size - 1, cap).round().astype(int)
+        shown = ordered[idx]
+    else:
+        shown = ordered
+    return interval_json(median, lo, hi, float(level), int(arr.size), shown.tolist())
+
 def lognorm(counts: np.ndarray) -> np.ndarray:
     """Library-size normalize to counts per 10k, then log1p.
 

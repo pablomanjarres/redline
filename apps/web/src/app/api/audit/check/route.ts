@@ -71,10 +71,26 @@ function chartEvidence(chart: Chart): Record<string, string | number | boolean> 
       };
       if (chart.discAUC !== undefined) e.discAUC = chart.discAUC;
       if (chart.holdAUC !== undefined) e.holdAUC = chart.holdAUC;
+      // The held-out AUC as a distribution over repeated splits, so the model can
+      // cite the interval and the repetition count, not a single point.
+      if (chart.holdAUCDist) {
+        e.holdAUCMedian = chart.holdAUCDist.median;
+        e.holdAUCCILow = chart.holdAUCDist.lo;
+        e.holdAUCCIHigh = chart.holdAUCDist.hi;
+        e.splitReps = chart.holdAUCDist.n;
+      }
+      if (chart.discAUCDist) {
+        e.discAUCCILow = chart.discAUCDist.lo;
+        e.discAUCCIHigh = chart.discAUCDist.hi;
+      }
+      if (chart.markersHoldingDist) {
+        e.markersHoldingCILow = chart.markersHoldingDist.lo;
+        e.markersHoldingCIHigh = chart.markersHoldingDist.hi;
+      }
       return e;
     }
-    case 'fragility':
-      return {
+    case 'fragility': {
+      const e: Record<string, string | number | boolean> = {
         chartKind: chart.kind,
         track: chart.track,
         stability: chart.stability,
@@ -82,6 +98,14 @@ function chartEvidence(chart: Chart): Record<string, string | number | boolean> 
         presentMax: chart.present[1],
         stepCount: chart.steps.length,
       };
+      if (chart.stabilityDist) {
+        e.stabilityMedian = chart.stabilityDist.median;
+        e.stabilityCILow = chart.stabilityDist.lo;
+        e.stabilityCIHigh = chart.stabilityDist.hi;
+        e.sweepReps = chart.stabilityDist.n;
+      }
+      return e;
+    }
     case 'confound': {
       const e: Record<string, string | number | boolean> = {
         chartKind: chart.kind,

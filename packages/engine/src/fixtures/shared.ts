@@ -1,5 +1,6 @@
 import type {
   Citation,
+  Interval,
   RoleOption,
   FragilityStep,
   CheckResult,
@@ -14,6 +15,18 @@ import type {
  * and the demo copy from ever drifting apart.
  */
 export type FullCheck = CheckResult;
+
+/**
+ * A repeat-interval literal for the fixtures. These demo intervals are
+ * illustrative reference values, the same status as the point estimates they
+ * surround: the real numbers come from repeating the stochastic check on the
+ * built foil (`services/rigor`, `build_ci_reference.py`), which the fixture
+ * cannot run. Their widths are calibrated to a real reference run, never
+ * invented, and the Environment page states what is real versus reference.
+ */
+export function iv(median: number, lo: number, hi: number, n: number, level = 0.95): Interval {
+  return { median, lo, hi, level, n };
+}
 
 /** Thousands-grouped integer, locale-independent so it is identical on any runtime. */
 export function groupInt(n: number): string {

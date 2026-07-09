@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
-import { ConfoundChart, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { ConfoundChart, DistributionStrip, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { ciLabel } from '@/lib/format';
 import { InstrumentRail } from '@/components/check/InstrumentRail';
 import { ReasoningConsole } from '@/components/check/ReasoningConsole';
 import { VerdictReadout } from '@/components/check/VerdictReadout';
@@ -41,6 +42,19 @@ function slug(s: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/** The repeated-run distribution behind a stat, when the check actually repeated. */
+function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
+  if (!s.interval) return null;
+  return (
+    <div style={{ marginTop: 10 }}>
+      <DistributionStrip iv={s.interval} accent={s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink-3)'} />
+      <div style={{ marginTop: 5, font: '400 9px/1.3 var(--mono)', color: 'var(--ink-4)' }}>
+        {ciLabel(s.interval, s.value)} · {s.interval.n} runs
+      </div>
+    </div>
+  );
 }
 
 /** The audit stage for one check: figure on a lightbox plate (the hero), the
@@ -154,6 +168,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
                 <div key={i} data-testid={`stat-${slug(s.label)}`} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
                   <div style={{ font: '700 19px/1 var(--mono)', color: s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)' }}>{s.value}</div>
                   <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
+                  <StatInterval s={s} />
                 </div>
               ))}
             </div>

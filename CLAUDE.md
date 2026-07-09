@@ -44,6 +44,7 @@ The `docs/` index:
 | Not break an honesty invariant | `docs/honesty-rules.md` |
 | Know the hero dataset and its framing rule | `docs/dataset.md` |
 | Manufacture naive foils on any dataset (fixtures, prevalence study) | `docs/foil-generator.md` |
+| Read a repeat interval on a stochastic check | `docs/confidence-intervals.md` |
 | Run the three-minute demo | `docs/demo-storyboard.md` |
 | Add a step to the guided tour, or run it hands-free | `docs/guided-tour.md` |
 | Deploy the app or point at the real engine | `docs/deploy.md` |

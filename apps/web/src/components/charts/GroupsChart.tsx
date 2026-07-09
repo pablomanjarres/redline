@@ -37,6 +37,14 @@ export function GroupsChart({ chart }: { chart: RC.GroupsChart }): ReactElement 
   add(<line x1={X(0.5)} y1={54} x2={X(0.5)} y2={axisY} stroke={C.line2} strokeWidth={1} strokeDasharray="4 4" />);
   add(txt(X(0.5), 48, 'chance', { textAnchor: 'middle', fill: C.ink4, style: { font: fSans(400, 9) } }));
 
+  // held-out CI band: where the aggregate held-out AUC lands across the repeated
+  // splits, so the collapse reads as a distribution and not one lucky number.
+  const hd = chart.holdAUCDist;
+  if (verified && hd) {
+    add(<rect x={X(hd.lo)} y={58} width={Math.max(2, X(hd.hi) - X(hd.lo))} height={axisY - 58} rx={4} fill={C.red} opacity={0.06} />);
+    add(<line x1={X(hd.median)} y1={58} x2={X(hd.median)} y2={axisY} stroke={C.red} strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />);
+  }
+
   markers.forEach((m, i) => {
     const y = rowY(i);
     const xd = X(m.disc);
