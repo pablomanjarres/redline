@@ -1,4 +1,4 @@
-import type { CheckState } from '@redline/contracts';
+import type { CheckState, Feasibility } from '@redline/contracts';
 
 /**
  * The chart palette as raw hex. The figures render on the bright lightbox plate
@@ -67,6 +67,35 @@ export function stateLabel(state: CheckState | 'ready' | 'running'): string {
       return 'Running…';
     default:
       return 'Not run';
+  }
+}
+
+/**
+ * Can the scientist fix it at their desk, do they need more data, or is the
+ * claim unrescuable? The unsalvageable tag is the editorial red on purpose: it
+ * carries the same weight as the flag, because an honest dead end is the answer,
+ * and softening it into a hedge would be the overclaim Redline exists to catch.
+ */
+export function feasibilityColor(f: Feasibility): string {
+  switch (f) {
+    case 'fixable_now':
+      return C.pass;
+    case 'needs_new_data':
+      return C.amber;
+    case 'unsalvageable':
+      return C.redDeep;
+  }
+}
+
+/** Feasibility -> the human label shown on the recommendation tag. */
+export function feasibilityLabel(f: Feasibility): string {
+  switch (f) {
+    case 'fixable_now':
+      return 'Fixable now';
+    case 'needs_new_data':
+      return 'Needs new data';
+    case 'unsalvageable':
+      return 'Cannot be rescued';
   }
 }
 
