@@ -44,6 +44,8 @@ One engine, every surface. The core is a rigor engine that exposes a foundation 
 
 Before any check runs, a **foundation step** resolves the design. Column names in an `.h5ad` are arbitrary (`donor`, `orig.ident`, `stim`, `batch`, guide IDs), so Redline's foundation step inspects the `obs` columns and proposes which one is the biological replicate, which is the grouping variable being compared, and which are technical nuisances, each with a reason and a confidence level. The scientist confirms or corrects it. Nothing else runs until the design is confirmed, because a wrong role makes every downstream flag wrong. Every pillar operates on that resolved role, never on a hardcoded "cell type."
 
+With the design confirmed, a second step reads the analysis and proposes the claims to audit. The scientist does not hand-write claims and Redline does not parse code. An agent inspects the stored results in the `.h5ad` (marker tables, differential-expression tables), plus an optional notebook or a pasted description, and proposes each auditable claim already routed to the checks that can test it and marked with a confidence. A bare `.h5ad` with stored results is enough. The scientist confirms, edits, or removes the list on a review screen, adds any the agent missed, and only the confirmed claims run. A deterministic backstop drops any claim built on data the object does not contain, so nothing is fabricated and then audited. See `docs/intake-and-claims.md`.
+
 A `ComputeTarget` seam decides where the statistics actually run, behind one return contract:
 
 ```text

@@ -1,4 +1,4 @@
-import { ComputeResult, FieldSpec } from '@redline/contracts';
+import { ComputeResult, FieldSpec, DatasetInventory } from '@redline/contracts';
 import type { ScenarioId } from '@redline/contracts';
 import type { ComputeInput, ComputeTarget } from '../compute-target.js';
 
@@ -29,6 +29,14 @@ export class RemoteTarget implements ComputeTarget {
 
   get available(): boolean {
     return Boolean(process.env[ENV_VAR[this.id]]);
+  }
+
+  async inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
+    const raw = await this.call({ op: 'inspect', scenarioId: input.scenarioId });
+    const payload = raw as { inventory?: unknown };
+    // Accept either a bare inventory or an { inventory } envelope, then validate
+    // against the contract so a real backend can never hand back a loose shape.
+    return DatasetInventory.parse(payload.inventory ?? raw);
   }
 
   async inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]> {

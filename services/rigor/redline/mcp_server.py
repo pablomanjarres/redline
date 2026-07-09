@@ -12,6 +12,7 @@ clean for the stdio protocol) lives in ``redline.job_runner`` so there is one
 source of truth and the Cloud Run image never needs the MCP SDK.
 
 Tools:
+  redline_inspect                 .h5ad -> DatasetInventory JSON (intake)
   redline_resolve_fields          obs columns -> FieldSpec[] JSON
   redline_check_pseudoreplication pillar 1
   redline_check_double_dipping    pillar 2
@@ -27,7 +28,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from redline.job_runner import compute_result, resolve_fields, to_json
+from redline.job_runner import compute_result, inspect_dataset, resolve_fields, to_json
 
 _INSTRUCTIONS = (
     "Redline is a statistical-rigor auditor for single-cell RNA-seq. Point each "
@@ -53,6 +54,18 @@ def _build_server():
         ) from exc
 
     server = FastMCP("redline", instructions=_INSTRUCTIONS)
+
+    @server.tool()
+    def redline_inspect(h5ad: str) -> str:
+        """Inspect an .h5ad and return its inventory (the intake step). Reports the
+        obs columns and their types, the stored uns results (marker tables, DE
+        results) with their genes and shape, the cluster label fields, whether raw
+        integer counts are present and where, the layers and obsm keys, and a
+        sample of gene identifiers. This is the thin material the claim-extraction
+        agent reads to propose auditable claims, and it never loads the expression
+        matrix. Returns DatasetInventory JSON (camelCase).
+        """
+        return to_json(inspect_dataset(h5ad))
 
     @server.tool()
     def redline_resolve_fields(h5ad: str) -> str:

@@ -8,6 +8,8 @@ export * from './fields.js';
 export * from './charts.js';
 export * from './critic.js';
 export * from './checks.js';
+export * from './inventory.js';
+export * from './claims.js';
 export * from './dataset.js';
 export * from './reasoning.js';
 export * from './report.js';

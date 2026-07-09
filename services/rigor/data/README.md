@@ -278,6 +278,61 @@ pip install -e 'services/rigor[cloud,stats]'
 # stats: scanpy, decoupler, pydeseq2 (the real re-run toolchain)
 ```
 
+## Synthetic case fixtures (`build_case_fixtures.py`)
+
+The intake, inspection, and claim-extraction paths need small `.h5ad` objects to
+run against, and the real Marson subset is multi-gigabyte and gitignored.
+`build_case_fixtures.py` synthesizes three tiny, seeded objects for that. They are
+**synthetic test fixtures and never real data**: nothing in them is real biology,
+the gene names are chosen only so the inventory and the routing are legible, and
+each object carries `uns['redline_fixture']` with a plain-language note saying so.
+Do not cite a number from them.
+
+The three cases and what each one exercises:
+
+- **`case_a.h5ad`** (Marson-shaped foil, about 600 cells, 4 donors, about 120
+  genes). Carries both a scanpy `rank_genes_groups` marker table (TNFRSF9, ICOS,
+  TIGIT, CTLA4 among the cluster-0 markers) and a stored `de_results` DE table
+  (FOXP3 at a tiny p-value). This is the full worked example: extraction should
+  fan out across all four checks, exactly as the built Workbench expects.
+- **`case_b.h5ad`** (ketamine-shaped, about 500 cells, about 100 genes).
+  Deliberately disjoint from case A: different `obs` columns entirely (`mouse_id`,
+  `treatment`, `batch`, `cell_type`), different genes (BDNF, HOMER1, ARC, NPAS4),
+  a DE result with different column names (`pvalue`, `log2FoldChange`, `baseMean`),
+  and no marker table. It proves the extractor is not hardcoded. Identical claims
+  across case A and case B would mean the extractor is faked, so the different
+  shapes force it to adapt.
+- **`case_c_bare.h5ad`** (counts and `obs`, and nothing stored in `uns`). The
+  honest empty state: with no stored result and no cluster field there is nothing
+  to audit, so it proves Redline says "no auditable claims" plainly instead of
+  inventing any to fill the list.
+
+Rebuild them (seconds, deterministic):
+
+```bash
+cd services/rigor && source .venv/bin/activate
+python -m data.build_case_fixtures                                    # writes to data/fixtures/
+python services/rigor/data/build_case_fixtures.py --out /tmp/fixtures  # elsewhere
+```
+
+The per-case seeds live in one place, `SEEDS` at the top of the module, and every
+random draw derives from them, so a rebuild reproduces the same RNG stream, the
+same counts matrix, the same `obs`, and the same stored results. On the current
+toolchain (anndata 0.13, h5py 3.16) two builds are byte-identical (same sha256);
+the portable guarantee the tests assert is that they are semantically identical
+(same inventory, same counts via `np.array_equal`), which holds across library
+versions. `services/rigor/tests/test_inspect.py::test_rebuild_is_deterministic`
+builds the three cases twice and checks this.
+
+**Generated, not committed.** The root `.gitignore` has a global `*.h5ad` rule, so
+these three (about 1.3 MB total) are not in git. That is deliberate: no consumer
+reads them from the fixed `data/fixtures/` path. `test_inspect.py` builds them into
+a tmp directory, and the acceptance harness (`scripts/verify-intake.mjs`) runs on
+in-memory inventories, so committing a binary artifact would carry no benefit.
+Because the build is deterministic and cheap, a future consumer that does want them
+at the fixed path should call `ensure_fixtures()` from the module, which builds any
+missing file on demand instead of hitting a bare `FileNotFoundError`.
+
 ## References
 
 - Hero dataset preprint (Zhu, Dann et al. 2025): https://www.biorxiv.org/content/10.64898/2025.12.23.696273v1

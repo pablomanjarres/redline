@@ -13,7 +13,7 @@ It has two readers at once, and it has to serve both:
   last step they should know what Redline catches, that it says clean when the analysis is
   clean, and that the same engine is an MCP server and a Claude Skill.
 
-Nineteen steps, about two minutes on the presenter track.
+Twenty-three steps, about two minutes on the presenter track.
 
 ## The two tracks
 
@@ -105,8 +105,9 @@ same session action the UI would have called. Ensures are idempotent, and they r
 check through the real compute target. The tour never writes a result and never fabricates
 a number.
 
-`ensure` kinds: `loadScenario`, `resolveFields`, `confirmFields`, `runCheck`,
-`setCheck3Track`.
+`ensure` kinds: `loadScenario`, `resolveFields`, `confirmFields`, `confirmClaims`, `runCheck`,
+`setCheck3Track`. `confirmFields` inspects the dataset and extracts the claims (it no longer
+runs the checks); `confirmClaims` ratifies the claim list and runs the routed checks.
 
 The script quotes the Marson fixture, so its first step switches to that scenario if the
 reader was on another one. Ending the tour puts their scenario, and any knob the tour

@@ -68,7 +68,13 @@ def __getattr__(name: str) -> Any:
     if target is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     module = import_module(target[0], __name__)
-    return getattr(module, target[1])
+    value = getattr(module, target[1])
+    # Importing `.audit` binds the submodule onto this package as `redline.audit`,
+    # which would shadow the function of the same name on the next attribute read
+    # (and `from redline import audit` would hand back the module). Cache the
+    # resolved value in globals() so the intended object wins from here on.
+    globals()[name] = value
+    return value
 
 
 def __dir__() -> list[str]:

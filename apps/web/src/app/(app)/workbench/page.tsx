@@ -8,10 +8,15 @@ const IDS: CheckId[] = [1, 2, 3, 4];
 
 /**
  * Workbench: the audit board. Four checks as dark tiles, each a live instrument
- * you open and operate. "Re-run all four" fires every check at once.
+ * you open and operate. "Re-run routed checks" fires every check a confirmed
+ * claim routes to, and only those; a check no claim routes to renders an honest
+ * empty state (see CheckTile) and is left untouched. When nothing is routed the
+ * button has nothing to run, so it is disabled and says why rather than posing
+ * as a live control.
  */
 export default function WorkbenchPage() {
-  const { runAll } = useSession();
+  const { runAll, routedChecks } = useSession();
+  const noneRouted = routedChecks.length === 0;
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '36px 40px 72px' }}>
@@ -34,6 +39,13 @@ export default function WorkbenchPage() {
         <button
           data-tour="workbench.rerun"
           onClick={() => runAll()}
+          disabled={noneRouted}
+          aria-label={
+            noneRouted
+              ? 'No claim routes to any check yet, so there is nothing to re-run'
+              : 'Re-run the routed checks'
+          }
+          title={noneRouted ? 'No claim routes to any check yet. Route a claim on the Claims step first.' : undefined}
           style={{
             flex: 'none',
             font: '700 11px/1 var(--sans)',
@@ -44,10 +56,11 @@ export default function WorkbenchPage() {
             border: '1px solid var(--edge-2)',
             padding: '12px 18px',
             borderRadius: 10,
-            cursor: 'pointer',
+            cursor: noneRouted ? 'not-allowed' : 'pointer',
+            opacity: noneRouted ? 0.5 : 1,
           }}
         >
-          Re-run all four
+          Re-run routed checks
         </button>
       </div>
 

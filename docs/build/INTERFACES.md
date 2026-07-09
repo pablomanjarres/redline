@@ -35,45 +35,83 @@ docs/                         Architecture, demo storyboard, honesty rules.
 
 ## The session store (owned by the web-spine agent) — `@/state/session`
 
-A `'use client'` React context. Persists `{scenarioId, fields, fieldsConfirmed, cfg}`
-to `localStorage['redline_state_v1']` and hydrates on mount. Exposes `useSession()`:
+A `'use client'` React context. Persists a subset of state to
+`localStorage['redline_state_v2']` (`scenarioId`, `fields`, `fieldsConfirmed`, `cfg`,
+plus the claim slice: `inventory`, `extractedClaims`, `claimsConfirmed`, `claimsSource`,
+`notebook`, `prose`) and hydrates on mount. A stale `redline_state_v1` payload is ignored,
+not migrated. Exposes `useSession()`:
 
 ```ts
 interface SessionValue {
   scenarioId: ScenarioId;
   dataset: DatasetMeta;
-  claims: Claim[];
+  claims: Claim[];                           // legacy scenario claims (unchanged)
   fields: FieldSpec[] | null;
   fieldsConfirmed: boolean;
-  cfg: CheckConfigMap;                       // defaults from engine DEFAULT_CONFIG
+  cfg: CheckConfigMap;                       // defaults from engine defaultConfigFor(id)
   results: Record<1|2|3|4, CheckResult | null>;
   running: Record<1|2|3|4, boolean>;
   reasoning: Record<1|2|3|4, string[]>;      // streamed lines, revealed on a timer
   reveal: Record<1|2|3|4, number>;
+  // claim slice (the front door; see intake-and-claims.md)
+  inventory: DatasetInventory | null;
+  extractedClaims: ExtractedClaim[] | null;  // the new claim list; `claims` is untouched
+  claimsSource: 'model' | 'curated' | null;  // 'curated' ⇒ show CURATED_CLAIMS_NOTICE
+  claimsConfirmed: boolean;
+  extracting: boolean;
+  extractionLines: string[];                 // streamed like check reasoning
+  extractionReveal: number;                  // use extractionLines.slice(0, reveal)
+  notebook: string;                          // optional Intake attach point
+  prose: string;                             // optional Intake attach point
+  addingClaim: boolean;
+  addClaimError: string | null;              // a 503 map failure, surfaced not swallowed
+  routedChecks: CheckId[];                    // a check not in here renders no verdict
   // actions
   loadScenario(id: ScenarioId): void;
   resolveFields(): Promise<void>;            // POST /api/audit/fields
   setRole(fieldId: string, role: FieldRole): void;
-  confirmFields(): Promise<void>;            // then runs all four checks
+  confirmFields(): Promise<void>;            // sets fieldsConfirmed, then inspect + extract (NOT the checks)
+  setNotebook(text: string): void;
+  setProse(text: string): void;
+  inspect(): Promise<void>;                  // POST /api/audit/inspect; falls back to the scenario inventory
+  extractClaims(): Promise<void>;            // POST /api/audit/claims; falls back to curatedClaimsFor
+  setClaimStatus(id: string, status: ClaimStatus): void;   // confirm / remove
+  setClaimText(id: string, text: string): void;            // marks status 'edited'
+  setClaimRouting(id: string, checks: CheckRoute[]): void; // marks status 'edited'
+  addClaim(text: string): Promise<void>;     // POST /api/audit/claims/map; on 503 sets addClaimError
+  confirmClaims(): Promise<void>;            // writes routedChecks, then runs only the routed checks
+  claimForCheck(id: 1|2|3|4): string | null; // the confirmed claim routed to a check, else null
   setCfg(id, patch, opts?: { rerun?: boolean }): void; // rerun !== false ⇒ re-run
   runCheck(id: 1|2|3|4): Promise<void>;      // POST /api/audit/check
-  runAll(): void;
+  runAll(): void;                             // runs ONLY routedChecks; clears the rest to null
   report: AuditReport;                        // derived from results
 }
 ```
 
 Reasoning lines stream client-side: on `runCheck`, reveal one line every ~165ms
 (matches the design) while the POST resolves; when it resolves, set the result and
-reveal all lines. Use the engine's `reasoningLines(id, cfg)` for the copy.
+reveal all lines. Use the engine's `reasoningLines(id, cfg)` for the copy. Extraction
+streams the same way, off `extractionLines(scenarioId)` from `@redline/engine`.
 
 ## HTTP routes (owned by the api agent) — `apps/web/src/app/api/…`
 
 All JSON. Validate bodies with the contracts' Zod schemas.
 
-- `POST /api/audit/fields` — body `{ scenarioId }` → `{ fields: FieldSpec[] }`.
+- `POST /api/audit/fields`, body `{ scenarioId }` → `{ fields: FieldSpec[] }`.
   Calls `getComputeTarget().inferFields(...)` (fixture returns the scenario fields;
   real target reads the `.h5ad`). May enrich reasoning via the Reasoner.
-- `POST /api/audit/check` — body `{ scenarioId, checkId, config, fields }` →
+- `POST /api/audit/inspect`, body `{ scenarioId }` → `{ inventory: DatasetInventory }`.
+  Calls `getComputeTarget().inspect(...)`, validated with `DatasetInventory.parse`.
+- `POST /api/audit/claims`, body `{ scenarioId, inventory, fields, notebook?, prose? }` →
+  `{ claims: ExtractedClaim[], source: 'model' | 'curated' }`. When `reasoner.available`,
+  calls `extractClaims(...)` (`source: 'model'`); on `ReasonerUnavailable` or any error,
+  falls back to `curatedClaimsFor(...)` (`source: 'curated'`). A model call returning zero
+  claims stays `model` with an empty list, never padded with curated claims.
+- `POST /api/audit/claims/map`, body `{ scenarioId, inventory, fields, text }` →
+  `{ claim: ExtractedClaim }` via `reasoner.mapClaim(...)` (manual entry). No backend or
+  any mapping failure ⇒ HTTP 503 `{ error: 'reasoning_unavailable' }`. It never
+  fabricates a routing.
+- `POST /api/audit/check`, body `{ scenarioId, checkId, config, fields }` →
   `CheckResult`. Calls `getComputeTarget().computeCheck(...)` for the numbers, then
   `createReasoner().narrate(...)` for the prose, and merges them.
 - Keep handlers thin; all logic lives in `@redline/engine` + `@redline/reasoning`.
@@ -91,13 +129,24 @@ export interface ComputeTarget {
   readonly id: 'fixture' | 'local' | 'cloudrun' | 'endpoint';
   readonly available: boolean;
   inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]>;
+  inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory>;
   computeCheck(input: ComputeInput): Promise<ComputeResult>;
 }
 export function getComputeTarget(): ComputeTarget; // reads REDLINE_COMPUTE_TARGET, default 'fixture'
 export const DEFAULT_CONFIG: CheckConfigMap;
 export function reasoningLines(id: 1|2|3|4, cfg: unknown): string[];
-export const SCENARIOS: Record<ScenarioId, Scenario>;
+export function extractionLines(scenarioId: ScenarioId): string[];
+export const SCENARIOS: Record<ScenarioId, Scenario>;   // each carries inventory + extractedClaims
+export const INVENTORIES: Record<ScenarioId, DatasetInventory>;
+export const MARSON_CLAIMS: ExtractedClaim[];
+export const KETAMINE_CLAIMS: ExtractedClaim[];
 ```
+
+The `fixture` target returns the hand-written `INVENTORIES[scenarioId]` from `inspect`;
+the real targets send `{ op: 'inspect', scenarioId }` to the Python engine and validate
+the reply with `DatasetInventory.parse`. `MARSON_CLAIMS` / `KETAMINE_CLAIMS` are the
+curated per-scenario claim sets, defined in engine and re-exported; keep them in agreement
+with any curated fallback in `@redline/reasoning`.
 
 The **fixture** target is deterministic, always `available`, and reproduces the locked
 demo numbers below. `local`/`cloudrun`/`endpoint` shell out / fetch the Python engine
@@ -108,17 +157,30 @@ and the app stays on `fixture` (never present a dead control as live).
 
 ```ts
 export interface Reasoner {
+  readonly available: boolean;
   narrate(req: NarrativeRequest): Promise<Narrative>;
   proposeFields(req: FieldProposalRequest): Promise<FieldSpec[]>;
+  extractClaims(req: ClaimExtractionRequest): Promise<ExtractedClaim[]>;
+  mapClaim(req: ClaimMappingRequest): Promise<ExtractedClaim>;
 }
-export function createReasoner(): Reasoner; // Bedrock if AWS creds+model, else curated fallback
+export function createReasoner(): Reasoner; // a live backend if configured, else calls throw
+export class ReasonerUnavailable extends Error {}   // thrown when no backend, or a call fails
 ```
 
-Bedrock via `@aws-sdk/client-bedrock-runtime`, model id from `REDLINE_BEDROCK_MODEL_ID`,
-region from `AWS_REGION`, standard AWS credential chain. NEVER the direct Anthropic API.
-On any missing-cred / error, fall back to the curated `Narrative` per (checkId, state)
-so the app always renders. The curated copy for the fixtures is the text in the locked
-demo below — keep the two in exact agreement.
+The curated claim fallback is NOT in the reasoner. It is one function in `@redline/engine`,
+`curatedClaimsFor(scenarioId, inventory)`, the single home both fallback paths share (the
+`/api/audit/claims` route and the session store). The UI shows its own `CURATED_CLAIMS_NOTICE`
+(`@/components/claims/shared`) whenever `claimsSource === 'curated'`.
+
+The backend prefers the first-party Claude API (`ANTHROPIC_API_KEY`) so anyone can run
+Redline against their own key, then AWS Bedrock (`REDLINE_BEDROCK_MODEL_ID` + AWS creds);
+`REDLINE_REASONING_BACKEND` forces one. NEVER the direct Anthropic HTTP API from app code.
+On any missing-cred / error, `available` is `false` and the calls throw `ReasonerUnavailable`.
+`narrate` falls back to the curated `Narrative` per (checkId, state); extraction falls back
+to `curatedClaimsFor(...)` (from `@redline/engine`) with `CURATED_CLAIMS_NOTICE` shown, so the
+app always renders and a curated list is never passed off as a live reading. Every extractor
+and mapper output runs through `enforceClaimHonesty(inventory, claims)` before it is returned.
+Keep the curated copy in exact agreement with the locked demo below.
 
 ## Chart components (owned by the charts agent) — `@/components/charts`
 
@@ -166,6 +228,14 @@ Zod schemas EXACTLY (snake vs camel: use the camelCase keys the TS types use, e.
 - Grouping variable is configurable, never hardcoded to "cell type".
 - The Marson scenario audits a NAIVE FOIL constructed on that data, never the authors'
   own (rigorous) analysis. Copy must never imply the authors erred.
+- The front door (intake and claim extraction). Extraction is a real model call that
+  adapts to the data; `enforceClaimHonesty` in `packages/contracts/src/claims.ts` is the
+  deterministic gate every model output passes through. Never fabricate a claim to fill
+  the list; an out-of-scope claim is labeled with an empty `checks` array; a check with no
+  routed claim renders no verdict; a curated fallback list is always labeled. The claim
+  and inventory shapes live in `packages/contracts/src/claims.ts` and
+  `packages/contracts/src/inventory.ts`. See `intake-and-claims.md` and `honesty-rules.md`
+  rules 9 through 14.
 
 ## Locked demo fixtures (the golden path — fixtures MUST reproduce these)
 
