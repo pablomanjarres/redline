@@ -34,6 +34,29 @@ function figure(result: CheckResult, cfg3: Check3Config): ReactNode {
   }
 }
 
+/** Slug a stat label into a stable kebab-case test id: lowercase, runs of
+ *  non-alphanumerics collapse to a single dash, no leading/trailing dash.
+ *  e.g. "Honest p (donor-level)" -> "honest-p-donor-level". */
+function slug(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** The repeated-run distribution behind a stat, when the check actually repeated. */
+function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
+  if (!s.interval) return null;
+  return (
+    <div style={{ marginTop: 10 }}>
+      <DistributionStrip iv={s.interval} accent={s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink-3)'} />
+      <div style={{ marginTop: 5, font: '400 9px/1.3 var(--mono)', color: 'var(--ink-4)' }}>
+        {ciLabel(s.interval, s.value)} · {s.interval.n} runs
+      </div>
+    </div>
+  );
+}
+
 /** The audit stage for one check: figure on a lightbox plate (the hero), the
  *  verdict, and the instrument + console rail. */
 export function CheckStage({ checkId }: { checkId: CheckId }) {
@@ -70,6 +93,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 'none' }}>
           {(isRunning || result) && (
             <span
+              data-testid="check-verdict"
               data-tour="check.badge"
               style={{
                 display: 'inline-flex',
@@ -90,6 +114,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </span>
           )}
           <button
+            data-testid="rerun-check"
             data-tour="check.rerun"
             onClick={() => void runCheck(checkId)}
             style={{
@@ -139,23 +164,13 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
           {/* stat strip */}
           {showFigure && result!.stats.length > 0 && (
             <div data-tour="check.stats" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-              {result!.stats.map((s, i) => {
-                const accent = s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)';
-                return (
-                  <div key={i} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
-                    <div style={{ font: '700 19px/1 var(--mono)', color: accent }}>{s.value}</div>
-                    <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
-                    {s.interval && (
-                      <div style={{ marginTop: 10 }}>
-                        <DistributionStrip iv={s.interval} accent={s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink-3)'} />
-                        <div style={{ marginTop: 5, font: '400 9px/1.3 var(--mono)', color: 'var(--ink-4)' }}>
-                          {ciLabel(s.interval, s.value)} · {s.interval.n} runs
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {result!.stats.map((s, i) => (
+                <div key={i} data-testid={`stat-${slug(s.label)}`} style={{ flex: 1, minWidth: 130, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 10, padding: '13px 15px' }}>
+                  <div style={{ font: '700 19px/1 var(--mono)', color: s.bad ? 'var(--red-2)' : s.good ? 'var(--green)' : 'var(--ink)' }}>{s.value}</div>
+                  <div style={{ marginTop: 6, font: '400 9.5px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
+                  <StatInterval s={s} />
+                </div>
+              ))}
             </div>
           )}
 
