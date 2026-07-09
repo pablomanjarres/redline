@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Watch pablomanjarres/redline for new pull requests and hand each to the review loop.
+
+  Install:
+    cp scripts/com.pablo.redline-pr-watch.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pablo.redline-pr-watch.plist
+  Run one now:
+    launchctl kickstart -k gui/$(id -u)/com.pablo.redline-pr-watch
+  Stop it without uninstalling:
+    touch .claude/pr-watch/DISABLED
+  Uninstall:
+    launchctl bootout gui/$(id -u)/com.pablo.redline-pr-watch
+
+  Interval: 600s. PRs land a few times a day, so a review lags an open by at most
+  one cycle. Same cadence as com.noelle.autoupdate, for the same reason.
+  Timers do not fire while the Mac sleeps; that is acceptable here, a PR can wait.
+
+  PR_LOOP_MERGE is deliberately absent. The loop reviews and fixes unattended; it
+  does not merge unless a human sets it. Merging writes to the outside world.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.pablo.redline-pr-watch</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>exec "$HOME/Projects/Claude Life Sciences Hackathon/redline/scripts/pr-watch.sh"</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>600</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/redline-pr-watch.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/redline-pr-watch.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PR_WATCH_MAX_PER_TICK</key>
+    <string>2</string>
+  </dict>
+</dict>
+</plist>
