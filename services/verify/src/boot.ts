@@ -23,7 +23,23 @@ function writeWrapper(): string {
   return p;
 }
 
+/** Refuse to boot onto a port something else already holds.
+ *
+ *  The child is spawned with stdio ignored, so a failed bind is invisible: the
+ *  driver would then grade whatever server is already listening, which on a
+ *  re-run is the previous build. A stale green is worse than a loud failure. */
+function assertPortFree(): void {
+  const probe = spawnSync('lsof', ['-nP', `-iTCP:${PORT}`, '-sTCP:LISTEN'], { encoding: 'utf8' });
+  if (probe.status === 0 && probe.stdout.trim()) {
+    throw new Error(
+      `port ${PORT} is already in use, so the harness would drive a server it did not build. ` +
+        `Stop it, or set REDLINE_VERIFY_BASE_URL to drive it deliberately.\n${probe.stdout.trim()}`,
+    );
+  }
+}
+
 export function bootApp(): Booted {
+  assertPortFree();
   const wrapper = writeWrapper();
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -49,21 +65,32 @@ export function bootApp(): Booted {
       throw new Error(`next build failed (${build.status}); cannot boot the app`);
     }
   }
+  // Its own process group: `pnpm exec next start` is a wrapper around the real
+  // server, so killing only the wrapper would orphan the server on the port.
   const child: ChildProcess = spawn('pnpm', ['exec', 'next', 'start', '--port', String(PORT)], {
     cwd: WEB_DIR,
     env,
     stdio: 'ignore',
+    detached: true,
   });
   let stopped = false;
   const stop = () => {
     if (stopped) return;
     stopped = true;
     try {
-      child.kill('SIGTERM');
+      if (child.pid) process.kill(-child.pid, 'SIGTERM');
     } catch {
-      /* already gone */
+      try {
+        child.kill('SIGTERM');
+      } catch {
+        /* already gone */
+      }
     }
   };
   process.on('exit', stop);
+  process.on('SIGINT', () => {
+    stop();
+    process.exit(130);
+  });
   return { stop };
 }
