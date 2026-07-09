@@ -16,12 +16,12 @@ import { fmt } from '@/lib/format';
 // Marson and Ketamine are the demo scenarios (locked fixtures), kept first. The
 // last three are verification foils: they only produce numbers on the real
 // `local` compute target (each reads its foil .h5ad), never the fixture path.
-const SCENARIOS: { id: ScenarioId; label: string }[] = [
+const SCENARIOS: { id: ScenarioId; label: string; localOnly?: boolean }[] = [
   { id: 'marson', label: 'Marson' },
   { id: 'ketamine', label: 'Ketamine' },
-  { id: 'pfc', label: 'PFC' },
-  { id: 'clean', label: 'Clean' },
-  { id: 'nocounts', label: 'No counts' },
+  { id: 'pfc', label: 'PFC', localOnly: true },
+  { id: 'clean', label: 'Clean', localOnly: true },
+  { id: 'nocounts', label: 'No counts', localOnly: true },
 ];
 
 export default function IntakePage() {
@@ -67,9 +67,15 @@ export default function IntakePage() {
           <div data-tour="intake.scenario" role="group" aria-label="Choose scenario" style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--panel-2)', border: '1px solid var(--edge-2)', borderRadius: 8 }}>
             {SCENARIOS.map((s) => {
               const active = scenarioId === s.id;
+              // The verification foils carry no locked fixture numbers, so on the
+              // fixture target every check would 500. Honesty rule 6: disable and
+              // label the dead control rather than let it fail on click.
+              const disabled = !!s.localOnly && !computeTargetAvailable;
               return (
-                <button key={s.id} type="button" aria-pressed={active} onClick={() => loadScenario(s.id)}
-                  style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', border: 'none', background: active ? 'var(--signal)' : 'transparent', color: active ? 'var(--surface)' : 'var(--ink-3)' }}>
+                <button key={s.id} type="button" aria-pressed={active} disabled={disabled}
+                  onClick={() => loadScenario(s.id)}
+                  title={disabled ? 'Requires a real compute target (REDLINE_COMPUTE_TARGET=local)' : undefined}
+                  style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', padding: '7px 12px', borderRadius: 6, cursor: disabled ? 'not-allowed' : 'pointer', border: 'none', background: active ? 'var(--signal)' : 'transparent', color: disabled ? 'var(--ink-4)' : active ? 'var(--surface)' : 'var(--ink-3)', opacity: disabled ? 0.55 : 1 }}>
                   {s.label}
                 </button>
               );
