@@ -2,4 +2,7 @@ export { SignificanceChart } from './SignificanceChart';
 export { GroupsChart } from './GroupsChart';
 export { FragilityChart } from './FragilityChart';
 export { ConfoundChart } from './ConfoundChart';
+export { VolcanoChart } from './VolcanoChart';
+export { FdrChart } from './FdrChart';
 export { MiniChart } from './MiniChart';
+export { renderChart } from './renderChart';
