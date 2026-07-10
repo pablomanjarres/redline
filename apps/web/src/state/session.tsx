@@ -409,7 +409,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const result = await postCheck({ scenarioId: s.scenarioId, checkId, config: cfg, fields });
+        const result = await postCheck({ scenarioId: s.scenarioId, checkId, config: cfg, fields, claim: run.claimText, claimId: run.claimId, runKey: run.key });
         if (!mounted.current || token !== tokens.current[key]) return;
         clearTimer(key);
         setCore((prev) => ({
@@ -480,7 +480,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const token = (tokens.current[key] ?? 0) + 1;
     tokens.current[key] = token;
     try {
-      const result = await postCheck({ scenarioId: s.scenarioId, checkId: run.checkId, config: cfg, fields: s.fields ?? [] });
+      const result = await postCheck({ scenarioId: s.scenarioId, checkId: run.checkId, config: cfg, fields: s.fields ?? [], claim: run.claimText, claimId: run.claimId, runKey: run.key });
       if (!mounted.current || token !== tokens.current[key]) return;
       setCore((prev) => ({
         ...prev,
