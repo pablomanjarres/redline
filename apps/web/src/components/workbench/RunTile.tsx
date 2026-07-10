@@ -69,7 +69,7 @@ export function RunTile({ run }: { run: PreparedRun }) {
       data-tour={`workbench.tile.${checkId}`}
       href={`/checks/${encodeURIComponent(run.key)}`}
       data-testid={`run-tile-${run.key}`}
-      aria-label={`Open check ${checkId}: ${meta.name}, auditing “${claim}”`}
+      aria-label={claim ? `Open the ${meta.name} audit of “${claim}”` : `Open check ${checkId}: ${meta.name}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -88,12 +88,19 @@ export function RunTile({ run }: { run: PreparedRun }) {
       <div style={{ height: 3, background: light, boxShadow: isReady ? 'none' : `0 0 12px ${light}` }} />
 
       <div style={{ padding: '19px 21px 21px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        {/* header: number · name · sub · verdict badge */}
+        {/* header: the CLAIM leads, because it is what makes two runs of the same
+            check distinct (both audit Pseudoreplication, but of different claims).
+            The check identity sits above as a quiet mono eyebrow, its failure mode
+            below; the verdict badge stays top-right. */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
-          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>0{checkId}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 17px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{meta.name}</div>
-            <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
+            <div style={{ font: '700 10.5px/1.3 var(--mono)', letterSpacing: '.09em', textTransform: 'uppercase', color: light }}>
+              0{checkId} · {meta.name}
+            </div>
+            <div style={{ marginTop: 9, font: '700 15px/1.35 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>
+              {claim || meta.name}
+            </div>
+            <div style={{ marginTop: 6, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
           </div>
           <span
             data-testid={`tile-verdict-${run.key}`}
@@ -125,14 +132,6 @@ export function RunTile({ run }: { run: PreparedRun }) {
             {badgeLabel}
           </span>
         </div>
-
-        {/* claim under audit */}
-        {claim && (
-          <div style={{ marginTop: 16, font: '400 12px/1.5 var(--mono)' }}>
-            <span style={{ color: 'var(--ink-4)' }}>AUDITING: </span>
-            <span style={{ color: 'var(--ink-2)' }}>“{claim}”</span>
-          </div>
-        )}
 
         {/* lightbox plate, the only white on the surface */}
         <div

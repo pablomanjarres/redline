@@ -5,31 +5,31 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useSession } from '@/state/session';
 import { CheckStage } from '@/components/check/CheckStage';
+import { resolveRun } from './resolve';
 
-/** The [id] segment is a RunKey (`${claimId}::${checkId}`). Next has already URL-
- *  decoded the param, so read the first value straight through. */
+/** Normalize the dynamic segment to a single string. Next hands it back still
+ *  percent-encoded (the RunKey's "::" arrives as "%3A%3A"), so `resolveRun`
+ *  decodes it before matching; see resolve.ts. */
 function paramValue(raw: string | string[] | undefined): string {
   return Array.isArray(raw) ? (raw[0] ?? '') : (raw ?? '');
 }
 
 /**
  * Check panel route. The [id] param is one run's RunKey, not a check number
- * (several claims can route to one check, so the unit of work is the run). Reads
- * the key and finds the run in the session. As a convenience, a bare canonical
- * check number (1..4) resolves to that check's FIRST run: a real RunKey always
- * contains "::", so a bare digit can never collide with one, and this keeps the
- * canonical `/checks/3` links (the pipeline, the guided tour) landing on a real
- * run. On arrival it kicks the run if it has not produced a result yet, so
- * opening a card runs its check. A key that matches no current run renders an
- * honest "no such run" state rather than a fabricated verdict.
+ * (several claims can route to one check, so the unit of work is the run).
+ * `resolveRun` decodes the segment (Next returns it percent-encoded) and finds
+ * the run; as a convenience, a bare canonical check number resolves to that
+ * check's FIRST run, which keeps the canonical `/checks/3` links (the pipeline,
+ * the guided tour) landing on a real run. On arrival it kicks the run if it has
+ * not produced a result yet, so opening a card runs its check. A key that matches
+ * no current run renders an honest "no such run" state rather than a fabricated
+ * verdict.
  */
 export default function CheckRoute() {
   const params = useParams();
   const rawKey = paramValue(params?.id as string | string[] | undefined);
   const { runs, results, running, runOne } = useSession();
-  const run =
-    runs.find((r) => r.key === rawKey) ??
-    (/^[1-4]$/.test(rawKey) ? runs.find((r) => String(r.checkId) === rawKey) : undefined);
+  const run = resolveRun(runs, rawKey);
   const triggered = useRef<Set<string>>(new Set());
 
   useEffect(() => {
