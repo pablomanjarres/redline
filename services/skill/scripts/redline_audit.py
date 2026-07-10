@@ -8,25 +8,32 @@ lives in the `redline` package (installed from services/rigor); this script is
 just an argv-to-JSON wrapper so an agent can run a check with one command.
 
     python redline_audit.py --h5ad analysis.h5ad --check 1
-    python redline_audit.py --h5ad analysis.h5ad --check 2 \
-        --config-json '{"split":0.5,"grouping":"leiden"}'
-    python redline_audit.py --h5ad analysis.h5ad --check fields   # foundation step
+    python redline_audit.py --h5ad analysis.h5ad --check 5 \
+        --config-json '{"method":"bh","alpha":0.05}'
+    python redline_audit.py --h5ad analysis.h5ad --check fields    # foundation step
+    python redline_audit.py --h5ad analysis.h5ad --check inspect   # dataset inventory
+    python redline_audit.py --h5ad analysis.h5ad --check audit     # foundation + all checks
 
 Contract this script codes to (source of truth: docs/build/INTERFACES.md and the
 Zod shapes in packages/contracts). It drives `redline.job_runner`, the same
 path-based engine bridge the MCP server and the RemoteTarget use:
 
-    job_runner.compute_result(check_id=<1|2|3|4>, h5ad=<path>, config=<dict>,
-                              fields=<list[dict]|None>) -> ComputeResult dict
+    job_runner.compute_result(check_id=<1..8>, h5ad=<path>, config=<dict>,
+                              fields=<list[dict]|None>) -> EngineResult dict
     job_runner.resolve_fields(h5ad=<path>) -> list of FieldSpec dicts
+    job_runner.inspect_dataset(h5ad=<path>) -> DatasetInventory dict
+    job_runner.run_audit(h5ad=<path>, analysis=<dict|None>) -> {fields, results, report}
 
-Both load the .h5ad, run the foundation step when fields are not supplied, and
+They load the .h5ad, run the foundation step when fields are not supplied, and
 return JSON-safe dicts, so this stays a thin argv-to-JSON shim over the engine.
 
 Output shapes match the contracts exactly:
-  * a check prints a ComputeResult: {checkId, state, headline, stats[], chart{}}
+  * a check prints an EngineResult: {checkId, state, headline, stats[], chart{}}
+    plus correctedCode/recommendations/preview when the check produced them.
   * `--check fields` prints a FieldSpec[] (id, dtype, levels, missing, role,
     confidence, reason, ...).
+  * `--check inspect` prints a DatasetInventory (obs, uns, hasRawCounts, ...).
+  * `--check audit` prints {fields, results, report}.
 
 stdout carries ONLY the JSON so it is safe to pipe or parse. All human-readable
 diagnostics go to stderr. Exit codes: 0 success, 2 usage / engine-not-installed,
@@ -42,7 +49,7 @@ import os
 import sys
 from typing import Any
 
-CHECK_CHOICES = ["1", "2", "3", "4", "fields"]
+CHECK_CHOICES = ["1", "2", "3", "4", "5", "6", "7", "8", "fields", "inspect", "audit"]
 
 # A per-check example config, surfaced in --help so a caller does not have to
 # open the contracts to remember the knob names. These are illustrative values;
@@ -52,6 +59,11 @@ CONFIG_HINTS = {
     "2": '{"split":0.5,"grouping":"leiden"}',
     "3": '{"min":0.2,"max":2.0,"step":0.2,"track":"Effector"}',
     "4": '{"interest":"condition","nuisance":["lane"]}',
+    "5": '{"method":"bh","alpha":0.05,"grouping":"condition"}',
+    "6": '{"interest":"condition","covariate":"batch","alpha":0.05}',
+    "7": '{"min":0.2,"max":2.0,"step":0.2,"criterion":"silhouette","chosen":1.0}',
+    "8": '{"grouping":"condition","claimedTest":"ttest","alpha":0.05}',
+    "audit": '{"gene":"IL2RA","track":"Effector"}',
 }
 
 
@@ -111,6 +123,20 @@ def run_fields(engine: Any, h5ad: str) -> Any:
     return engine.resolve_fields(h5ad)
 
 
+def run_inspect(engine: Any, h5ad: str) -> Any:
+    """Run the intake step: inventory obs, uns, counts, layers, and gene ids
+    without loading the expression matrix. Returns a DatasetInventory dict."""
+    return engine.inspect_dataset(h5ad)
+
+
+def run_audit(engine: Any, h5ad: str, analysis: Any) -> Any:
+    """Run the one-call audit: the foundation step, every applicable check, and
+    the assembled summary. `analysis` is an optional hints dict (gene, markers,
+    target_group, track, or a per-check config map). Returns {fields, results,
+    report}."""
+    return engine.run_audit(h5ad, analysis)
+
+
 def to_jsonable(value: Any) -> Any:
     """Coerce whatever the engine returns into JSON-serializable data.
 
@@ -158,9 +184,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--check",
         required=True,
         choices=CHECK_CHOICES,
-        help="pillar to run: 1 pseudoreplication, 2 double dipping, "
-        "3 clustering fragility, 4 confounding, or 'fields' for the "
-        "design-resolution foundation step",
+        help="what to run: 1 pseudoreplication, 2 double dipping, 3 clustering "
+        "fragility, 4 confounding, 5 multiple testing, 6 unmodeled covariate, "
+        "7 resolution choice, 8 test assumptions; 'fields' for the "
+        "design-resolution foundation step, 'inspect' for the dataset inventory, "
+        "or 'audit' for the one-call audit (foundation + every applicable check)",
     )
     parser.add_argument(
         "--config-json",
@@ -201,6 +229,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.check == "fields":
             result = run_fields(engine, args.h5ad)
+        elif args.check == "inspect":
+            result = run_inspect(engine, args.h5ad)
+        elif args.check == "audit":
+            result = run_audit(engine, args.h5ad, config)
         else:
             result = run_check(engine, args.h5ad, int(args.check), config, fields)
     except SystemExit:
@@ -211,7 +243,16 @@ def main(argv: list[str] | None = None) -> int:
 
     indent = args.indent if args.indent and args.indent > 0 else None
     separators = (",", ":") if indent is None else None
-    json.dump(to_jsonable(result), sys.stdout, indent=indent, separators=separators)
+    # allow_nan=False keeps the output valid JSON: the engine sanitizes non-finite
+    # floats to null, and this asserts none slipped through (JS JSON.parse rejects
+    # NaN/Infinity, and the Zod contracts make such values nullable).
+    json.dump(
+        to_jsonable(result),
+        sys.stdout,
+        indent=indent,
+        separators=separators,
+        allow_nan=False,
+    )
     sys.stdout.write("\n")
     return 0
 

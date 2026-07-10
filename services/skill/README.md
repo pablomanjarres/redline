@@ -15,21 +15,29 @@ Claude Code, Claude Science, Claude Desktop, and the API.
 | File | Purpose |
 |---|---|
 | `SKILL.md` | The skill. YAML front-matter (name, description) plus the procedure. |
-| `scripts/redline_audit.py` | Thin CLI over `redline` for local code execution. Runs one check on an `.h5ad` and prints the `ComputeResult` JSON. |
+| `scripts/redline_audit.py` | Thin CLI over `redline` for local code execution. Runs intake, the foundation step, any of the eight checks, or the one-call audit on an `.h5ad` and prints the contract JSON. |
 | `README.md` | This file. |
 
 ## The tools the skill drives
 
-The MCP server (`services/rigor`) exposes one tool per pillar plus the foundation
-step. The skill references them by name:
+The MCP server (`services/rigor`) exposes twelve tools: dataset intake, the
+foundation step, the eight checks, a corrected-code emitter, and a one-call audit.
+The skill references them by name:
 
 | Step | MCP tool | Local-execution equivalent |
 |---|---|---|
+| Intake (inventory the `.h5ad`) | `redline_inspect` | `redline_audit.py --check inspect` |
 | Resolve obs roles | `redline_resolve_fields` | `redline_audit.py --check fields` |
 | Pseudoreplication | `redline_check_pseudoreplication` | `redline_audit.py --check 1` |
 | Double dipping | `redline_check_double_dipping` | `redline_audit.py --check 2` |
 | Clustering fragility | `redline_check_fragility` | `redline_audit.py --check 3` |
 | Confounding | `redline_check_confounding` | `redline_audit.py --check 4` |
+| Multiple testing (FDR) | `redline_check_multiple_testing` | `redline_audit.py --check 5` |
+| Unmodeled covariate | `redline_check_unmodeled_covariate` | `redline_audit.py --check 6` |
+| Resolution choice | `redline_check_resolution_choice` | `redline_audit.py --check 7` |
+| Test assumptions | `redline_check_test_assumptions` | `redline_audit.py --check 8` |
+| Corrected code for a check | `redline_corrected_code` | rides along in each result (`correctedCode`) |
+| One-call audit | `redline_audit` | `redline_audit.py --check audit` |
 
 Every tool and the CLI return the same contract shapes (a `ComputeResult` per
 check, a `FieldSpec[]` for the foundation step), defined in
@@ -40,11 +48,11 @@ check, a `FieldSpec[]` for the foundation step), defined in
 The skill and the CLI need the `redline` package importable. From the repo root:
 
 ```bash
-pip install -e "services/rigor[stats]"   # stats extra pulls scanpy, decoupler, pydeseq2
+pip install -e "services/rigor[stats,mcp]"   # stats: scanpy, decoupler, pydeseq2; mcp: the server
 ```
 
-Add the `mcp` extra when you want to run the server: `pip install -e
-"services/rigor[stats,mcp]"`.
+The `mcp` extra installs the MCP server. Drop it (`[stats]`) if you only run the
+local CLI and never register the connector.
 
 ## Run a single check locally (code execution)
 
@@ -52,6 +60,9 @@ On any surface with local code execution (Claude Science, Claude Code), run a
 check straight against an `.h5ad`:
 
 ```bash
+# Intake: inventory the object (obs, uns, counts) before extracting claims.
+python services/skill/scripts/redline_audit.py --h5ad analysis.h5ad --check inspect
+
 # Foundation: resolve the obs roles first, confirm them, then run checks.
 python services/skill/scripts/redline_audit.py --h5ad analysis.h5ad --check fields
 
@@ -62,9 +73,17 @@ python services/skill/scripts/redline_audit.py --h5ad analysis.h5ad --check 1
 python services/skill/scripts/redline_audit.py \
   --h5ad analysis.h5ad --check 2 --config-json '{"split":0.5,"grouping":"leiden"}'
 
+# A rigor check (5: multiple testing) with an explicit FDR method and threshold.
+python services/skill/scripts/redline_audit.py \
+  --h5ad analysis.h5ad --check 5 --config-json '{"method":"bh","alpha":0.05}'
+
 # Feed confirmed roles back into a check so it audits the confirmed design.
 python services/skill/scripts/redline_audit.py \
   --h5ad analysis.h5ad --check 4 --fields-json confirmed_fields.json
+
+# One-call audit: foundation plus every applicable check, with optional hints.
+python services/skill/scripts/redline_audit.py \
+  --h5ad analysis.h5ad --check audit --config-json '{"gene":"IL2RA","track":"Effector"}'
 ```
 
 stdout is pure JSON, so pipe it (`... | jq .state`). Diagnostics go to stderr.
@@ -98,7 +117,8 @@ tools or the local CLI), and writes the report following the skill's procedure.
 Claude Science extends through exactly two mechanisms, and Redline uses both:
 
 - **MCP connector.** Add the `redline` MCP server as a connector. Every future
-  session inherits the four pillar tools plus `redline_resolve_fields`.
+  session inherits all twelve tools: dataset intake, the foundation step, the
+  eight checks, the corrected-code emitter, and the one-call audit.
 - **Skill.** Add this skill. It gives the workbench the procedural knowledge its
   generalist reviewer does not have: the specific single-cell false-discovery
   modes and how to report them.
