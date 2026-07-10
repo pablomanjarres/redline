@@ -38,6 +38,15 @@ preflight() {
   command -v pnpm >/dev/null || die "pnpm not on PATH"
   command -v uv   >/dev/null || die "uv not on PATH"
   [[ -d "$RIGOR_DIR" ]]      || die "no services/rigor at $RIGOR_DIR"
+
+  # A fresh worktree has no node_modules. Installing them is setup, not a gate:
+  # a typecheck that fails because nothing is installed says nothing about the PR.
+  # An unfit environment is exit 2, never a failing PR.
+  if [[ ! -d "$REPO_ROOT/node_modules" ]]; then
+    log "installing node dependencies (fresh worktree)"
+    (cd "$REPO_ROOT" && pnpm install --frozen-lockfile >/dev/null 2>&1) \
+      || die "pnpm install failed; this box cannot judge the PR"
+  fi
   log "preflight ok"
 }
 
@@ -127,21 +136,23 @@ gate_no_em_dashes_in_new_prose() {
 
 main() {
   preflight
-  assert_real_stack
 
-  # The engine and test gates are meaningless if the stack is not there: they
-  # would be measuring the fallbacks. Skip them and say so, rather than emit a
-  # green that means nothing.
-  if [[ -z "$FAILURES" ]]; then
+  # Cheap gates first. A loop that ticks every 10 minutes must not spend 25 of
+  # them installing a scientific Python stack to discover a typo.
+  gate_no_em_dashes_in_new_prose
+  gate_typecheck
+  gate_js_tests
+
+  # The expensive half. The engine and test gates are meaningless if the real
+  # stack is absent: they would be measuring the fallbacks. Skip and say so,
+  # rather than emit a green that means nothing.
+  assert_real_stack
+  if [[ "$FAILURES" != *"stack"* ]]; then
     assert_no_silent_degrade
     gate_pytest
   else
     log "  SKIP  engine + pytest gates: the real stack is unusable, a pass here would be meaningless"
   fi
-
-  gate_typecheck
-  gate_js_tests
-  gate_no_em_dashes_in_new_prose
 
   echo
   if [[ -z "$FAILURES" ]]; then
