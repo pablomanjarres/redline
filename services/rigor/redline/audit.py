@@ -319,9 +319,9 @@ _DEFAULT_CHART_KIND: dict[int, str] = {
     3: "fragility",
     4: "confound",
     5: "fdr",
-    6: "volcano",
+    6: "significance",
     7: "fragility",
-    8: "volcano",
+    8: "significance",
 }
 
 

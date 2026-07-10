@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 /**
  * The "Redline is an engine" route: a quiet, secondary surface on the dark
- * instrument, showing that the same four checks run outside this workbench.
+ * instrument, showing that the same checks run outside this workbench.
  * Static content, no session state. The only bright element is the terminal
  * block, and even that stays on the dark --void so the workbench keeps its
  * one lightbox plate as the sole white surface.
@@ -31,7 +31,7 @@ export default function EnvironmentPage() {
         Redline is an engine. This workbench is one way to drive it.
       </h1>
       <p style={{ margin: '14px 0 0', maxWidth: 640, font: '400 14.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
-        The same four checks run wherever your analysis lives: a notebook cell, a pipeline step, or a gate on every commit.
+        The same checks run wherever your analysis lives: a notebook cell, a pipeline step, or a gate on every commit.
         Same findings, same citations, no interface required.
       </p>
 
