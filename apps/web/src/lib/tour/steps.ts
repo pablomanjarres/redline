@@ -68,7 +68,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: 'intake.analysis',
     headline: 'Two optional attach points.',
-    what: 'Paste or upload your notebook or script, and your written results. Both are optional. New here? Load the example analysis and run the audit on a ready sample.',
+    what: 'Drop a notebook or script to upload it, or paste one. A .ipynb renders as a notebook. New here? Load the example and run the audit on a ready sample.',
     why: 'The dataset alone is enough. Anything you add sharpens the reading and matches the claims to how you would state them.',
     advance: 'next',
     dwellMs: 6000,

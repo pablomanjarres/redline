@@ -1,18 +1,34 @@
 'use client';
 
+import { useState } from 'react';
 import { AttachField } from './AttachField';
-import { EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
+import { NotebookField } from './NotebookField';
+import { EXAMPLE_CELLS, EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
+import { cellsToIpynb, scriptToCells, type NotebookCell } from '@/lib/notebook';
+
+const NOTEBOOK_MAX = 200_000;
+
+interface NotebookView {
+  cells: NotebookCell[] | null;
+  name: string | null;
+  notice: string | null;
+  error: string | null;
+}
 
 /**
  * Intake slab 02: the optional attach points. The dataset alone already audits,
- * so both fields here are optional. They let the scientist add the analysis they
- * ran (a notebook or script) and what they concluded (claims or prose), so the
- * extracted claims read in their own words. Both are text, paste or upload, so
- * they feed the model directly and work in every compute mode, fixture included.
+ * so both fields here are optional. Upload a notebook or script (a `.ipynb`
+ * renders as a real notebook) or paste it, add what you concluded (claims or
+ * prose), and the extracted claims read in your own words. Everything is text
+ * fed to the model, so it works in every compute mode, fixture included.
  *
  * "Load example" fills both fields with the demo's naive analysis, so a judge can
- * test the flow without writing one. "Download sample" hands back the same file,
- * to try the upload path.
+ * test the flow without writing one. "Download sample" hands back the same
+ * `.ipynb`, to try the upload path.
+ *
+ * This slab owns the notebook's display state (parsed cells, filename, notice,
+ * error), so every path keeps the rendered notebook, header, and messages in
+ * step. The flattened `notebook` text is what the parent persists and sends on.
  */
 export function AnalysisSlab({
   notebook,
@@ -25,14 +41,46 @@ export function AnalysisSlab({
   onNotebook: (t: string) => void;
   onProse: (t: string) => void;
 }) {
+  // Seed the preview from any persisted text, so a remount shows a notebook
+  // rather than dumping the text into the paste box.
+  const [nb, setNb] = useState<NotebookView>(() => ({
+    cells: notebook ? scriptToCells(notebook) : null,
+    name: null,
+    notice: null,
+    error: null,
+  }));
+
+  function onNotebookLoad(r: { text: string; cells: NotebookCell[]; name: string; truncated: boolean }) {
+    onNotebook(r.text);
+    setNb({
+      cells: r.cells,
+      name: r.name,
+      notice: r.truncated
+        ? `Showing the full notebook. The first ${NOTEBOOK_MAX.toLocaleString()} characters are sent to extraction.`
+        : null,
+      error: null,
+    });
+  }
+
+  function onNotebookPaste(text: string) {
+    onNotebook(text);
+    setNb({ cells: null, name: null, notice: null, error: null });
+  }
+
+  function onNotebookClear() {
+    onNotebook('');
+    setNb({ cells: null, name: null, notice: null, error: null });
+  }
+
   function loadExample() {
     onNotebook(EXAMPLE_NOTEBOOK);
+    setNb({ cells: EXAMPLE_CELLS, name: EXAMPLE_FILENAME, notice: null, error: null });
     onProse(EXAMPLE_PROSE);
   }
 
   function downloadSample() {
     if (typeof window === 'undefined') return;
-    const url = URL.createObjectURL(new Blob([EXAMPLE_NOTEBOOK], { type: 'text/x-python' }));
+    const url = URL.createObjectURL(new Blob([cellsToIpynb(EXAMPLE_CELLS)], { type: 'application/x-ipynb+json' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = EXAMPLE_FILENAME;
@@ -70,11 +118,11 @@ export function AnalysisSlab({
         </span>
       </div>
       <p style={{ margin: '13px 0 12px', maxWidth: 440, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-2)' }}>
-        Redline can audit the dataset on its own. Add the analysis you ran, by paste or upload, so the claims read in your own words.
+        Redline can audit the dataset on its own. Upload or paste the analysis you ran so the claims read in your own words.
       </p>
 
       {/* Judges (and anyone testing) can fill both fields with the demo's naive
-          analysis in one click, or download the same file to try the upload. */}
+          analysis in one click, or download the same notebook to try the upload. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '0 0 16px' }}>
         <button
           type="button"
@@ -107,19 +155,22 @@ export function AnalysisSlab({
             textDecoration: 'underline',
           }}
         >
-          Download sample .py
+          Download sample .ipynb
         </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <AttachField
-          label="Notebook or script"
-          hint="Paste or upload your analysis code so the claims match the tests you actually ran."
-          placeholder="# de_analysis.ipynb, or a script..."
+        <NotebookField
           value={notebook}
-          onChange={onNotebook}
-          accept=".ipynb,.py,.r,.txt,.md"
-          maxChars={200_000}
+          cells={nb.cells}
+          name={nb.name}
+          notice={nb.notice}
+          error={nb.error}
+          onLoad={onNotebookLoad}
+          onError={(message) => setNb((s) => ({ ...s, error: message }))}
+          onPaste={onNotebookPaste}
+          onClear={onNotebookClear}
+          maxChars={NOTEBOOK_MAX}
         />
         <AttachField
           label="Claims or prose"
