@@ -3,6 +3,7 @@ import type {
   CheckId,
   CheckState,
   ClaimExtractionRequest,
+  ClaimImprovementRequest,
   ClaimMappingRequest,
   DatasetInventory,
   FieldProposalRequest,
@@ -544,4 +545,79 @@ export function buildClaimMappingPrompt(req: ClaimMappingRequest): PromptPair {
     '{ "claim": { ... } }.',
   ].join('\n');
   return { system: CLAIMS_SYSTEM_PROMPT, user };
+}
+
+// ── Improve a claim's wording (Claim Review, "Improve with AI") ───────────────
+
+/**
+ * The wording-improvement system prompt. The scientist has one claim in the edit
+ * field and asks Redline to sharpen it. The model rewrites the SAME claim into
+ * plain, precise, testable language grounded in this dataset. It never invents a
+ * new claim, a new number, or data that is not in the inventory, and it never
+ * changes which checks apply (routing is a separate action). The output contract
+ * is one JSON object of the form { "text": "..." } validated against
+ * ClaimImprovementResponse.
+ */
+export const IMPROVE_SYSTEM_PROMPT = [
+  'You are Redline, a statistical-rigor auditor for single-cell RNA-seq analyses.',
+  'A scientist is editing one claim their analysis makes and has asked you to improve its',
+  'wording before it is audited. You rewrite the SAME claim so it is sharper, more precise,',
+  'and easier to test. You do not invent a new claim and you do not change what it asserts.',
+  '',
+  'Return ONLY a single JSON object of the form { "text": "..." }. No text around it, no',
+  'markdown fences. "text" is the rewritten claim, one or two sentences.',
+  '',
+  'Hard rules:',
+  '1. Keep the same claim and the same meaning. Sharpen the wording; do not broaden,',
+  '   narrow, negate, or replace the scientific assertion. If the claim is already',
+  '   precise, return it close to unchanged.',
+  '2. Ground it in this dataset. You may name the exact obs columns, groups, cluster',
+  '   labels, and genes from the inventory below. Never name a column, stored result,',
+  '   cluster, or gene that is not in the inventory.',
+  '3. Do not add a specific statistic (a p-value, q-value, fold change, or effect size)',
+  '   that the claim did not already state. You are rewording an assertion, not reporting',
+  '   a result. If the original claim carried a number, you may keep it.',
+  '4. Keep it a claim: an assertion the analysis makes, stated so a check can test it.',
+  '   Name the comparison and its direction when the claim implies them.',
+  '5. Do not change which checks apply. The routing is fixed separately, and the checks',
+  '   the claim is currently routed to are listed only as context.',
+  '6. Style: plain, direct, concrete English. No em dashes. No "not X, but Y" phrasing.',
+  '   No filler, no hedging, no preamble. State the claim.',
+  '',
+  FENCE_RULE,
+].join('\n');
+
+/** Render the routed checks as context, so the rewrite matches what will test the claim. */
+function renderRoutedChecks(checks: CheckId[] | undefined): string {
+  if (!checks || checks.length === 0) return '  (none routed yet)';
+  return checks.map((id) => `  - Check ${id}: ${checkTitle(id)}`).join('\n');
+}
+
+/** Build the wording-improvement prompt for one claim (Claim Review). */
+export function buildClaimImprovementPrompt(req: ClaimImprovementRequest): PromptPair {
+  const lines = [
+    `Dataset: ${req.datasetTitle}`,
+    '',
+    'Inventory:',
+    renderInventory(req.inventory),
+    '',
+    'Resolved fields:',
+    renderClaimFields(req.fields),
+    '',
+    'Checks this claim is routed to (context only, do not change them):',
+    renderRoutedChecks(req.checks),
+  ];
+  if (req.restsOn && req.restsOn.trim().length > 0) {
+    lines.push('', 'What the claim rests on:', `  ${fenced(req.restsOn, 2_000)}`);
+  }
+  lines.push(
+    '',
+    'The current wording of the claim:',
+    `${fenced(req.text, MAX_CLAIM_CHARS)}`,
+    '',
+    'Rewrite this claim so it is sharper, more precise, and easier to test, keeping the',
+    'same meaning and grounding every specific in the inventory. Return it now as',
+    '{ "text": "..." }.',
+  );
+  return { system: IMPROVE_SYSTEM_PROMPT, user: lines.join('\n') };
 }

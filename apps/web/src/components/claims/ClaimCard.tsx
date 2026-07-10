@@ -71,6 +71,7 @@ export function ClaimCard({
   onStatus,
   onText,
   onRouting,
+  onImprove,
 }: {
   claim: ExtractedClaim;
   /** Set by the page on the first card the guided tour spotlights. */
@@ -79,12 +80,22 @@ export function ClaimCard({
   onStatus: (status: ClaimStatus) => void;
   onText: (text: string) => void;
   onRouting: (checks: CheckRoute[]) => void;
+  /**
+   * Rewrite the current wording with the reasoner ("Improve with AI"). Resolves
+   * to the sharper text, which replaces the edit draft. Rejects when no honest
+   * rewrite is possible, and the card leaves the wording untouched. Absent when
+   * no reasoning backend is wired, and then the control is not rendered.
+   */
+  onImprove?: (text: string) => Promise<string>;
 }) {
   const [editing, setEditing] = useState(false);
   const [routingOpen, setRoutingOpen] = useState(false);
   const [draft, setDraft] = useState(claim.text);
   const [textFocused, setTextFocused] = useState(false);
+  const [improving, setImproving] = useState(false);
+  const [improveError, setImproveError] = useState<string | null>(null);
   const editId = useId();
+  const improveErrorId = `${editId}-improve-error`;
 
   // Focus never falls to <body> when a control this card owns unmounts or goes
   // disabled. Removing collapses the card, so focus lands on Restore; restoring
@@ -160,12 +171,40 @@ export function ClaimCard({
 
   function beginEdit() {
     setDraft(claim.text);
+    setImproveError(null);
     setEditing(true);
   }
   function saveText() {
     const next = draft.trim();
     if (next !== '' && next !== claim.text) onText(next);
+    setImproveError(null);
     setEditing(false);
+  }
+  function cancelEdit() {
+    setDraft(claim.text);
+    setImproveError(null);
+    setEditing(false);
+  }
+
+  // Ask the reasoner to sharpen the current draft. The rewrite replaces the draft
+  // so the scientist reviews it before Save; a failure surfaces amber (a needs-
+  // input state, red is reserved for statistical findings) and the wording is left
+  // as the scientist had it. It improves what is in the field, falling back to the
+  // claim text when the field was cleared.
+  async function improve() {
+    if (!onImprove || improving) return;
+    setImproveError(null);
+    setImproving(true);
+    try {
+      const improved = await onImprove(draft.trim() === '' ? claim.text : draft.trim());
+      setDraft(improved);
+    } catch {
+      setImproveError(
+        'Redline could not improve that wording right now, so it is unchanged. Try again, or configure a Claude backend.',
+      );
+    } finally {
+      setImproving(false);
+    }
   }
 
   return (
@@ -185,6 +224,8 @@ export function ClaimCard({
                 onChange={(e) => setDraft(e.target.value)}
                 onFocus={() => setTextFocused(true)}
                 onBlur={() => setTextFocused(false)}
+                aria-describedby={improveError ? improveErrorId : undefined}
+                aria-busy={improving}
                 rows={3}
                 style={{
                   width: '100%',
@@ -199,6 +240,24 @@ export function ClaimCard({
                   boxShadow: textFocused ? '0 0 0 3px var(--signal-soft)' : 'none',
                 }}
               />
+              {improveError && (
+                <div
+                  id={improveErrorId}
+                  role="alert"
+                  style={{
+                    marginTop: 9,
+                    display: 'flex',
+                    gap: 9,
+                    background: 'var(--amber-soft)',
+                    border: '1px solid color-mix(in srgb, var(--amber) 32%, transparent)',
+                    borderRadius: 9,
+                    padding: '9px 11px',
+                  }}
+                >
+                  <span style={{ width: 7, height: 7, marginTop: 4, flex: 'none', borderRadius: 7, background: 'var(--amber)' }} />
+                  <p style={{ margin: 0, font: '400 12px/1.5 var(--sans)', color: 'var(--ink-2)' }}>{improveError}</p>
+                </div>
+              )}
             </>
           ) : (
             <p style={{ margin: 0, font: '600 15px/1.45 var(--sans)', color: 'var(--ink)' }}>{claim.text}</p>
@@ -280,18 +339,45 @@ export function ClaimCard({
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {editing ? (
             <>
-              <button type="button" onClick={saveText} aria-label="Save the edited wording" style={ctrlStyle(true)}>
-                Save
-              </button>
+              {onImprove && (
+                <button
+                  type="button"
+                  onClick={improve}
+                  disabled={improving}
+                  aria-label="Improve the claim wording with AI"
+                  style={{
+                    ...ctrlStyle(),
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    ...(improving ? { opacity: 0.6, cursor: 'default' } : {}),
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 6,
+                      height: 6,
+                      flex: 'none',
+                      borderRadius: 6,
+                      background: 'var(--signal)',
+                      boxShadow: improving ? 'none' : '0 0 6px var(--signal)',
+                      animation: improving ? 'rl-pulse 1s infinite' : undefined,
+                    }}
+                  />
+                  {improving ? 'Improving…' : 'Improve with AI'}
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => {
-                  setDraft(claim.text);
-                  setEditing(false);
-                }}
-                aria-label="Cancel editing"
-                style={ctrlStyle()}
+                onClick={saveText}
+                disabled={improving}
+                aria-label="Save the edited wording"
+                style={{ ...ctrlStyle(true), ...(improving ? { opacity: 0.5, cursor: 'default' } : {}) }}
               >
+                Save
+              </button>
+              <button type="button" onClick={cancelEdit} aria-label="Cancel editing" style={ctrlStyle()}>
                 Cancel
               </button>
             </>

@@ -1,6 +1,13 @@
-import { CriticJudgment, FieldProposalResponse, Narrative, RecommendationResponse } from '@redline/contracts';
+import {
+  ClaimImprovementResponse,
+  CriticJudgment,
+  FieldProposalResponse,
+  Narrative,
+  RecommendationResponse,
+} from '@redline/contracts';
 import type {
   ClaimExtractionRequest,
+  ClaimImprovementRequest,
   ClaimMappingRequest,
   ExtractedClaim,
   CriticRequest,
@@ -14,6 +21,7 @@ import * as anthropic from './anthropic.js';
 import * as bedrock from './bedrock.js';
 import {
   buildClaimExtractionPrompt,
+  buildClaimImprovementPrompt,
   buildClaimMappingPrompt,
   buildFieldProposalPrompt,
   buildNarrativePrompt,
@@ -50,6 +58,14 @@ export interface Reasoner {
   /** Map one user-typed claim to its checks and params (spec section 7). */
   mapClaim(req: ClaimMappingRequest): Promise<ExtractedClaim>;
   /**
+   * Rewrite one claim's wording into sharper, more testable language (Claim
+   * Review, the "Improve with AI" affordance). Grounded in the dataset; it never
+   * re-routes the claim. Returns the rewritten text, or throws
+   * `ReasonerUnavailable` when no backend is wired or the reply does not parse, so
+   * the caller leaves the wording untouched rather than fabricating one.
+   */
+  improveClaim(req: ClaimImprovementRequest): Promise<string>;
+  /**
    * The critic: an independent, adversarial second pass over one candidate
    * finding. Returns the validated ruling, or throws `ReasonerUnavailable` when
    * no backend is wired or the reply does not parse, so the caller can fail safe
@@ -63,6 +79,8 @@ const RECOMMEND_MAX_TOKENS = 2048;
 const FIELDS_MAX_TOKENS = 4096;
 // Claim lists are longer than a single narrative, so they get more headroom.
 const CLAIMS_MAX_TOKENS = 8192;
+/** One rewritten claim is a sentence or two of prose. A tight cap is plenty. */
+const IMPROVE_MAX_TOKENS = 1024;
 /** Routing a claim to a check is a decision, not prose. Same run, same routing. */
 const CLAIMS_TEMPERATURE = 0;
 const CRITIQUE_MAX_TOKENS = 1024;
@@ -306,6 +324,29 @@ export function createReasoner(opts?: { invoke?: InvokeFn }): Reasoner {
         }, retryUnlessRejected);
       } catch (err) {
         throw asUnavailable('mapClaim', err);
+      }
+    },
+
+    async improveClaim(req: ClaimImprovementRequest): Promise<string> {
+      if (activeBackend() === undefined) {
+        throw new ReasonerUnavailable(
+          'No reasoning backend configured; leave the wording untouched',
+        );
+      }
+      try {
+        return await withRetry(async () => {
+          const { system, user } = buildClaimImprovementPrompt(req);
+          const text = await withTimeout(send(system, user, IMPROVE_MAX_TOKENS), REASON_TIMEOUT_MS, 'improveClaim');
+          const improved = ClaimImprovementResponse.parse(extractJson(text)).text.trim();
+          // An empty or whitespace-only rewrite is no rewrite. Treat it as a
+          // failure so the caller leaves the scientist's wording untouched.
+          if (improved === '') {
+            throw new ReasonerUnavailable('improveClaim returned an empty rewrite');
+          }
+          return improved;
+        });
+      } catch (err) {
+        throw asUnavailable('improveClaim', err);
       }
     },
 

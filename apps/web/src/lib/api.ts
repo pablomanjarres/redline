@@ -30,6 +30,7 @@ const ClaimsResponse = z.object({
   assessment: ExtractionAssessmentSchema.optional(),
 });
 const MapResponse = z.object({ claim: ExtractedClaim });
+const ImproveResponse = z.object({ text: z.string() });
 
 /** The extraction result: the claims plus whether they are a live model reading
  * or the curated built-in list. `source` is load-bearing for honest UI copy. */
@@ -130,4 +131,23 @@ export async function postMapClaim(body: {
 }): Promise<ExtractedClaim> {
   const json = await postJson('/api/audit/claims/map', body);
   return MapResponse.parse(json).claim;
+}
+
+/**
+ * Improve a claim's wording (Claim Review, the "Improve with AI" affordance): send
+ * the current wording plus its routing context, get back a sharper rewrite.
+ * POST /api/audit/claims/improve -> `{ text }`. The route returns 503 when no
+ * honest rewrite is possible; `postJson` throws on that, and the caller leaves
+ * the scientist's wording untouched rather than fabricating one.
+ */
+export async function postImproveClaim(body: {
+  scenarioId: ScenarioId;
+  inventory: DatasetInventory;
+  fields: FieldSpec[];
+  text: string;
+  restsOn?: string;
+  checks?: CheckId[];
+}): Promise<string> {
+  const json = await postJson('/api/audit/claims/improve', body);
+  return ImproveResponse.parse(json).text;
 }

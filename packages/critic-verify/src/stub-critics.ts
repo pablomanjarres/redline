@@ -10,7 +10,9 @@ import type { Reasoner } from '@redline/reasoning';
  */
 
 const nope = async (): Promise<never> => {
-  throw new Error('narrate / proposeFields / extractClaims / mapClaim are not used by the critic harness');
+  throw new Error(
+    'narrate / proposeFields / extractClaims / mapClaim / improveClaim are not used by the critic harness',
+  );
 };
 
 /** Wrap a critique function as a full Reasoner (available, bedrock-shaped source). */
@@ -26,6 +28,7 @@ export function reasonerFrom(
     proposeFields: nope,
     extractClaims: nope,
     mapClaim: nope,
+    improveClaim: nope,
     recommend: nope,
     critique,
   };
