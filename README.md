@@ -167,5 +167,9 @@ MIT. See [LICENSE](./LICENSE).
 ---
 
 <p align="center">
+  <img src=".github/lab-critter.gif" alt="Redline's lab critter mascot — Reviewer 2, in a lab coat" width="180">
+</p>
+
+<p align="center">
   Built with Claude: Life Sciences (Anthropic × Gladstone Institutes) · Built by Pablo Manjarres
 </p>

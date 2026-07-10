@@ -84,13 +84,31 @@ export default function IntakePage() {
 
       {/* hero */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: 1080, width: '100%', margin: '0 auto', padding: '48px 40px' }}>
-        <div style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.24em', textTransform: 'uppercase', color: 'var(--red)' }}>Built with Claude · Life Sciences</div>
-        <h1 data-tour="intake.hero" style={{ margin: '20px 0 0', font: '900 56px/1.02 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)', maxWidth: 900 }}>
-          Break your own analysis<br />before Reviewer 2 does.
-        </h1>
-        <p style={{ margin: '20px 0 0', maxWidth: 640, font: '400 15.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
-          Drop in the data you analyzed and the analysis you ran. Redline re-runs the load-bearing statistics itself, then marks the false discoveries on your own figures, before they become a paper.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 40, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 520px', minWidth: 0 }}>
+            <div style={{ font: '600 10px/1 var(--mono)', letterSpacing: '.24em', textTransform: 'uppercase', color: 'var(--red)' }}>Built with Claude · Life Sciences</div>
+            <h1 data-tour="intake.hero" style={{ margin: '20px 0 0', font: '900 56px/1.02 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)', maxWidth: 900 }}>
+              Break your own analysis<br />before Reviewer 2 does.
+            </h1>
+            <p style={{ margin: '20px 0 0', maxWidth: 640, font: '400 15.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
+              Drop in the data you analyzed and the analysis you ran. Redline re-runs the load-bearing statistics itself, then marks the false discoveries on your own figures, before they become a paper.
+            </p>
+          </div>
+
+          {/* mascot: the lab critter — Reviewer 2, in a lab coat */}
+          <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+            <img
+              src="/lab-critter.gif"
+              alt="Redline's lab critter mascot — Reviewer 2, in a lab coat, holding a red pen"
+              width={128}
+              height={128}
+              style={{ imageRendering: 'pixelated', width: 128, height: 'auto', filter: 'drop-shadow(0 12px 22px rgba(11,13,18,.14))' }}
+            />
+            <span style={{ font: '500 8.5px/1 var(--mono)', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
+              Reviewer 2, resident
+            </span>
+          </div>
+        </div>
 
         {/* two slabs: the required dataset, and the optional analysis attach points */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 40, alignItems: 'start' }}>
