@@ -65,7 +65,7 @@ cloudrun   dispatch a GCP Cloud Run job        (heavy jobs, isolated)
 endpoint   a runner the scientist controls     (SSH cluster or their own cloud)
 ```
 
-The UI never changes, only the target does. A target that is not yet wired stays disabled and clearly labeled, never a dead control pretending to work.
+The UI never changes, only the target does. A target that is not yet wired stays disabled and clearly labeled until it is.
 
 ```text
 redline/

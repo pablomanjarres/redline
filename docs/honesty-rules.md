@@ -96,16 +96,15 @@ there is no error in it to catch. Copy must never imply otherwise. Their rigor i
 gold standard Redline helps others reach. See `dataset.md` for the full framing. This is
 a hard constraint on every demo script, caption, and report line.
 
-## 6. The configurable-compute honesty rule (never present a dead control as live)
+## 6. The configurable-compute honesty rule (unwired targets stay disabled and labeled)
 
 Where the heavy statistics run is configurable (`fixture`, `local`, `cloudrun`,
 `endpoint`). The default is the fixture, and the default real target is Redline's own
 GCP dispatch. A user-provided endpoint is an optional target.
 
 If a target's environment is not fully wired by demo time, it is **disabled and clearly
-labeled as not yet available**. Never present a non-functional control as working. The
-honest and sufficient message is "configurable, currently pointed at our compute." A dead
-button labeled as live is not.
+labeled as not yet available**. A control only renders live once its target is connected.
+The honest and sufficient message is "configurable, currently pointed at our compute."
 
 - **In the contract:** every `ComputeTarget` exposes `available: boolean`. When its env
   is unwired, `available` is `false`, the app stays on `fixture`, and the control for

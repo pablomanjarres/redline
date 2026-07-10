@@ -111,9 +111,9 @@ These are test-instrumentation and provenance additions. They do not change demo
    roles with Claude and return `{ fields, source: 'bedrock' }`; otherwise fall back to the
    compute target's `inferFields` and return `source: 'fixture'`. The field proposal must be a
    genuine function of the dataset's columns so it adapts across cases A and B.
-5. **Fix the one dead control.** The intake "Upload .h5ad" affordance renders interactive but
-   has no handler when a compute target is available. Either make it real or render it disabled
-   with a plain label. No dead control may be unlabeled.
+5. **The upload control only renders when it works.** On the fixture demo the dataset is already
+   loaded and there is no upload control; a live "Upload .h5ad" file picker appears only when a
+   compute target is connected. No control renders live before its target is wired.
 
 All new fields are OPTIONAL so the fixture path and existing tests stay valid, and the no-em-dash
 voice gate + honesty invariants in `honesty-rules.md` still hold on all new copy.
