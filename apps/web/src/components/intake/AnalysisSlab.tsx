@@ -1,11 +1,18 @@
+'use client';
+
 import { AttachField } from './AttachField';
+import { EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
 
 /**
  * Intake slab 02: the optional attach points. The dataset alone already audits,
  * so both fields here are optional. They let the scientist add the analysis they
  * ran (a notebook or script) and what they concluded (claims or prose), so the
- * extracted claims read in their own words. Both are text, so they feed the model
- * directly and work in every compute mode, fixture included.
+ * extracted claims read in their own words. Both are text, paste or upload, so
+ * they feed the model directly and work in every compute mode, fixture included.
+ *
+ * "Load example" fills both fields with the demo's naive analysis, so a judge can
+ * test the flow without writing one. "Download sample" hands back the same file,
+ * to try the upload path.
  */
 export function AnalysisSlab({
   notebook,
@@ -18,6 +25,25 @@ export function AnalysisSlab({
   onNotebook: (t: string) => void;
   onProse: (t: string) => void;
 }) {
+  function loadExample() {
+    onNotebook(EXAMPLE_NOTEBOOK);
+    onProse(EXAMPLE_PROSE);
+  }
+
+  function downloadSample() {
+    if (typeof window === 'undefined') return;
+    const url = URL.createObjectURL(new Blob([EXAMPLE_NOTEBOOK], { type: 'text/x-python' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = EXAMPLE_FILENAME;
+    // Append before click and defer the revoke, so the download starts across
+    // browsers before the object URL is invalidated.
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
   return (
     <div
       data-tour="intake.analysis"
@@ -43,23 +69,66 @@ export function AnalysisSlab({
           optional
         </span>
       </div>
-      <p style={{ margin: '13px 0 16px', maxWidth: 440, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-2)' }}>
-        Redline can audit the dataset on its own. Add the analysis you ran so the claims read in your own words.
+      <p style={{ margin: '13px 0 12px', maxWidth: 440, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-2)' }}>
+        Redline can audit the dataset on its own. Add the analysis you ran, by paste or upload, so the claims read in your own words.
       </p>
+
+      {/* Judges (and anyone testing) can fill both fields with the demo's naive
+          analysis in one click, or download the same file to try the upload. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '0 0 16px' }}>
+        <button
+          type="button"
+          onClick={loadExample}
+          style={{
+            font: '700 10.5px/1 var(--mono)',
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+            color: 'var(--signal)',
+            background: 'var(--signal-soft)',
+            border: '1px solid var(--signal)',
+            padding: '8px 12px',
+            borderRadius: 7,
+            cursor: 'pointer',
+          }}
+        >
+          Load example
+        </button>
+        <button
+          type="button"
+          onClick={downloadSample}
+          style={{
+            font: '600 10.5px/1 var(--mono)',
+            letterSpacing: '.04em',
+            color: 'var(--ink-4)',
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+          }}
+        >
+          Download sample .py
+        </button>
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <AttachField
           label="Notebook or script"
-          hint="Paste your analysis code so the claims match the tests you actually ran."
+          hint="Paste or upload your analysis code so the claims match the tests you actually ran."
           placeholder="# de_analysis.ipynb, or a script..."
           value={notebook}
           onChange={onNotebook}
+          accept=".ipynb,.py,.r,.txt,.md"
+          maxChars={200_000}
         />
         <AttachField
           label="Claims or prose"
-          hint="Paste an abstract, figure captions, or a plain description of what you found."
+          hint="Paste or upload an abstract, figure captions, or a plain description of what you found."
           placeholder="e.g. IL2RA knockdown significantly upregulates FOXP3 (p < 0.001)..."
           value={prose}
           onChange={onProse}
+          accept=".txt,.md"
+          maxChars={100_000}
         />
       </div>
     </div>
