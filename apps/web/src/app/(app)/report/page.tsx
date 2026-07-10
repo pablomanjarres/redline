@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
+import { CHECK_COUNT } from '@redline/contracts';
 import { useSession } from '@/state/session';
 import { fmt } from '@/lib/format';
 import { ReportRow } from '@/components/report/ReportRow';
@@ -131,13 +133,31 @@ export default function ReportPage() {
             color: 'var(--ink-4)',
           }}
         >
-          No checks have run yet. Confirm the design and run the four checks to populate this report.
+          No checks have run yet. Confirm the design and run all {CHECK_COUNT} checks to populate this report.
         </div>
       )}
 
-      {/* closing note: auditor, not corrector */}
-      <p style={{ margin: '24px 4px 0', font: '400 13px/1.6 var(--sans)', color: 'var(--ink-3)', maxWidth: 660 }}>
-        Redline reports evidence and flags. Except where noted, it does not overwrite your analysis. The rewritten conclusions above are the defensible version of each claim, for you to accept.
+      {/* leave with the fixed pipeline, not only the critique */}
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ font: '700 14px/1.3 var(--sans)', color: 'var(--ink)' }}>Take the corrected analysis with you.</div>
+          <p style={{ margin: '5px 0 0', font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-3)' }}>
+            Every flagged finding comes with a runnable script that reproduces the honest re-analysis. Download the scripts, the
+            notebook, and the README.
+          </p>
+        </div>
+        <Link
+          href="/corrected"
+          style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, font: '700 11px/1 var(--sans)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--surface)', background: 'var(--signal)', padding: '11px 16px', borderRadius: 10, textDecoration: 'none' }}
+        >
+          Corrected analysis →
+        </Link>
+      </div>
+
+      {/* closing note */}
+      <p style={{ margin: '18px 4px 0', font: '400 13px/1.6 var(--sans)', color: 'var(--ink-3)', maxWidth: 660 }}>
+        Everything above is shown, reproducible, and cited. Each flag names the method that fixes it, the corrected code runs, and
+        the preview is the output of that code. Where a claim cannot be rescued, Redline says so and shows no corrected result.
       </p>
     </div>
   );

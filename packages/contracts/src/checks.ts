@@ -1,16 +1,8 @@
 import { z } from 'zod';
 import { Chart, Interval } from './charts.js';
 import { CriticAssessment } from './critic.js';
-import { CheckId, CheckState } from './primitives.js';
-
-export const Citation = z.object({
-  authors: z.string(),
-  year: z.number().int(),
-  venue: z.string(),
-  note: z.string(),
-  url: z.string().url().optional(),
-});
-export type Citation = z.infer<typeof Citation>;
+import { CorrectedCode, PreviewArtifact, Recommendation } from './correction.js';
+import { CheckId, CheckState, Citation } from './primitives.js';
 
 export const StatReadout = z.object({
   label: z.string(),
@@ -67,17 +59,44 @@ export const Narrative = z.object({
 export type Narrative = z.infer<typeof Narrative>;
 
 /**
- * What the UI renders per check: numbers ⊕ narrative, plus the actor-critic layer.
- * `state` is the effective, post-critic verdict (a veto flips a flag to clean).
- * `computeState` preserves the actor's pre-critic verdict for audit, and `critic`
- * carries the second pass so the card can show "confirmed / downgraded / vetoed".
- * Both are optional so fixture and pre-critic payloads still parse.
+ * The correction half of a finding: the runnable script that reproduces the
+ * honest re-analysis, what to do about it, and the corrected result rendered
+ * beside the claimed one. Every field is optional, so a check that cannot
+ * correct, or a compute target that does not run a preview, simply omits it and
+ * the card renders what it has.
  */
-export const CheckResult = ComputeResult.merge(Narrative).extend({
-  computeState: CheckState.optional(),
-  critic: CriticAssessment.optional(),
+export const Correction = z.object({
+  correctedCode: CorrectedCode.optional(),
+  recommendations: z.array(Recommendation).optional(),
+  preview: PreviewArtifact.optional(),
 });
+export type Correction = z.infer<typeof Correction>;
+
+/**
+ * What the UI renders per check: numbers ⊕ narrative, plus the correction half
+ * and the actor-critic layer.
+ *
+ * `Correction.shape` adds the corrected code, recommendations, and preview.
+ * `computeState` preserves the actor's pre-critic verdict for audit while
+ * `state` carries the effective, post-critic one (a veto flips a flag to
+ * clean); `critic` carries the second pass so the card can show
+ * "confirmed / downgraded / vetoed". Every added key is optional, so fixture
+ * and pre-critic/pre-correction payloads still parse.
+ */
+export const CheckResult = ComputeResult.merge(Narrative)
+  .extend(Correction.shape)
+  .extend({
+    computeState: CheckState.optional(),
+    critic: CriticAssessment.optional(),
+  });
 export type CheckResult = z.infer<typeof CheckResult>;
+
+/**
+ * What a ComputeTarget returns: the statistics plus whatever correction the
+ * check could produce. The prose is added afterwards by the reasoning layer.
+ */
+export const EngineResult = ComputeResult.extend(Correction.shape);
+export type EngineResult = z.infer<typeof EngineResult>;
 
 // ── Per-check knob configs ───────────────────────────────────────────────────
 //
@@ -139,22 +158,57 @@ export const Check4Config = z.object({
 });
 export type Check4Config = z.infer<typeof Check4Config>;
 
+/** Check 5 (multiple testing): the q threshold and the adjustment method. */
+export const Check5Config = z.object({
+  alpha: z.number(),
+  method: z.enum(['bh', 'by']),
+});
+export type Check5Config = z.infer<typeof Check5Config>;
+
+/** Check 6 (unmodeled covariate): the effect of interest and the batch to add. */
+export const Check6Config = z.object({
+  interest: z.string(),
+  covariate: z.string(),
+  alpha: z.number(),
+});
+export type Check6Config = z.infer<typeof Check6Config>;
+
+/** Check 7 (resolution choice): the sweep, the criterion, and the chosen value. */
+export const Check7Config = z.object({
+  min: z.number(),
+  max: z.number(),
+  step: z.number(),
+  criterion: z.enum(['silhouette', 'ari']),
+  chosen: z.number(),
+});
+export type Check7Config = z.infer<typeof Check7Config>;
+
+/** Check 8 (test assumptions): the grouping and the test the analysis used. */
+export const Check8Config = z.object({
+  grouping: z.string(),
+  claimedTest: z.enum(['ttest', 'wilcoxon', 'unknown']),
+  alpha: z.number(),
+});
+export type Check8Config = z.infer<typeof Check8Config>;
+
 /** The full knob state, keyed by check id. */
 export const CheckConfigMap = z.object({
   1: Check1Config,
   2: Check2Config,
   3: Check3Config,
   4: Check4Config,
+  5: Check5Config,
+  6: Check6Config,
+  7: Check7Config,
+  8: Check8Config,
 });
 export type CheckConfigMap = z.infer<typeof CheckConfigMap>;
 
-export type CheckConfigFor<Id extends CheckId> = Id extends 1
-  ? Check1Config
-  : Id extends 2
-    ? Check2Config
-    : Id extends 3
-      ? Check3Config
-      : Check4Config;
+/** The config a given check id carries. Derived, so a new check needs no branch. */
+export type CheckConfigFor<Id extends CheckId> = CheckConfigMap[Id];
+
+/** Any check's config, for the seams that take whichever one applies. */
+export type AnyCheckConfig = CheckConfigMap[CheckId];
 
 /** The value shape of one knob, as far as a claim's route param needs to know. */
 export type KnobKind = 'string' | 'number' | 'string[]';
@@ -196,4 +250,8 @@ export const CHECK_KNOBS: Record<CheckId, Record<string, KnobKind>> = {
   2: knobsOf(Check2Config),
   3: knobsOf(Check3Config),
   4: knobsOf(Check4Config),
+  5: knobsOf(Check5Config),
+  6: knobsOf(Check6Config),
+  7: knobsOf(Check7Config),
+  8: knobsOf(Check8Config),
 };

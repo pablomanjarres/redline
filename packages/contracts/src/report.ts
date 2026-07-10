@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CheckResult } from './checks.js';
 import { DatasetMeta } from './dataset.js';
 
-/** The assembled audit — the printable report across all four checks. */
+/** The assembled audit: the printable report across every check that ran. */
 export const AuditReport = z.object({
   dataset: DatasetMeta,
   results: z.array(CheckResult),

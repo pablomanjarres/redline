@@ -17,9 +17,18 @@ const nope = async (): Promise<never> => {
 export function reasonerFrom(
   critique: (req: CriticRequest) => Promise<CriticJudgment>,
 ): Reasoner {
-  // The claim-extraction half of the Reasoner is not exercised by the critic
-  // harness. Refuse rather than stub a plausible answer.
-  return { available: true, backend: 'bedrock', narrate: nope, proposeFields: nope, extractClaims: nope, mapClaim: nope, critique };
+  // The claim-extraction and recommendation halves of the Reasoner are not
+  // exercised by the critic harness. Refuse rather than stub a plausible answer.
+  return {
+    available: true,
+    backend: 'bedrock',
+    narrate: nope,
+    proposeFields: nope,
+    extractClaims: nope,
+    mapClaim: nope,
+    recommend: nope,
+    critique,
+  };
 }
 
 function j(

@@ -4,9 +4,11 @@
  * the Python rigor engine (via its JSON return contract) all speak these types.
  */
 export * from './primitives.js';
+export * from './registry.js';
 export * from './fields.js';
 export * from './charts.js';
 export * from './critic.js';
+export * from './correction.js';
 export * from './checks.js';
 export * from './inventory.js';
 export * from './claims.js';

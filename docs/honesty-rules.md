@@ -5,23 +5,31 @@ A rigor tool that overclaims is the exact thing it exists to catch, so Redline h
 itself to the standard it audits others against. Each rule below says what it means, and
 where in the contracts and the engine it is enforced.
 
-## 1. Auditor, not corrector
+## 1. Correct, and show your work
 
-Redline surfaces and quantifies problems and fragility. It does not hand back one
-authoritative "corrected" result, because for most of these problems the field has no
-agreed-on fix, and overclaiming a correction is a defensibility risk in front of expert
-judges.
+Redline gives advice, corrects the analysis, and previews the corrected result. This
+replaces the old "auditor, not corrector" rule, which limited the assertion of a
+corrected result to Pillar 1. The rule that keeps the new behavior defensible:
+everything Redline asserts, recommends, or corrects is shown, reproducible, and cited.
+The corrected code is downloadable and runs. The preview is the output of that code. The
+recommendation names the method and its limits. No silent black-box authority.
 
-**The single exception is Pillar 1 (pseudoreplication).** Aggregating to pseudobulk and
-re-testing is the accepted-correct method (Squair et al. 2021), so Pillar 1 may assert
-the corrected result. Every other pillar reports evidence and sensitivity, never a
-certified correction.
+- **In the contract:** `CorrectedCode.inline` is the script that reproduces the honest
+  re-analysis. `PreviewArtifact.after` is its output, the corrected result rendered.
+  `Recommendation.citation` names the method behind the fix.
+- **The three-way consistency requirement:** the reported numbers (`Evidence.numbers`),
+  the preview (`PreviewArtifact.after`), and the output of the downloadable code all
+  agree within tolerance. Every emitted script prints, as its last line of stdout,
+  `REDLINE_RESULT {json}` whose keys are exactly the keys of that check's
+  `Evidence.numbers`. The acceptance harness runs the script and diffs its JSON against
+  what Redline reported and against the preview. If the preview and the code disagree,
+  one of them is faked, and the harness fails. The enforcing test is
+  `services/rigor/tests/test_correction.py::test_three_way_consistency_holds_for_every_fired_check`
+  (its `assert_three_way` helper is itself covered by
+  `test_assert_three_way_catches_a_faked_preview`).
 
-- **In the contract:** the `Narrative.corrected` field carries an asserted rewrite only
-  for Check 1. For Checks 2, 3, and 4 it carries a defensible restatement of what can and
-  cannot be concluded, not a new authoritative number.
-- **In copy:** Check 1 may say "the corrected result is." Checks 2, 3, 4 say "the
-  evidence shows" or "this cannot be concluded from this comparison."
+This does not license overclaiming. A method's strength is stated honestly (rule 3), and
+a fix that does not exist is never invented (rule 9).
 
 ## 2. Never cry wolf
 
@@ -40,18 +48,30 @@ who points Redline at the authors' rigorous analysis must see it correctly repor
   fraction is shown as a good stat, not a bad one. Do not soften a clean verdict into a
   hedge, and do not invent a flag to fill the panel.
 
-## 3. Pillar 2 is evidence, not a certified FDR correction
+## 3. Check 2 is evidence, not a certified FDR correction. Check 5 is a real correction.
 
-Count splitting via Poisson thinning is a simple, defensible method, but it does not
-fully control the false discovery rate in the most severe cases, and data thinning has
-documented real-world limitations. Frame Pillar 2's output as evidence ("this many
-markers survive a valid held-out test"), never as a certified correction. Name ClusterDE
-as the stronger method on the roadmap.
+Two checks touch the false discovery rate, and they are not the same thing. Do not
+conflate them.
 
-- **In the contract:** `GroupsChart` reports `discAUC` and `holdAUC` and a surviving
-  marker count. It does not report a corrected FDR or a corrected p-value.
-- **In copy:** "N of 4 markers survive a held-out test" is allowed. "The FDR-corrected
-  marker set is" is not. Always cite the stronger method by name.
+Check 2 (double dipping) uses count splitting via Poisson thinning, a simple, defensible
+method that does not fully control the false discovery rate in the most severe cases, and
+data thinning has documented real-world limitations. Frame Check 2's output as evidence
+("this many markers survive a valid held-out test"), never as a certified correction.
+Name ClusterDE as the stronger method on the roadmap.
+
+Check 5 (multiple testing) IS a Benjamini-Hochberg correction. It applies BH adjustment
+to a set of raw p-values and reports how many hits survive FDR control. It may be
+described as a correction, because it is one. Its limit travels with it (rule 10): BH
+controls the false discovery rate, not the family-wise error rate.
+
+- **In the contract:** Check 2's `GroupsChart` reports `discAUC`, `holdAUC`, and a
+  surviving marker count. It does not report a corrected FDR or a corrected p-value. Check
+  5's `FdrChart` reports `rawHits`, `adjustedHits`, the `method` (`bh` or `by`), and per
+  gene `q` values with a `survives` flag.
+- **In copy:** for Check 2, "N of 4 markers survive a held-out test" is allowed, "the
+  FDR-corrected marker set is" is not, and always cite the stronger method by name. For
+  Check 5, "N of M raw hits survive Benjamini-Hochberg control at q < alpha" is allowed,
+  because that is what the check computes.
 
 ## 4. The grouping variable is configurable, never hardcoded to "cell type"
 
@@ -121,15 +141,51 @@ producing numbers. On the Marson scenario, resolving the unit to a two-level
 - **In copy:** "no valid test is possible" and what to do about it (assign a field with
   replicate units, or collect more), never a fabricated statistic.
 
+## 9. No fabricated fixes
+
+When there is no valid fix (a full confound, n=1, an unsalvageable design), Redline says
+so plainly, in the finding, in the recommendation, and in the preview. An honest "this
+cannot be fixed from this data" is worth more than a fake correction. Redline never
+invents a fix that does not exist.
+
+- **Enforced structurally:** `PreviewArtifact` (Zod `.superRefine`, and the Python
+  `__post_init__` mirror) refuses to carry an `after` artifact when `unsalvageable` is
+  true. A fabricated fix is a parse error, not a review comment. The same guard sits on
+  `Evidence` in the Python engine: an unsalvageable finding with a `corrected_artifact`
+  raises before it can be serialized.
+- **Feasibility is deterministic.** `Recommendation.feasibility` is decided by the engine,
+  never by the model. The reasoning layer's honesty backstop overwrites whatever the model
+  returned against the engine's verdict, and a model that proposes a statistical fix in an
+  unsalvageable slot is treated as unavailable, so the curated copy wins.
+- **Concrete case:** Check 1 resolved to a two-level `guide_batch` gives n=1 per group.
+  No valid differential expression exists by any method. The state is `hard_stop`, the
+  feasibility is `needs_new_data` or `unsalvageable`, and no corrected result is shown
+  anywhere. Check 4 with a fully collinear condition and lane (Cramer's V = 1.00) is
+  `flag_only` and `unsalvageable`: the effect is not identifiable, and Redline shows no
+  corrected volcano.
+
+## 10. A method's limits travel with its result
+
+A known limitation rides on the corrected result (`PreviewArtifact.caveat`), not only on
+the flag. The count-split caveat, the "BH controls the false discovery rate and not the
+family-wise error rate" caveat, and any other documented limit are carried beside the
+`after` artifact so a reader who looks only at the corrected figure still sees the limit.
+
+- **In the contract:** `PreviewArtifact.caveat` and `Recommendation` prose both carry the
+  limit. `Evidence.caveat` is where the module sets it, and it flows through `preview`
+  unchanged.
+- **In copy:** state the limit in the same breath as the corrected number, never as a
+  detached footnote that a reader can miss.
+
 ## Intake and claim extraction (the front door)
 
-Rules 9 through 14 govern the front door: how a claim gets into the system. Full detail
+Rules 11 through 16 govern the front door: how a claim gets into the system. Full detail
 is in `intake-and-claims.md`. The deterministic enforcement point for all of them is
 `enforceClaimHonesty` in `packages/contracts/src/claims.ts`, the pure gate every model
 output passes through before it reaches the user or the Workbench. A model call proposes
 claims; this gate has the last word.
 
-## 9. Never fabricate a claim to fill the list
+## 11. Never fabricate a claim to fill the list
 
 Extraction reports the claims the analysis actually makes. When there are none it says so
 plainly and offers manual entry. It does not invent a claim to have something to audit,
@@ -142,7 +198,7 @@ and it does not pad a short list.
   zero claims stays a model result with an empty list; it is never topped up with curated
   claims.
 
-## 10. An out-of-scope claim is labeled and carries zero checks
+## 12. An out-of-scope claim is labeled and carries zero checks
 
 A claim Redline cannot audit is listed, clearly marked outside scope, and never silently
 audited as if it were in scope.
@@ -153,7 +209,7 @@ audited as if it were in scope.
 - **In the UI:** out-of-scope claims sit in their own labeled group with a per-claim
   reason, and never carry a check chip.
 
-## 11. Extraction is a real model call that adapts to the data
+## 13. Extraction is a real model call that adapts to the data
 
 The extraction agent reads the actual inventory and proposes claims that reference the
 real genes, clusters, and groupings present. It is a real Claude call, never a template
@@ -166,7 +222,7 @@ that returns the same list regardless of input.
   faked. The generality check in `intake-and-claims.md` (case A versus case B, disjoint
   genes and non-identical claims) is what proves this. It is a test, not a suggestion.
 
-## 12. Surface uncertainty, never resolve it silently
+## 14. Surface uncertainty, never resolve it silently
 
 A wrong claim routed to a check produces a confident wrong audit, so uncertainty goes to
 the user. Low confidence and ambiguous routing are shown, not smoothed over.
@@ -179,7 +235,7 @@ the user. Low confidence and ambiguous routing are shown, not smoothed over.
   amber note when routing is ambiguous, so the user's attention lands on the uncertain
   claims first.
 
-## 13. A check with no routed claim renders no verdict
+## 15. A check with no routed claim renders no verdict
 
 The Workbench audits only the claims the user ratified. A check that no confirmed claim
 routes to has nothing to test, and it says so instead of showing a verdict.
@@ -190,7 +246,7 @@ routes to has nothing to test, and it says so instead of showing a verdict.
   this check"), and the rail keeps it locked so there is no in-app path to run it. It
   never renders a manufactured verdict.
 
-## 14. A curated fallback list is always labeled as such
+## 16. A curated fallback list is always labeled as such
 
 When no model backend is configured, Redline shows a curated reference list for the
 built-in scenario so the app still renders. That list is always labeled and is never
@@ -206,7 +262,8 @@ passed off as a live reading.
 ## How to use this doc
 
 Before you write any user-facing string (a reasoning line, a report sentence, a headline,
-a caption), check it against these rules. Before you wire any control, check rule 6.
-Before you show a claim, check rules 9 through 14. Before you script any demo beat, check
-rule 5. If a change would make Redline claim more than it can defend, the change is wrong,
-not the rule.
+a caption), check it against these sixteen rules. Before you assert or preview a
+correction, check rules 1, 9, and 10. Before you wire any control, check rule 6. Before you
+show a claim, check rules 11 through 16. Before you script any demo beat, check rule 5. If
+a change would make Redline claim more than it can defend, the change is wrong, not the
+rule.

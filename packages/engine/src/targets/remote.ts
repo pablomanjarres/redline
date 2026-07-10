@@ -1,4 +1,4 @@
-import { ComputeResult, FieldSpec, DatasetInventory } from '@redline/contracts';
+import { EngineResult, FieldSpec, DatasetInventory, PreviewArtifact } from '@redline/contracts';
 import type { ScenarioId } from '@redline/contracts';
 import type { ComputeInput, ComputeTarget } from '../compute-target.js';
 
@@ -45,7 +45,7 @@ export class RemoteTarget implements ComputeTarget {
     return FieldSpec.array().parse(payload.fields);
   }
 
-  async computeCheck(input: ComputeInput): Promise<ComputeResult> {
+  async computeCheck(input: ComputeInput): Promise<EngineResult> {
     const raw = await this.call({
       op: 'check',
       scenarioId: input.scenarioId,
@@ -53,7 +53,26 @@ export class RemoteTarget implements ComputeTarget {
       config: input.config,
       fields: input.fields,
     });
-    return ComputeResult.parse(raw);
+    return EngineResult.parse(raw);
+  }
+
+  /**
+   * The heavier fix-and-preview render. POSTs `{op:'preview', ...}` and parses a
+   * PreviewArtifact, or null when the engine returns none. A target that is not
+   * wired reports available:false and never runs, so a dead control is never
+   * shown as live. The honesty refinement travels with the parse: an
+   * unsalvageable preview that carries an `after` chart fails here.
+   */
+  async preview(input: ComputeInput): Promise<PreviewArtifact | null> {
+    const raw = await this.call({
+      op: 'preview',
+      scenarioId: input.scenarioId,
+      checkId: input.checkId,
+      config: input.config,
+      fields: input.fields,
+    });
+    if (raw === null || raw === undefined) return null;
+    return PreviewArtifact.parse(raw);
   }
 
   private async call(payload: unknown): Promise<unknown> {

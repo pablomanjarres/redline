@@ -1,4 +1,6 @@
+import { CHECK_REGISTRY } from '@redline/contracts';
 import type {
+  CheckId,
   CheckState,
   ClaimExtractionRequest,
   ClaimMappingRequest,
@@ -6,6 +8,7 @@ import type {
   FieldProposalRequest,
   FieldSpec,
   NarrativeRequest,
+  RecommendationRequest,
 } from '@redline/contracts';
 import { FENCE_RULE, fenced, fencedBlock, fencedList } from './fence.js';
 
@@ -39,9 +42,10 @@ export const SYSTEM_PROMPT = [
   '             cannot run or cannot be settled from the data at hand.',
   '',
   'Hard rules:',
-  '1. Auditor, not corrector. Only pillar 1 (pseudoreplication) asserts a corrected',
-  '   numeric result. For pillars 2, 3, and 4, "corrected" states what the evidence',
-  '   does and does not support. Never invent an effect size for pillars 2, 3, or 4.',
+  '1. Everything you assert, recommend, or correct is shown, reproducible, and cited.',
+  '   The corrected code is downloadable and runs. The preview is the output of that code.',
+  '   Name the method and its limits. When there is no valid fix, say so plainly; never',
+  '   invent one.',
   '2. Never cry wolf. When the state is "clean", set error to null and original to null,',
   '   and write "corrected" as a confident, specific statement that the check passed.',
   '3. Name the real failure mode and cite a real fixing method from the reference list.',
@@ -52,41 +56,60 @@ export const SYSTEM_PROMPT = [
   '   interval bounds and a repetition count, for example holdAUCMedian with holdAUCCILow,',
   '   holdAUCCIHigh over splitReps splits), cite the median with its 95 percent interval and',
   '   the number of repetitions, so the reader sees the spread and not one lucky run.',
+  '6. Check 2 (double dipping) is evidence about robustness, not a certified FDR',
+  '   correction; name ClusterDE as the stronger, purpose-built method. Check 5 (multiple',
+  '   testing) IS a Benjamini-Hochberg correction and may be described as one.',
   '',
   'Reference list (use the entry that matches the check):',
-  '- Pillar 1, pseudoreplication and pseudobulk aggregation: Squair et al. 2021,',
+  '- Check 1, pseudoreplication and pseudobulk aggregation: Squair et al. 2021,',
   '  Nature Communications, "Confronting false discoveries in single-cell differential',
   '  expression". https://www.nature.com/articles/s41467-021-25960-2',
-  '- Pillar 2, selective inference after clustering (double dipping): Neufeld et al. 2024,',
+  '- Check 2, selective inference after clustering (double dipping): Neufeld et al. 2024,',
   '  Biostatistics, count splitting; and Gao, Bien and Witten 2023, data thinning.',
   '  Name ClusterDE (Song et al. 2023) as the stronger, purpose-built method.',
   '  https://doi.org/10.1093/biostatistics/kxac047',
-  '- Pillar 3, cluster stability across resolution: Luecken and Theis 2019, Molecular',
+  '- Check 3, cluster stability across resolution: Luecken and Theis 2019, Molecular',
   '  Systems Biology, "Current best practices in single-cell RNA-seq analysis: a tutorial".',
   '  https://www.embopress.org/doi/full/10.15252/msb.20188746',
-  '- Pillar 4, technical confounding and batch effects: Hicks et al. 2018, Biostatistics,',
+  '- Check 4, technical confounding and batch effects: Hicks et al. 2018, Biostatistics,',
   '  "Missing data and technical variability in single-cell RNA-sequencing experiments".',
   '  https://doi.org/10.1093/biostatistics/kxx053',
+  '- Check 5, multiple testing across many genes: Benjamini and Hochberg 1995, Journal of',
+  '  the Royal Statistical Society Series B, "Controlling the false discovery rate: a',
+  '  practical and powerful approach to multiple testing". This is a real correction and',
+  '  may be described as one. https://doi.org/10.1111/j.2517-6161.1995.tb02031.x',
+  '- Check 6, a separable technical covariate left out of the model: Hicks et al. 2018,',
+  '  Biostatistics, "Missing data and technical variability in single-cell RNA-sequencing',
+  '  experiments". https://doi.org/10.1093/biostatistics/kxx053',
+  '- Check 7, justifying a clustering resolution with a stability criterion: Luecken and',
+  '  Theis 2019, Molecular Systems Biology, "Current best practices in single-cell RNA-seq',
+  '  analysis: a tutorial". https://www.embopress.org/doi/full/10.15252/msb.20188746',
+  '- Check 8, count-aware differential expression and test assumptions: Soneson and',
+  '  Robinson 2018, Nature Methods, "Bias, robustness and scalability in single-cell',
+  '  differential expression analysis". https://doi.org/10.1038/nmeth.4612',
 ].join('\n');
 
 interface CheckGuidance {
-  title: string;
   instruction: string;
 }
 
-const CHECK_GUIDANCE: Record<1 | 2 | 3 | 4, CheckGuidance> = {
+/**
+ * Per-check narration guidance. The title is derived from `CHECK_REGISTRY`
+ * (see `checkTitle`) so the two never drift; this map carries only the
+ * instruction. The record is keyed by every `CheckId`, so a new check is a
+ * compile error until it has an entry here.
+ */
+const CHECK_GUIDANCE: Record<CheckId, CheckGuidance> = {
   1: {
-    title: 'Pseudoreplication (unit of analysis)',
     instruction: [
       'The naive analysis tested cells as if they were independent biological replicates.',
       'The real unit of replication is the biological replicate named in the evidence.',
-      'Name the failure mode Pseudoreplication. This is the one pillar that asserts a',
-      'corrected result: state the pseudobulk p-value across the true replicates and what',
-      'it means for the claim. Cite Squair et al. 2021.',
+      'Name the failure mode Pseudoreplication. State the pseudobulk p-value across the',
+      'true replicates and what it means for the claim. The corrected script reproduces',
+      'this re-test and the preview is its output. Cite Squair et al. 2021.',
     ].join(' '),
   },
   2: {
-    title: 'Marker fragility (selective inference)',
     instruction: [
       'The markers were discovered and tested on the same cells, which inflates their',
       'separation. Report how many of the claimed markers survive a held-out test, using',
@@ -100,7 +123,6 @@ const CHECK_GUIDANCE: Record<1 | 2 | 3 | 4, CheckGuidance> = {
     ].join(' '),
   },
   3: {
-    title: 'Cluster stability across resolution',
     instruction: [
       'The cluster was tracked across a Leiden resolution sweep. If it appears only inside',
       'a narrow resolution window it is a resolution artifact and the claim of a distinct',
@@ -112,7 +134,6 @@ const CHECK_GUIDANCE: Record<1 | 2 | 3 | 4, CheckGuidance> = {
     ].join(' '),
   },
   4: {
-    title: 'Technical confounding',
     instruction: [
       'The comparison of interest is confounded with a technical variable. Use the',
       "Cramer's V in the evidence: at V near 1.00 the biological and technical effects",
@@ -120,7 +141,48 @@ const CHECK_GUIDANCE: Record<1 | 2 | 3 | 4, CheckGuidance> = {
       'assert a corrected differential-expression result. Cite Hicks et al. 2018.',
     ].join(' '),
   },
+  5: {
+    instruction: [
+      'The analysis claimed significance on raw p-values across many gene tests. Apply the',
+      'Benjamini-Hochberg procedure and report how many tests survive at the q threshold',
+      'in the evidence. This IS a real FDR correction and may be described as one: the',
+      'corrected script runs the procedure and the preview is its output. State how many',
+      'of the original hits remain after correction. Cite Benjamini and Hochberg 1995.',
+    ].join(' '),
+  },
+  6: {
+    instruction: [
+      'A known technical covariate was left out of the model, and it is separable from the',
+      'effect of interest, so it can be adjusted for. Report how the effect changes once',
+      'the covariate enters the model, using the numbers in the evidence. The corrected',
+      'script refits with the covariate and the preview is its output. If the covariate is',
+      'not separable from the effect, say the model cannot be corrected on this data.',
+      'Cite Hicks et al. 2018.',
+    ].join(' '),
+  },
+  7: {
+    instruction: [
+      'A cluster count was chosen without a stability criterion. Report what the criterion',
+      'in the evidence (silhouette or ARI) supports across the resolution sweep, and',
+      'whether the chosen resolution matches it. Describe the supported resolution and',
+      'what the chosen one implies. Do not assert a new biological result. Cite Luecken',
+      'and Theis 2019.',
+    ].join(' '),
+  },
+  8: {
+    instruction: [
+      'The analysis used a test whose assumptions the data violate. Say which assumption',
+      'fails and rerun with a count-aware test, reporting how the p-value changes using',
+      'the numbers in the evidence. The corrected script runs the appropriate test and',
+      'the preview is its output. Cite Soneson and Robinson 2018.',
+    ].join(' '),
+  },
 };
+
+/** The finding title, derived from the registry so guidance and rail never drift. */
+function checkTitle(id: CheckId): string {
+  return CHECK_REGISTRY[id].name;
+}
 
 const STATE_GUIDANCE: Record<CheckState, string> = {
   flagged: [
@@ -155,7 +217,7 @@ export function buildNarrativePrompt(req: NarrativeRequest): PromptPair {
   const guide = CHECK_GUIDANCE[req.checkId];
   const stateGuide = STATE_GUIDANCE[req.state];
   const user = [
-    `Check ${req.checkId}: ${guide.title}`,
+    `Check ${req.checkId}: ${checkTitle(req.checkId)}`,
     `Dataset: ${req.datasetTitle}`,
     `Verdict state: ${req.state}`,
     `Claim under audit: "${req.claim}"`,
@@ -170,6 +232,71 @@ export function buildNarrativePrompt(req: NarrativeRequest): PromptPair {
     'Return the JSON object now.',
   ].join('\n');
   return { system: SYSTEM_PROMPT, user };
+}
+
+/**
+ * The recommend-step system prompt. The engine has already decided every
+ * feasibility. The model writes the prose for each slot and echoes the
+ * feasibility back unchanged. On an unsalvageable slot it must give the honest
+ * no-fix verdict and is forbidden from proposing a statistical fix.
+ */
+export const RECOMMEND_SYSTEM_PROMPT = [
+  'You are Redline, recommending the concrete next actions for one audited finding.',
+  'The compute layer has decided the finding. For each recommendation slot the engine',
+  'has already decided the feasibility: whether the scientist can fix it now at their',
+  'desk, needs new data from the bench, or cannot rescue the claim from this data at all.',
+  'You write the prose. You do not decide feasibility.',
+  '',
+  'Return ONLY a single JSON object. No text around it, no markdown fences:',
+  '  { "recommendations": [ { action, rationale, changes, feasibility, citation? } ] }',
+  'Each recommendation:',
+  '  action:      one imperative step. It MUST name the resolved field names of THIS',
+  '               dataset given below. No generic boilerplate.',
+  '  rationale:   why, tied to this finding\'s actual numbers from the evidence.',
+  '  changes:     what doing it would change about the result.',
+  '  feasibility: one of "fixable_now", "needs_new_data", "unsalvageable". Echo the',
+  '               feasibility given for that slot, unchanged.',
+  '  citation:    optional object { authors, year, venue, note, url } naming the method.',
+  '',
+  'Hard rules:',
+  '1. Return exactly as many recommendations as there are feasibility slots below, one',
+  '   per slot, in that same order. Echo each feasibility value unchanged.',
+  '2. For a "fixable_now" or "needs_new_data" slot, name the method and its limits, and',
+  '   name the resolved fields the step touches.',
+  '3. For an "unsalvageable" slot, give the honest no-fix verdict: name why the claim',
+  '   cannot be rescued from this data and what study design would be needed to answer it.',
+  '   Do NOT propose a statistical fix in that slot. No "add X as a covariate", no',
+  '   aggregating, adjusting, re-running, or refitting. There is no valid fix; say so.',
+  '4. Style: plain, direct, concrete English. No em dashes. No "not X, but Y" phrasing.',
+  '   Report the number and say what it means.',
+].join('\n');
+
+/** Build the strict recommend prompt: one slot per engine-decided feasibility. */
+export function buildRecommendationPrompt(req: RecommendationRequest): PromptPair {
+  const slots = req.feasibilities
+    .map((feasibility, i) => `  slot ${i + 1}: feasibility = ${feasibility}`)
+    .join('\n');
+  const fields =
+    req.fields.length > 0 ? req.fields.join(', ') : '(no resolved fields provided)';
+  const method = `${req.method.authors} ${req.method.year}, ${req.method.venue}`;
+  const user = [
+    `Check ${req.checkId}: ${checkTitle(req.checkId)}`,
+    `Dataset: ${req.datasetTitle}`,
+    `Verdict state: ${req.state}`,
+    `Claim under audit: "${req.claim}"`,
+    `Resolved fields you may name: ${fields}`,
+    `Method for this finding: ${method}`,
+    '',
+    'Evidence:',
+    formatEvidence(req.evidence),
+    '',
+    `Return exactly ${req.feasibilities.length} recommendation(s), one per slot, in order.`,
+    'Echo each slot feasibility unchanged:',
+    slots,
+    '',
+    'Return the JSON object now.',
+  ].join('\n');
+  return { system: RECOMMEND_SYSTEM_PROMPT, user };
 }
 
 /**
@@ -262,8 +389,8 @@ export const CLAIMS_SYSTEM_PROMPT = [
   '                the machine-checkable evidence, so populate it faithfully: a claim',
   '                that cites an obs column or uns key not in the inventory is rejected,',
   '                and a claim that cites a gene not in the inventory is demoted.',
-  '  checks:       an array of routes, each { "check": 1|2|3|4, "params": { ... } }.',
-  '                Empty for an out-of-scope claim.',
+  '  checks:       an array of routes, each { "check": 1 through 8, "params": { ... } }.',
+  '                Route by the guidance above; empty for an out-of-scope claim.',
   '  confidence:   one of "high", "medium", "low". How sure you are you extracted and',
   '                routed the claim correctly.',
   '  status:       "proposed" for a claim you extracted, or "out_of_scope" for a claim',
@@ -279,11 +406,16 @@ export const CLAIMS_SYSTEM_PROMPT = [
   '- From a notebook or prose, take the claims stated in the scientist own words.',
   '',
   'Route each claim to the checks that can test it. Routing is many-to-many, so one',
-  'claim can trigger several checks:',
+  'claim can trigger several checks. The founding checks:',
   '  significance claim about a difference between groups -> Check 1, and if between-condition -> Check 4',
   '  cluster/state defined by markers -> Check 2 and Check 3',
   '  a distinct population exists -> Check 3, and Check 2 if markers are claimed for it',
   '  a between-condition comparison -> Check 4, and Check 1 if a significance is asserted',
+  'The rigor checks, which sharpen a differential-expression or clustering claim:',
+  '  a significance claim drawn from testing many genes -> Check 5 (was the p-value FDR-corrected?)',
+  '  a between-condition significance claim with a known batch or covariate -> Check 6 (is it in the model?)',
+  '  a cluster count or resolution chosen without a stated criterion -> Check 7 (was the resolution justified?)',
+  '  a significance claim from a named test (t-test, wilcoxon) on counts -> Check 8 (do the data meet its assumptions?)',
   '',
   'Extract the specifics each routed check needs, in the route params. Use these keys',
   'so the specifics are machine-checkable:',

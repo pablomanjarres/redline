@@ -88,12 +88,22 @@ const DATASET: Record<'A' | 'B' | 'C', string> = {
 // 4 donors x 280 cells, Case C is 6 donors x 190; the held-out half is about half.
 const HELDOUT: Record<'A' | 'B' | 'C', number> = { A: 560, B: 570, C: 570 };
 
+/**
+ * This harness grades the four founding pillars, the checks with a hand-built
+ * oracle. The rigor checks (5 to 8) the correction layer added have their own
+ * coverage; a case here would need an oracle this file does not carry. The key
+ * type is derived from METHOD so the compiler holds the harness to the ids it
+ * actually has methods for, rather than every registered CheckId.
+ */
 const METHOD = {
   1: 'pseudobulk aggregation to the replicate unit, Welch t on per-unit means',
   2: 'Poisson count-split, held-out marker AUC',
   3: 'Leiden resolution sweep, cluster persistence across settings',
   4: "design-matrix rank and Cramer's V on the resolved columns",
 } as const;
+
+/** The check ids this harness builds oracle cases for. */
+type CoreCheckId = keyof typeof METHOD;
 
 /** Semantic evidence, as the oracle reports it. Rewritten below into the shape
  *  the app actually sends. */
@@ -114,7 +124,7 @@ const pval = (v: unknown): string => {
  * `markersHolding`), none of which the route ever sends. A green run on a shape
  * production never builds proves nothing about production.
  */
-function productionEvidence(checkId: CheckId, e: RawEvidence): CriticRequest['evidence'] {
+function productionEvidence(checkId: CoreCheckId, e: RawEvidence): CriticRequest['evidence'] {
   const out: Record<string, string | number | boolean> = {};
   if (checkId === 1) {
     out['Naive p'] = pval(e.naiveP);
@@ -140,7 +150,7 @@ function productionEvidence(checkId: CheckId, e: RawEvidence): CriticRequest['ev
   return out as CriticRequest['evidence'];
 }
 
-function req(caseId: 'A' | 'B' | 'C', checkId: CheckId, claim: string, evidence: RawEvidence): CriticRequest {
+function req(caseId: 'A' | 'B' | 'C', checkId: CoreCheckId, claim: string, evidence: RawEvidence): CriticRequest {
   return {
     checkId,
     computeState: 'flagged',

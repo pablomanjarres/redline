@@ -18,10 +18,13 @@
  * and are marked `@deprecated`. New callers use `runsFrom` + `configForRun`.
  */
 
-import { CHECK_KNOBS } from '@redline/contracts';
+import { CHECK_KNOBS, CHECK_IDS } from '@redline/contracts';
 import type { CheckConfigMap, CheckId, ExtractedClaim, KnobKind } from '@redline/contracts';
 
-const IDS: CheckId[] = [1, 2, 3, 4];
+// Every registered check, so a claim routes to any real check the engine runs.
+// Pinning this to [1,2,3,4] (its value before the rigor checks shipped) made the
+// routing layer silently drop routes to checks 5-8 the engine fully implements.
+const IDS: readonly CheckId[] = CHECK_IDS;
 const VALID_IDS: ReadonlySet<CheckId> = new Set<CheckId>(IDS);
 
 /** The claims that still count: everything the user has not removed. */
@@ -65,7 +68,7 @@ export function runKeyOf(claimId: string, checkId: CheckId): RunKey {
  * Every (active claim, valid route) as its own run. Active means the claim is
  * not `removed`; an `out_of_scope` claim carries `checks: []` by contract
  * (enforceClaimHonesty), so it contributes zero runs with no special-casing
- * here. A route to an id outside 1|2|3|4 is ignored.
+ * here. A route to an id no check declares is ignored.
  *
  * Order is deterministic: claims in their list order, and within a claim its
  * routes in ascending check id. enforceClaimHonesty de-duplicates a claim's
@@ -100,7 +103,7 @@ export function runsFrom(claims: ExtractedClaim[] | null): RunDescriptor[] {
 
 /**
  * The set of checks a confirmed, non-removed claim routes to, in ascending id
- * order. A route to an id outside 1|2|3|4 is ignored. This is the list the
+ * order. A route to an id no check declares is ignored. This is the list the
  * Workbench runs; a check absent from it renders no verdict (honesty rule 13).
  *
  * @param claims The current claim list (null before extraction).

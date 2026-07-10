@@ -12,23 +12,31 @@ clean for the stdio protocol) lives in ``redline.job_runner`` so there is one
 source of truth and the Cloud Run image never needs the MCP SDK.
 
 Tools:
-  redline_inspect                 .h5ad -> DatasetInventory JSON (intake)
-  redline_resolve_fields          obs columns -> FieldSpec[] JSON
-  redline_check_pseudoreplication pillar 1
-  redline_check_double_dipping    pillar 2
-  redline_check_fragility         pillar 3
-  redline_check_confounding       pillar 4
+  redline_inspect                     .h5ad -> DatasetInventory JSON (intake)
+  redline_resolve_fields              obs columns -> FieldSpec[] JSON
+  redline_check_pseudoreplication     check 1
+  redline_check_double_dipping        check 2
+  redline_check_fragility             check 3
+  redline_check_confounding           check 4
+  redline_check_multiple_testing      check 5
+  redline_check_unmodeled_covariate   check 6
+  redline_check_resolution_choice     check 7
+  redline_check_test_assumptions      check 8
+  redline_corrected_code              the runnable corrected script for a check
+  redline_audit                       the whole registry-driven audit
 
 Each check tool also accepts an optional ``fields`` argument (a confirmed
 FieldSpec[]). When it is omitted the tool resolves fields from the file first,
-so a caller can run a check with only a path and a config.
+so a caller can run a check with only a path and a config. Each check tool
+returns the flat ``EngineResult``: the ``ComputeResult`` keys plus, when the
+check produced them, ``correctedCode``, ``recommendations``, and ``preview``.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from redline.job_runner import compute_result, inspect_dataset, resolve_fields, to_json
+from redline.job_runner import compute_result, inspect_dataset, resolve_fields, run_audit, to_json
 
 _INSTRUCTIONS = (
     "Redline is a statistical-rigor auditor for single-cell RNA-seq. Point each "
@@ -123,6 +131,85 @@ def _build_server():
         with a technical variable is not separable from it. Returns a ComputeResult.
         """
         return _check_result(4, h5ad, config, fields)
+
+    @server.tool()
+    def redline_check_multiple_testing(
+        h5ad: str, config: dict[str, Any], fields: list[dict[str, Any]] | None = None
+    ) -> str:
+        """Check 5 (multiple testing): re-test the differential-expression claim
+        across every gene and apply a real Benjamini-Hochberg (``config.method``:
+        ``bh`` or ``by``) correction at ``config.alpha``, then report how many raw
+        hits survive the adjusted threshold. Unlike Check 2 (a held-out evidence
+        check), this is a certified FDR correction. Returns an EngineResult.
+        """
+        return _check_result(5, h5ad, config, fields)
+
+    @server.tool()
+    def redline_check_unmodeled_covariate(
+        h5ad: str, config: dict[str, Any], fields: list[dict[str, Any]] | None = None
+    ) -> str:
+        """Check 6 (unmodeled covariate): refit the effect of interest
+        (``config.interest``) with the batch variable (``config.covariate``) added
+        to the model, when the two are separable, and report whether the claim
+        survives once the known structure is modeled. Returns an EngineResult.
+        """
+        return _check_result(6, h5ad, config, fields)
+
+    @server.tool()
+    def redline_check_resolution_choice(
+        h5ad: str, config: dict[str, Any], fields: list[dict[str, Any]] | None = None
+    ) -> str:
+        """Check 7 (resolution choice): sweep clustering resolution from
+        ``config.min`` to ``config.max`` in ``config.step`` increments, score each
+        by ``config.criterion`` (``silhouette`` or ``ari``), and report whether the
+        chosen resolution (``config.chosen``) is the one the criterion supports.
+        Returns an EngineResult.
+        """
+        return _check_result(7, h5ad, config, fields)
+
+    @server.tool()
+    def redline_check_test_assumptions(
+        h5ad: str, config: dict[str, Any], fields: list[dict[str, Any]] | None = None
+    ) -> str:
+        """Check 8 (test assumptions): check whether the data meet the assumptions
+        of the test the analysis used (``config.claimedTest``: ``ttest``,
+        ``wilcoxon``, or ``unknown``) for the grouping in ``config.grouping``, and
+        report the assumption-respecting result at ``config.alpha``. Returns an
+        EngineResult.
+        """
+        return _check_result(8, h5ad, config, fields)
+
+    @server.tool()
+    def redline_corrected_code(
+        h5ad: str,
+        check_id: int,
+        config: dict[str, Any],
+        fields: list[dict[str, Any]] | None = None,
+    ) -> str:
+        """The runnable corrected script for one check: a ``CorrectedCode`` object
+        (``filename``, ``inline``, ``entrypoint``, ``params``, ``language``) that
+        reproduces the honest re-analysis. The script takes ``--h5ad PATH`` and, as
+        its last line of stdout, prints ``REDLINE_RESULT`` with the check's
+        numbers, so it is its own oracle. A clean verdict has nothing to correct
+        and returns a short message instead.
+        """
+        result = compute_result(int(check_id), h5ad, config, fields)
+        corrected = result.get("correctedCode")
+        if corrected is None:
+            return to_json(
+                {"message": "This check produced no corrected code (a clean verdict has nothing to correct)."}
+            )
+        return to_json(corrected)
+
+    @server.tool()
+    def redline_audit(h5ad: str, analysis: dict[str, Any] | None = None) -> str:
+        """Run the whole registry-driven audit: the foundation step, every check
+        that applies to the analysis, and an assembled summary. ``analysis`` is an
+        optional dict of hints (``gene``, ``markers``, ``target_group``, ``track``,
+        or a per-check ``config`` map). Returns ``{fields, results, report}`` JSON;
+        checks that do not apply are simply absent from ``results``.
+        """
+        return to_json(run_audit(h5ad, analysis))
 
     return server
 

@@ -107,6 +107,56 @@ const CRITIC_REMIT: Record<CheckId, CriticRemit> = {
       "variables are in fact separable (low Cramer's V, full-rank design).",
     ].join(' '),
   },
+  5: {
+    title: 'Multiple testing',
+    remit: [
+      'The actor flagged significance claimed on raw p-values across many tests, where a',
+      'false-discovery correction changes the call. The knob names the method (bh for',
+      'Benjamini-Hochberg, by for Benjamini-Yekutieli) and an alpha. This is a certified FDR',
+      'correction, unlike Check 2. Weigh how many discoveries survive the correction. CONFIRM',
+      'when a claim significant on raw p-values falls above the adjusted threshold, so the',
+      'discovery does not survive FDR control at the stated alpha. DOWNGRADE when the claim',
+      'sits near the boundary, where the ranking of a few genes decides it. VETO when the',
+      'result is already reported on adjusted p-values, or survives the correction unchanged.',
+    ].join(' '),
+  },
+  6: {
+    title: 'Unmodeled covariate',
+    remit: [
+      'The actor flagged a known batch or covariate left out of a model the design could have',
+      'separated. The knob names the effect of interest and the covariate. Weigh whether',
+      'adding the covariate is both possible and consequential. CONFIRM when the covariate is',
+      'separable from the effect of interest (not collinear, so the model is identifiable) and',
+      'the effect moves once it is included, so leaving it out misstated the result. DOWNGRADE',
+      'when adding it shifts the estimate only slightly. VETO when the covariate is collinear',
+      'with the effect of interest, since then the honest answer is the confounding of Check 4,',
+      'not an unmodeled term.',
+    ].join(' '),
+  },
+  7: {
+    title: 'Resolution choice',
+    remit: [
+      'The actor flagged a cluster count chosen without a stability criterion. The knob sweeps',
+      'a resolution grid and names the criterion (silhouette or ari) and the chosen value.',
+      'This weighs the choice of resolution, where Check 3 weighs whether one tracked group',
+      'survives it. CONFIRM when the chosen resolution is not the one the criterion favors, and',
+      'the reported cluster count rides on that unjustified pick. DOWNGRADE when the chosen',
+      'value is close to the criterion optimum, or the criterion is flat across a wide plateau.',
+      'VETO when the chosen resolution is the criterion optimum, so the count is defensible.',
+    ].join(' '),
+  },
+  8: {
+    title: 'Test assumptions',
+    remit: [
+      'The actor flagged a test whose assumptions the data violate. The knob names the grouping',
+      'and the test the analysis claimed (ttest, wilcoxon, or unknown). Weigh whether the',
+      'violation would change the call. CONFIRM when the claimed test needs an assumption the',
+      'data break (a t-test on heavy-tailed or tied counts, say) and a valid test moves the',
+      'result across the alpha threshold. DOWNGRADE when the assumption is bent but the',
+      'conclusion holds under a robust alternative. VETO when the claimed test is appropriate,',
+      'or the data meet its assumptions closely enough that the verdict does not change.',
+    ].join(' '),
+  },
 };
 
 function formatEvidence(evidence: CriticRequest['evidence']): string {

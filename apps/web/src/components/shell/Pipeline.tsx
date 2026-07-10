@@ -8,12 +8,12 @@ import { useSession } from '@/state/session';
 
 /**
  * The pipeline: a horizontal rail of stations (design resolution, claim review,
- * the four checks, the report) with a verdict light on each. This IS the
- * navigation, in place of a sidebar of links. The rail line runs behind the
- * nodes so the audit reads as one flow left to right: 00, 00b, 01, 02, 03, 04,
- * report. Claims sits at 00b (between design 00 and check 01) because the check
- * numbers 01-04 are canonical ids shown across the whole app, so renumbering
- * them to make room would desync that mental model.
+ * the four checks, the corrected bundle, the report) with a verdict light on
+ * each. This IS the navigation, in place of a sidebar of links. The rail line
+ * runs behind the nodes so the audit reads as one flow left to right: 00, 00b,
+ * 01, 02, 03, 04, Corrected, Report. Claims sits at 00b (between design 00 and
+ * check 01) because the check numbers 01-04 are canonical ids shown across the
+ * whole app, so renumbering them to make room would desync that mental model.
  *
  * Each station gates the one after it. Confirming the design opens Claims;
  * confirming the claim list opens the four checks and the report. Nothing
@@ -27,6 +27,10 @@ import { useSession } from '@/state/session';
  * a station opens the FIRST run of its check (the deep board lives at /workbench);
  * its light aggregates that check's runs (running if any run is running, flagged
  * if any flagged, else clean when all its runs are clean).
+ *
+ * The corrected bundle sits between the checks and the report (the correction
+ * layer's honest rewrite of every flagged finding), reachable once the design is
+ * confirmed.
  */
 const IDS: CheckId[] = [1, 2, 3, 4];
 
@@ -89,6 +93,17 @@ export function Pipeline() {
       pulse: anyRunning,
       locked: !claimsConfirmed || checkRuns.length === 0,
     });
+  });
+  // The corrected bundle sits between the checks and the report: the honest
+  // rewrite of every flagged finding, reachable once the design is confirmed.
+  stations.push({
+    href: '/corrected',
+    n: '',
+    label: 'Corrected',
+    active: path === '/corrected',
+    light: 'var(--ink-4)',
+    pulse: false,
+    locked: !fieldsConfirmed,
   });
   stations.push({
     href: '/report',
