@@ -226,17 +226,16 @@ because column names are identifiers.
 
 ### Intake (`apps/web/src/app/page.tsx`)
 
-One job: get the analysis in. A required drop for the `.h5ad`, two optional attach points
+One job: get the analysis in. The required `.h5ad`, two optional attach points
 (a notebook or script, and pasted claims or prose), and one primary action to proceed.
 Nothing else.
 
-On the default `fixture` compute target the upload control is a real disabled button,
-labeled with the reason ("the demo runs a locked fixture dataset; connect a compute
-target to inspect your own file"), because Redline never presents a dead control as live
-(honesty rule 6). The scenario picker in the top strip is the honest path in for the
-demo. When a real compute target is wired, the upload becomes a live, keyboard-operable
-file picker. The two attach points work in every mode, since they are plain text.
-**Begin** confirms the fields, then inspection and extraction run.
+On the default `fixture` compute target the dataset is already loaded, so there is no
+upload control; a note says so and points to the scenario picker in the top strip, the
+way in for the demo. When a real compute target is wired, an upload appears as a live,
+keyboard-operable file picker (honesty rule 6: a control only renders live once its
+target is connected). The two attach points work in every mode, since they are plain
+text. **Begin** confirms the fields, then inspection and extraction run.
 
 ### Claim Review (`apps/web/src/app/(app)/claims/page.tsx`)
 

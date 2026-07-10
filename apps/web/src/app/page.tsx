@@ -10,9 +10,10 @@ import { AnalysisSlab } from '@/components/intake/AnalysisSlab';
 
 /**
  * Intake. Its own full-screen chrome (the pipeline shell begins at design
- * resolution). One clear job: get the analysis in. A required drop for the
- * dataset, and two optional attach points (a notebook / script, and pasted
- * claims / prose) that feed the extraction agent. A single primary action opens
+ * resolution). One clear job: get the analysis in. The required dataset (the
+ * loaded fixture, or a live upload on a real compute target), and two optional
+ * attach points (a notebook / script, and pasted claims / prose) that feed the
+ * extraction agent. A single primary action opens
  * design resolution. Nothing is tested here; the first real work happens once
  * fields are confirmed, then Redline reads the analysis and proposes the claims.
  */
@@ -65,8 +66,8 @@ export default function IntakePage() {
             {SCENARIOS.map((s) => {
               const active = scenarioId === s.id;
               // The verification foils carry no locked fixture numbers, so on the
-              // fixture target every check would 500. Honesty rule 6: disable and
-              // label the dead control rather than let it fail on click.
+              // fixture target every check would 500. Disable and label them until
+              // a real compute target is connected, rather than fail on click.
               const disabled = !!s.localOnly && !computeTargetAvailable;
               return (
                 <button key={s.id} type="button" aria-pressed={active} disabled={disabled}

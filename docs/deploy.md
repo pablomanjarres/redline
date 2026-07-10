@@ -70,8 +70,8 @@ shape, so the app cannot tell them apart except by the numbers.
 
 If a target's environment is not wired, its `ComputeTarget.available` is `false`, the
 app stays on `fixture`, and that target's control renders disabled and clearly labeled.
-This is a hard rule, covered in `honesty-rules.md` rule 6: never present a dead control
-as live. "Configurable, currently pointed at our compute" is the honest message.
+This is a hard rule, covered in `honesty-rules.md` rule 6: a control only renders live
+once its target is wired. "Configurable, currently pointed at our compute" is the honest message.
 
 ### `local`
 
@@ -94,7 +94,7 @@ Set `REDLINE_COMPUTE_TARGET=endpoint` and provide a runner the scientist control
 the heavy jobs run on infrastructure they own while their data stays on their side. The
 job payload and the return contract are identical to `cloudrun`; only the destination
 changes. If this path is not fully wired, keep it disabled and labeled, per the honesty
-rule. Do not ship a dead endpoint button as if it worked.
+rule. Do not ship an endpoint button that looks live but does nothing.
 
 ## The full product on AWS
 
