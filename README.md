@@ -23,7 +23,7 @@ Redline audits the statistics behind a single-cell RNA-seq analysis before that 
 QC is a solved, commoditized layer, and a generic reviewer reads a finished manuscript. Redline works one level in from both: on your own data and your own code, on the statistical reasoning, before any of it is published. It catches eight classes of error that no QC tool and no generic agent flags: four founding pillars plus four rigor checks built on the same interface.
 
 <p align="center">
-  <img src=".github/redline-banner.png" alt="The classes of statistical error Redline catches" width="880">
+  <img src=".github/lab-critter.gif" alt="Redline's lab critter mascot — Reviewer 2, in a lab coat" width="220">
 </p>
 
 ## What it catches
