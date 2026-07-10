@@ -77,6 +77,14 @@ export async function postCheck(body: {
   checkId: CheckId;
   config: CheckConfigMap[CheckId];
   fields: FieldSpec[];
+  // The run's claim and its identity. The route narrates and critiques THIS
+  // claim, so two runs on one check strike their own conclusion, never a
+  // per-check claim looked up by id. `claim` is required because every run the
+  // session executes has one; the numbers-only verification harness posts to
+  // /api/verify/run, not here, so it never reaches this client.
+  claim: string;
+  claimId?: string;
+  runKey?: string;
 }): Promise<CheckResult> {
   const json = await postJson('/api/audit/check', body);
   return CheckResult.parse(json);
