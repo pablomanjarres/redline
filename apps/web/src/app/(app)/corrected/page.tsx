@@ -6,6 +6,7 @@ import { checkMeta } from '@redline/contracts';
 import { buildBundle } from '@redline/engine';
 import { useSession } from '@/state/session';
 import { highlightPython } from '@/components/check/CorrectedCodeBlock';
+import { NotebookPreview } from '@/components/check/NotebookPreview';
 import { downloadTextFile } from '@/lib/download';
 
 /**
@@ -65,6 +66,9 @@ export default function CorrectedPage() {
           </div>
         )}
       </div>
+
+      {/* the notebook, shown inline: the cells the Download notebook button saves */}
+      {bundle && <NotebookPreview notebook={bundle.notebook} />}
 
       {/* scripts */}
       {scripts.length > 0 ? (

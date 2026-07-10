@@ -1,35 +1,41 @@
-# Add-on 5 — Detection Benchmark (plan)
+# Close the improving loop
 
-Measure how well Redline (four deterministic checks + an LLM critic) detects planted
-statistical errors in single-cell analyses, against a single-shot Claude baseline given
-the same analysis. Headline: "Redline catches X% of planted errors at Y% false-positive
-rate; single-shot Claude catches P% at Q%."
+Spec: `docs/superpowers/specs/2026-07-10-improving-loop-design.md`
 
-## Methodology (integrity)
-- [ ] Ground truth = construction, VALIDATED by an INDEPENDENT numpy/scipy labeler that
-      scores all four pillars per case. Cases tuned against the LABELER, never the engine
-      or the baseline. Both arms evaluated blind. (No tautology: label != engine output.)
-- [ ] Baseline sees the scientist's own write-up (claim + naive stats + methods) and must
-      find the problems. Redline re-runs the statistics on the data. Same info, diff method.
-- [ ] Same strong model (Opus 4.6) powers baseline AND critic -> only variable = scaffolding.
-- [ ] Record/replay every LLM call -> frozen number reproducible with zero credentials.
-- [ ] Deterministic engine path (Welch-on-donor-means, leiden-via-igraph seeded, no PyDESeq2).
+## Plan
 
-## Cases (bench/cases/)
-- [ ] Single-error foil generator: per pillar, positive (error) + negative (clean, same
-      method) cases; plus fully-clean whole-analysis controls. ~52 cases, distinct seeds.
-- [ ] P2/P3 negatives are indistinguishable-from-write-up (the crying-wolf trap).
+- [x] 1. `lib/correction-terminal.ts` + test: pure `correctionTerminal(result)` derivation
+- [x] 2. `lib/notebook.ts` + test: `parseNotebook(json)` + `renderMarkdownLite`
+- [x] 3. `lib/api.ts`: `postCheck` forwards optional `noReason`
+- [x] 4. `BeforeAfter.tsx`: controlled `flipToAfter?: boolean`
+- [x] 5. `CorrectedCodeBlock.tsx`: Run button + terminal reveal (uses 1 + 3)
+- [x] 6. `CheckStage.tsx`: wire run inputs, `correctionRan`, flip Before/After
+- [x] 7. `NotebookPreview.tsx` + `corrected/page.tsx`: inline notebook preview (uses 2)
+- [x] 8. Verify: typecheck, vitest, build, drive the page in a browser
+- [ ] 9. Commit, push, draft PR
 
-## Harness (bench/)
-- [ ] spec.py, generate.py, labeler.py, artifact.py, llm.py (record/replay),
-      redline_arm.py, critic.py, baseline.py, score.py, run.py, __main__.py
-- [ ] Self-tests: labeler catches injected errors; scorer math; determinism; harness-can-fail.
+## Review
 
-## Deliverables
-- [ ] Frozen results.json + report.md + figure(s) + README (open-source).
-- [ ] Per-class + overall detection, FP rate, balanced score, headline number.
+Closed the loop the corrected code used to dead-end on (Copy/Download only).
 
-## Verify
-- [ ] Adversarial workflow: circularity, baseline fairness, labeler independence,
-      scoring correctness, reproducibility, honesty invariants.
-- [ ] Commit granularly, push, draft PR.
+**What changed.** Each check page gains a **Run** action on the corrected-code
+block: a genuine numbers-only recompute through the same ComputeTarget the audit
+used (`postCheck({ noReason: true })`), into local state so the figure/stats stay
+mounted. It reveals a terminal readout (command, computed stats colored by the
+same bad/good flags, verdict), labeled with the honest compute seam
+(`provenance.target`, e.g. "recomputed on the locked fixture"). Running flips
+Before/After to the honest analysis. The CORRECTED page now renders the
+consolidated `.ipynb` inline as notebook cells above the download buttons.
+
+**Honesty held.** Unsalvageable findings (confounding) show the evidence but no
+fabricated corrected number and route to the dead end, in the reveal and in the
+inline notebook (no code cell). Clean findings have no corrected code, so no Run
+button. No em dashes / AI-tell copy; aria-labels + reduced-motion respected.
+
+**Verification.** typecheck clean; vitest 77/77 (18 new across the two pure
+helpers); `next build` clean. Drove the real app end to end: Run reveal on
+double-dipping, unsalvageable path on confounding, inline notebook on /corrected.
+Screenshots captured. Only console error is a pre-existing favicon 404.
+
+**Scope.** No cloud/sandbox execution, no new API route, no contract/engine/Python
+change. All eight edits live in `apps/web`.
