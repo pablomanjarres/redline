@@ -8,10 +8,16 @@ import { Markdown } from './Markdown';
  * outputs beneath. Read-only, and every source/output string is rendered as
  * React text, so an uploaded notebook cannot inject markup.
  */
+/** Cap the DOM: the flattened text sent to the model is already clamped, so a
+ *  pathological notebook never needs every cell mounted at once. */
+const MAX_RENDER_CELLS = 60;
+
 export function NotebookPreview({ cells }: { cells: NotebookCell[] }) {
+  const shown = cells.slice(0, MAX_RENDER_CELLS);
+  const hidden = cells.length - shown.length;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {cells.map((cell, i) =>
+      {shown.map((cell, i) =>
         cell.type === 'markdown' ? (
           <div key={i} style={{ padding: '6px 2px' }}>
             <Markdown source={cell.source} />
@@ -20,6 +26,11 @@ export function NotebookPreview({ cells }: { cells: NotebookCell[] }) {
           <CodeCell key={i} cell={cell} />
         ),
       )}
+      {hidden > 0 ? (
+        <div style={{ padding: '8px 2px 2px', font: '400 11px/1.4 var(--mono)', color: 'var(--ink-4)' }}>
+          {hidden} more {hidden === 1 ? 'cell' : 'cells'} not shown
+        </div>
+      ) : null}
     </div>
   );
 }
