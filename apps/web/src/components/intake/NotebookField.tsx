@@ -12,37 +12,46 @@ import { NotebookPreview } from './NotebookPreview';
  * Paste still works for anyone who would rather type. The flattened text is what
  * feeds the extraction agent, so this needs no compute in any mode.
  *
- * `cells` is the parsed notebook (owned by the parent so "Load example" can fill
- * it); a paste leaves `cells` null and shows the textarea. Clearing empties both.
+ * Controlled: the parent owns the parsed `cells`, the `name`, the `notice`, and
+ * any `error`, so every path that changes the field (upload, paste, Clear, or a
+ * parent-driven "Load example") keeps the header, notice, and error in step.
  */
 export function NotebookField({
   value,
   cells,
-  onChange,
+  name,
+  notice,
+  error,
+  onLoad,
+  onError,
+  onPaste,
+  onClear,
   maxChars = 200_000,
 }: {
   value: string;
   cells: NotebookCell[] | null;
-  onChange: (text: string, cells: NotebookCell[] | null) => void;
+  name: string | null;
+  notice: string | null;
+  error: string | null;
+  onLoad: (r: { text: string; cells: NotebookCell[]; name: string; truncated: boolean }) => void;
+  onError: (message: string) => void;
+  onPaste: (text: string) => void;
+  onClear: () => void;
   maxChars?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const [name, setName] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
 
   async function onFile(file: File | undefined) {
     if (!file) return;
     if (file.size > MAX_ANALYSIS_FILE_BYTES) {
-      setErr('That file is too large. Paste the relevant part instead.');
+      onError('That file is too large. Paste the relevant part instead.');
     } else {
       try {
-        const nb = await readNotebookFile(file, maxChars);
-        onChange(nb.text, nb.cells);
-        setName(nb.name);
-        setErr(null);
+        onLoad(await readNotebookFile(file, maxChars));
       } catch {
-        setErr('Could not read that file. Paste the text instead.');
+        onError('Could not read that notebook. Paste the text instead.');
       }
     }
     if (inputRef.current) inputRef.current.value = ''; // let the same file be re-picked
@@ -54,14 +63,9 @@ export function NotebookField({
     void onFile(e.dataTransfer.files?.[0]);
   }
 
-  function clear() {
-    onChange('', null);
-    setName(null);
-    setErr(null);
-  }
-
   const showNotebook = cells !== null && cells.length > 0;
   const cellCount = cells?.length ?? 0;
+  const status = showNotebook ? `Loaded ${name ?? 'notebook'}, ${cellCount} ${cellCount === 1 ? 'cell' : 'cells'}` : '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -85,12 +89,17 @@ export function NotebookField({
               <button type="button" onClick={() => inputRef.current?.click()} style={barButtonStyle}>
                 Replace
               </button>
-              <button type="button" onClick={clear} style={barButtonStyle}>
+              <button type="button" onClick={onClear} style={barButtonStyle}>
                 Clear
               </button>
             </span>
           </div>
-          <div className="rl-scroll" style={{ maxHeight: 320, overflowY: 'auto', padding: 14 }}>
+          <div
+            className="rl-scroll"
+            tabIndex={0}
+            aria-label="Notebook preview"
+            style={{ maxHeight: 320, overflowY: 'auto', padding: 14 }}
+          >
             <NotebookPreview cells={cells} />
           </div>
         </div>
@@ -119,9 +128,11 @@ export function NotebookField({
             placeholder="or paste a script here..."
             value={value}
             rows={3}
-            onChange={(e) => onChange(e.target.value, null)}
+            onChange={(e) => onPaste(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             className="rl-scroll"
-            style={pasteStyle}
+            style={pasteStyle(focused)}
           />
         </>
       )}
@@ -135,12 +146,20 @@ export function NotebookField({
         style={{ display: 'none' }}
       />
 
+      {/* screen-reader announcement when a notebook loads or clears */}
+      <div aria-live="polite" style={srOnly}>
+        {status}
+      </div>
+
       <p style={{ margin: 0, font: '400 11.5px/1.5 var(--sans)', color: 'var(--ink-4)' }}>
         Upload or paste your analysis so the claims match the tests you actually ran.
       </p>
-      {err ? (
+      {notice ? (
+        <p style={{ margin: 0, font: '400 11px/1.5 var(--sans)', color: 'var(--ink-4)' }}>{notice}</p>
+      ) : null}
+      {error ? (
         <p role="alert" style={{ margin: 0, font: '400 11px/1.5 var(--sans)', color: 'var(--red)' }}>
-          {err}
+          {error}
         </p>
       ) : null}
     </div>
@@ -152,6 +171,18 @@ const labelStyle: CSSProperties = {
   letterSpacing: '.1em',
   textTransform: 'uppercase',
   color: 'var(--ink-3)',
+};
+
+const srOnly: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
 };
 
 function dropzoneStyle(drag: boolean): CSSProperties {
@@ -171,18 +202,22 @@ function dropzoneStyle(drag: boolean): CSSProperties {
   };
 }
 
-const pasteStyle: CSSProperties = {
-  resize: 'vertical',
-  width: '100%',
-  minHeight: 64,
-  font: '400 12.5px/1.55 var(--mono)',
-  color: 'var(--ink)',
-  background: 'var(--void)',
-  border: '1px solid var(--edge-2)',
-  borderRadius: 9,
-  padding: '11px 12px',
-  outline: 'none',
-};
+function pasteStyle(focused: boolean): CSSProperties {
+  return {
+    resize: 'vertical',
+    width: '100%',
+    minHeight: 64,
+    font: '400 12.5px/1.55 var(--mono)',
+    color: 'var(--ink)',
+    background: 'var(--void)',
+    border: `1px solid ${focused ? 'var(--signal)' : 'var(--edge-2)'}`,
+    borderRadius: 9,
+    padding: '11px 12px',
+    outline: 'none',
+    boxShadow: focused ? '0 0 0 3px var(--signal-soft)' : 'none',
+    transition: 'border-color .12s ease, box-shadow .12s ease',
+  };
+}
 
 const notebookBarStyle: CSSProperties = {
   display: 'flex',

@@ -4,7 +4,16 @@ import { useState } from 'react';
 import { AttachField } from './AttachField';
 import { NotebookField } from './NotebookField';
 import { EXAMPLE_CELLS, EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
-import { cellsToIpynb, type NotebookCell } from '@/lib/notebook';
+import { cellsToIpynb, scriptToCells, type NotebookCell } from '@/lib/notebook';
+
+const NOTEBOOK_MAX = 200_000;
+
+interface NotebookView {
+  cells: NotebookCell[] | null;
+  name: string | null;
+  notice: string | null;
+  error: string | null;
+}
 
 /**
  * Intake slab 02: the optional attach points. The dataset alone already audits,
@@ -16,6 +25,10 @@ import { cellsToIpynb, type NotebookCell } from '@/lib/notebook';
  * "Load example" fills both fields with the demo's naive analysis, so a judge can
  * test the flow without writing one. "Download sample" hands back the same
  * `.ipynb`, to try the upload path.
+ *
+ * This slab owns the notebook's display state (parsed cells, filename, notice,
+ * error), so every path keeps the rendered notebook, header, and messages in
+ * step. The flattened `notebook` text is what the parent persists and sends on.
  */
 export function AnalysisSlab({
   notebook,
@@ -28,18 +41,40 @@ export function AnalysisSlab({
   onNotebook: (t: string) => void;
   onProse: (t: string) => void;
 }) {
-  // The parsed notebook, for the rendered preview. Held here so "Load example"
-  // can fill it; the flattened `notebook` text is what the parent sends on.
-  const [cells, setCells] = useState<NotebookCell[] | null>(null);
+  // Seed the preview from any persisted text, so a remount shows a notebook
+  // rather than dumping the text into the paste box.
+  const [nb, setNb] = useState<NotebookView>(() => ({
+    cells: notebook ? scriptToCells(notebook) : null,
+    name: null,
+    notice: null,
+    error: null,
+  }));
 
-  function onNotebookChange(text: string, nextCells: NotebookCell[] | null) {
+  function onNotebookLoad(r: { text: string; cells: NotebookCell[]; name: string; truncated: boolean }) {
+    onNotebook(r.text);
+    setNb({
+      cells: r.cells,
+      name: r.name,
+      notice: r.truncated
+        ? `Showing the full notebook. The first ${NOTEBOOK_MAX.toLocaleString()} characters are sent to extraction.`
+        : null,
+      error: null,
+    });
+  }
+
+  function onNotebookPaste(text: string) {
     onNotebook(text);
-    setCells(nextCells);
+    setNb({ cells: null, name: null, notice: null, error: null });
+  }
+
+  function onNotebookClear() {
+    onNotebook('');
+    setNb({ cells: null, name: null, notice: null, error: null });
   }
 
   function loadExample() {
     onNotebook(EXAMPLE_NOTEBOOK);
-    setCells(EXAMPLE_CELLS);
+    setNb({ cells: EXAMPLE_CELLS, name: EXAMPLE_FILENAME, notice: null, error: null });
     onProse(EXAMPLE_PROSE);
   }
 
@@ -125,7 +160,18 @@ export function AnalysisSlab({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <NotebookField value={notebook} cells={cells} onChange={onNotebookChange} maxChars={200_000} />
+        <NotebookField
+          value={notebook}
+          cells={nb.cells}
+          name={nb.name}
+          notice={nb.notice}
+          error={nb.error}
+          onLoad={onNotebookLoad}
+          onError={(message) => setNb((s) => ({ ...s, error: message }))}
+          onPaste={onNotebookPaste}
+          onClear={onNotebookClear}
+          maxChars={NOTEBOOK_MAX}
+        />
         <AttachField
           label="Claims or prose"
           hint="Paste or upload an abstract, figure captions, or a plain description of what you found."
