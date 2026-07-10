@@ -68,10 +68,20 @@ export function scriptToCells(source: string): NotebookCell[] {
   return [{ type: 'code', source }];
 }
 
-/** Flatten cells into the plain text the extraction agent reads. */
+/**
+ * Flatten cells into the plain text the extraction agent reads. A code cell's
+ * plain-text outputs are appended after its source, because a printed result
+ * (a p-value, a fold change) is often the very claim to audit, and it is what
+ * the rendered preview shows; keeping them here means the text sent matches the
+ * notebook seen.
+ */
 export function cellsToText(cells: NotebookCell[]): string {
   return cells
-    .map((c) => c.source.trim())
+    .map((c) => {
+      const src = c.source.trim();
+      const outs = c.outputs && c.outputs.length ? c.outputs.join('\n').trim() : '';
+      return outs ? [src, outs].filter(Boolean).join('\n') : src;
+    })
     .filter(Boolean)
     .join('\n\n');
 }
@@ -97,20 +107,23 @@ export function cellsToIpynb(cells: NotebookCell[]): string {
 }
 
 /**
- * Read a picked file into a notebook: a `.ipynb` becomes its parsed cells (or a
- * single code cell if the JSON is not a notebook), any other file becomes one
- * code cell. The flattened `text` is what gets sent for extraction, clamped to
- * the field's contract cap so the request never trips the route's size guard.
+ * Read a picked file into a notebook: a `.ipynb` becomes its parsed cells, any
+ * other file becomes a single code cell. A `.ipynb` that does not parse into
+ * cells throws, rather than masquerading the raw JSON as code. The flattened
+ * `text` is what gets sent for extraction, clamped to the field's contract cap
+ * so the request never trips the route's size guard; `truncated` says whether
+ * the clamp dropped anything the preview still shows.
  */
 export async function readNotebookFile(
   file: File,
   maxChars: number,
-): Promise<{ cells: NotebookCell[]; text: string; name: string }> {
+): Promise<{ cells: NotebookCell[]; text: string; name: string; truncated: boolean }> {
   const raw = await file.text();
-  const cells = file.name.toLowerCase().endsWith('.ipynb')
-    ? (parseNotebook(raw) ?? scriptToCells(raw))
-    : scriptToCells(raw);
+  const isIpynb = file.name.toLowerCase().endsWith('.ipynb');
+  const parsed = isIpynb ? parseNotebook(raw) : null;
+  if (isIpynb && !parsed) throw new Error('not a readable notebook');
+  const cells = parsed ?? scriptToCells(raw);
   const flat = cellsToText(cells);
-  const text = flat.length > maxChars ? flat.slice(0, maxChars) : flat;
-  return { cells, text, name: file.name };
+  const truncated = flat.length > maxChars;
+  return { cells, text: truncated ? flat.slice(0, maxChars) : flat, name: file.name, truncated };
 }

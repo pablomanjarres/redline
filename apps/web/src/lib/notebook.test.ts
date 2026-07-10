@@ -56,6 +56,10 @@ describe('cellsToText / scriptToCells', () => {
     expect(cellsToText([{ type: 'markdown', source: '# A' }, { type: 'code', source: 'x = 1' }])).toBe('# A\n\nx = 1');
   });
 
+  it('appends code-cell outputs so extraction reads what the preview shows', () => {
+    expect(cellsToText([{ type: 'code', source: 'print(x)', outputs: ['FOXP3 p=0.0004'] }])).toBe('print(x)\nFOXP3 p=0.0004');
+  });
+
   it('wraps a script as one code cell', () => {
     expect(scriptToCells('print(1)')).toEqual([{ type: 'code', source: 'print(1)' }]);
   });
@@ -87,11 +91,13 @@ describe('readNotebookFile', () => {
     expect((await readNotebookFile(fake('a.py', 'x = 1'), 1000)).cells).toEqual([{ type: 'code', source: 'x = 1' }]);
   });
 
-  it('falls back to one code cell when a .ipynb is not really a notebook', async () => {
-    expect((await readNotebookFile(fake('a.ipynb', 'not json'), 1000)).cells).toEqual([{ type: 'code', source: 'not json' }]);
+  it('rejects a .ipynb that is not a readable notebook, rather than dumping raw JSON', async () => {
+    await expect(readNotebookFile(fake('a.ipynb', 'not json'), 1000)).rejects.toThrow();
   });
 
-  it('clamps the flattened text to maxChars so the request never 413s', async () => {
-    expect((await readNotebookFile(fake('a.py', 'x'.repeat(50)), 10)).text).toHaveLength(10);
+  it('clamps the flattened text to maxChars and flags truncation', async () => {
+    const nb = await readNotebookFile(fake('a.py', 'x'.repeat(50)), 10);
+    expect(nb.text).toHaveLength(10);
+    expect(nb.truncated).toBe(true);
   });
 });
