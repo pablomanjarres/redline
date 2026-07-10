@@ -271,7 +271,7 @@ function uniqueId(base: string, used: ReadonlySet<string>): string {
  *     (Spec 8 and 11, invariant b.)
  *
  *  4. Impossible routes are dropped, then de-duplicated. A CheckRoute is removed
- *     when its check id is not 1|2|3|4, or when a column-naming param
+ *     when its check id names no registered check, or when a column-naming param
  *     (grouping, unit, nuisance, interest) points at an `obs` column absent from
  *     the inventory. Surviving routes are de-duplicated by check id (first
  *     occurrence wins). (Spec 5 and 8.)

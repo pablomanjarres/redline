@@ -68,7 +68,7 @@ export function runKeyOf(claimId: string, checkId: CheckId): RunKey {
  * Every (active claim, valid route) as its own run. Active means the claim is
  * not `removed`; an `out_of_scope` claim carries `checks: []` by contract
  * (enforceClaimHonesty), so it contributes zero runs with no special-casing
- * here. A route to an id outside 1|2|3|4 is ignored.
+ * here. A route to an id no check declares is ignored.
  *
  * Order is deterministic: claims in their list order, and within a claim its
  * routes in ascending check id. enforceClaimHonesty de-duplicates a claim's
@@ -103,7 +103,7 @@ export function runsFrom(claims: ExtractedClaim[] | null): RunDescriptor[] {
 
 /**
  * The set of checks a confirmed, non-removed claim routes to, in ascending id
- * order. A route to an id outside 1|2|3|4 is ignored. This is the list the
+ * order. A route to an id no check declares is ignored. This is the list the
  * Workbench runs; a check absent from it renders no verdict (honesty rule 13).
  *
  * @param claims The current claim list (null before extraction).

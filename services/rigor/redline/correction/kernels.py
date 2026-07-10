@@ -558,33 +558,33 @@ def _embed(adata, seed):
     return _pca(_lognorm(counts), seed)
 
 
-def _clustering_engine() -> str:
-    """The name of the backend the resolution sweeps will use, decided by the
-    same import probe as ``_cluster``: scanpy Leiden when a graph backend is
-    installed, else deterministic KMeans, else a first-component binning. The
-    sweep records this so a silent Leiden -> KMeans downgrade (a different
-    algorithm than the method paper describes) is visible, never assumed away."""
-    try:
-        import igraph  # noqa: F401
-        import leidenalg  # noqa: F401
-        import scanpy  # noqa: F401
-
-        return "Leiden (scanpy)"
-    except Exception:
-        pass
-    try:
-        from sklearn.cluster import KMeans  # noqa: F401
-
-        return "KMeans (fallback)"
-    except Exception:
-        return "first-component bins (fallback)"
+def _reconcile_engine(engines: list) -> str:
+    """One honest label for a sweep from the per-resolution engines ``_cluster``
+    actually used. All resolutions normally run the same backend, but if leiden
+    ran on some and fell back on others (an intermittent runtime failure), the
+    sweep is no longer a pure Leiden result, so the fallback is reported. Reporting
+    the truth is what lets a silent Leiden -> KMeans downgrade stay visible."""
+    seen = list(dict.fromkeys(engines))
+    if not seen:
+        return ""
+    if len(seen) == 1:
+        return seen[0]
+    fell_back = [e for e in seen if "Leiden" not in e]
+    return fell_back[0] if fell_back else seen[0]
 
 
 def _cluster(emb, res, seed):
     """Cluster an embedding at one resolution, for the resolution sweeps (checks
-    3 and 7). scanpy Leiden at that resolution when a graph backend is installed,
-    else deterministic KMeans, else a first-component binning so the code still
-    runs. Every path is seeded.
+    3 and 7). Returns ``(labels, engine)`` where ``engine`` names the backend that
+    ACTUALLY produced the labels: "Leiden (scanpy)" when the leiden call ran,
+    "KMeans (fallback)" when it did not, or the binning fallback. The engine is
+    tied to execution, not to importability, so a leiden call that raises at
+    runtime (a stack present but incompatible) reports the KMeans it fell back to
+    rather than the Leiden it did not run.
+
+    scanpy Leiden at the resolution when a graph backend is installed, else
+    deterministic KMeans, else a first-component binning so the code still runs.
+    Every path is seeded.
 
     Leiden reads a resolution directly. When it is absent the KMeans and binning
     fallbacks still have to turn a resolution into a cluster count, so the sweep
@@ -619,20 +619,20 @@ def _cluster(emb, res, seed):
             n_iterations=2,
             directed=False,
         )
-        return a.obs["_rl"].astype(str).to_numpy()
+        return a.obs["_rl"].astype(str).to_numpy(), "Leiden (scanpy)"
     except Exception:
         pass
     try:
         from sklearn.cluster import KMeans
 
-        return KMeans(n_clusters=k, n_init=10, random_state=int(seed)).fit_predict(emb).astype(str)
+        return KMeans(n_clusters=k, n_init=10, random_state=int(seed)).fit_predict(emb).astype(str), "KMeans (fallback)"
     except Exception:
         pc = emb[:, 0] if emb.ndim == 2 and emb.shape[1] else np.zeros(n)
         order = np.argsort(pc, kind="mergesort")
         lab = np.zeros(n, dtype=int)
         for b in range(k):
             lab[order[b * n // k : (b + 1) * n // k]] = b
-        return lab.astype(str)
+        return lab.astype(str), "first-component bins (fallback)"
 
 
 # Bounds for bisecting a leiden resolution to a target cluster count (check 2).
@@ -975,8 +975,9 @@ def check3_fragility(adata, track, track_column, min_res, max_res, step, seed):
 
     resolutions = _grid(min_res, max_res, step)
     emb = _embed(adata, seed)
-    engine = _clustering_engine()
-    labels = [_cluster(emb, r, seed) for r in resolutions]
+    pairs = [_cluster(emb, r, seed) for r in resolutions]
+    labels = [lab for lab, _ in pairs]
+    engine = _reconcile_engine([eng for _, eng in pairs])
     clusters = [int(np.unique(l).size) for l in labels]
 
     col = str(track_column) if track_column else _find_track_col(adata, track)
@@ -1165,7 +1166,8 @@ def check7_resolution_choice(adata, min_res, max_res, step, criterion, chosen, s
 
     resolutions = _grid(min_res, max_res, step)
     emb = _embed(adata, seed)
-    labels = [_cluster(emb, r, seed) for r in resolutions]
+    # _cluster returns (labels, engine); this check reads the cluster counts only.
+    labels = [lab for lab, _ in (_cluster(emb, r, seed) for r in resolutions)]
     clusters = [int(np.unique(l).size) for l in labels]
     crit = str(criterion).lower()
     if crit not in ("silhouette", "ari"):
