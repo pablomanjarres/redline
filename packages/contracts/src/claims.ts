@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CheckId, Confidence } from './primitives.js';
+import { CHECK_IDS } from './registry.js';
 import { FieldSpec } from './fields.js';
 import { DatasetInventory, inventoryHasField, inventoryKnowsGene } from './inventory.js';
 
@@ -118,8 +119,14 @@ export type ClaimMappingResponse = z.infer<typeof ClaimMappingResponse>;
 
 // ── The honesty backstop ─────────────────────────────────────────────────────
 
-/** Only 1, 2, 3, 4 are real checks; anything else is dropped at runtime. */
-const VALID_CHECK_IDS: ReadonlySet<number> = new Set([1, 2, 3, 4]);
+/**
+ * The routable checks, derived from the registry so a route drops only when it
+ * names a check that does not exist. This was pinned to [1,2,3,4] before the
+ * rigor checks (5-8) shipped; leaving it pinned silently dropped every route to
+ * a rigor check, so those checks could never run from a claim while the UI
+ * invited the user to route one to them.
+ */
+const VALID_CHECK_IDS: ReadonlySet<number> = new Set<number>(CHECK_IDS);
 
 /**
  * Param keys whose values are `obs` column NAMES. Extraction must put exact

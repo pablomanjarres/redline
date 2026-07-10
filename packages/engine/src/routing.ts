@@ -18,10 +18,13 @@
  * and are marked `@deprecated`. New callers use `runsFrom` + `configForRun`.
  */
 
-import { CHECK_KNOBS } from '@redline/contracts';
+import { CHECK_KNOBS, CHECK_IDS } from '@redline/contracts';
 import type { CheckConfigMap, CheckId, ExtractedClaim, KnobKind } from '@redline/contracts';
 
-const IDS: CheckId[] = [1, 2, 3, 4];
+// Every registered check, so a claim routes to any real check the engine runs.
+// Pinning this to [1,2,3,4] (its value before the rigor checks shipped) made the
+// routing layer silently drop routes to checks 5-8 the engine fully implements.
+const IDS: readonly CheckId[] = CHECK_IDS;
 const VALID_IDS: ReadonlySet<CheckId> = new Set<CheckId>(IDS);
 
 /** The claims that still count: everything the user has not removed. */
