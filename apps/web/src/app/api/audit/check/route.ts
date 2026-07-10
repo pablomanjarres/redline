@@ -439,7 +439,7 @@ export async function POST(req: Request) {
     if (reasoner.available && recommendations && recommendations.length > 0) {
       try {
         const prose = await reasoner.recommend({
-          ...buildRequest(body.scenarioId, compute, effectiveState),
+          ...buildRequest(body.scenarioId, compute, effectiveState, auditedClaim),
           // The feasibility slots the engine already decided. The model fills in
           // prose against them and cannot change them; `enforceRecommendationHonesty`
           // overwrites whatever it returns.
