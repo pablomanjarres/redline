@@ -1,7 +1,8 @@
 'use client';
 
-import type { CheckId, CheckResult } from '@redline/contracts';
-import { checkMeta } from '@redline/contracts';
+import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
+import { checkMeta, checkRecord } from '@redline/contracts';
+import type { RunKey } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { DistributionStrip, renderChart } from '@/components/charts';
@@ -12,6 +13,13 @@ import { VerdictReadout } from '@/components/check/VerdictReadout';
 import { CorrectedCodeBlock } from '@/components/check/CorrectedCodeBlock';
 import { Recommendations } from '@/components/check/Recommendations';
 import { BeforeAfter } from '@/components/check/BeforeAfter';
+
+/** Name + sub for every check, keyed by id for the workbench tile and the report
+ *  row (both import this). Derived from the contract registry so all eight checks
+ *  (four core + four rigor) live in exactly one place. */
+export const CHECK_META: Record<CheckId, { name: string; sub: string }> = checkRecord(
+  (id) => ({ name: checkMeta(id).name, sub: checkMeta(id).sub }),
+);
 
 /** Slug a stat label into a stable kebab-case test id: lowercase, runs of
  *  non-alphanumerics collapse to a single dash, no leading/trailing dash.
@@ -36,20 +44,27 @@ function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
   );
 }
 
-/** The audit stage for one check: figure on a lightbox plate (the hero), the
- *  verdict, the corrected code, the recommendations, the before/after preview,
- *  and the instrument + console rail. */
-export function CheckStage({ checkId }: { checkId: CheckId }) {
-  const { results, running, reasoning, reveal, cfg, claimForCheck, runCheck } = useSession();
-  const result = results[checkId];
-  const isRunning = running[checkId];
-  const meta = checkMeta(checkId);
-  const num = checkId < 10 ? `0${checkId}` : String(checkId);
-  const claim = claimForCheck(checkId) ?? '';
-  const revealed = (reasoning[checkId] ?? []).slice(0, reveal[checkId] ?? 0);
+/** The audit stage for one (claim, check) RUN: figure on a lightbox plate (the
+ *  hero), the verdict, the corrected code, the recommendations, the before/after
+ *  preview, and the instrument + console rail. The run's claim and its check both
+ *  come from one run descriptor, so the named target and the audited target can
+ *  never disagree (honesty rule 2). Every correction section renders from this
+ *  run's result and only when the finding carries that half. */
+export function CheckStage({ runKey }: { runKey: RunKey }) {
+  const { runs, runCfg, results, running, reasoning, reveal, cfg, runOne } = useSession();
+  const run = runs.find((r) => r.key === runKey);
+  const checkId: CheckId = run?.checkId ?? 1; // the route guards the no-run case
+  const claim = run?.claimText ?? '';
+  const result = results[runKey];
+  const isRunning = running[runKey];
+  const meta = CHECK_META[checkId];
+  const revealed = (reasoning[runKey] ?? []).slice(0, reveal[runKey] ?? 0);
   const state = isRunning ? 'running' : result ? result.state : 'ready';
   const light = signalColor(state);
   const showFigure = !!result && !isRunning;
+  // The fragility figure needs this run's live Check-3 config (the scrub); other
+  // checks never read it, so fall back to the base for a non-3 run.
+  const cfg3: Check3Config = checkId === 3 && runCfg[runKey] ? (runCfg[runKey] as Check3Config) : cfg[3];
 
   return (
     <div style={{ maxWidth: 1360, margin: '0 auto', padding: '30px 40px 72px' }}>
@@ -57,7 +72,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--red)' }}>CHECK {num}</span>
+            <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--red)' }}>CHECK 0{checkId}</span>
             <span style={{ width: 5, height: 5, borderRadius: 5, background: 'var(--edge-hi)' }} />
             <span style={{ font: '500 10px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
               {meta.sub}
@@ -67,7 +82,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             {meta.name}
           </h1>
           <div style={{ marginTop: 12, font: '400 12.5px/1.5 var(--mono)', color: 'var(--ink-3)', maxWidth: 720 }}>
-            <span style={{ color: 'var(--ink-4)' }}>AUDITING — </span>
+            <span style={{ color: 'var(--ink-4)' }}>AUDITING: </span>
             <span style={{ color: 'var(--ink-2)' }}>“{claim}”</span>
           </div>
         </div>
@@ -97,7 +112,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
           <button
             data-testid="rerun-check"
             data-tour="check.rerun"
-            onClick={() => void runCheck(checkId)}
+            onClick={() => void runOne(runKey)}
             style={{
               font: '700 11px/1 var(--sans)',
               letterSpacing: '.06em',
@@ -129,7 +144,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </div>
             <div style={{ padding: '22px 24px 24px', minHeight: 360, display: 'flex', alignItems: 'center' }}>
               {showFigure ? (
-                <div style={{ width: '100%' }}>{renderChart(result!.chart, cfg[3])}</div>
+                <div style={{ width: '100%' }}>{renderChart(result!.chart, cfg3)}</div>
               ) : (
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -163,14 +178,14 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
 
           {/* The correction layer: the code that reproduces the honest analysis,
               what to do next, and the corrected result rendered beside the claim.
-              Each renders only when the finding carries that half. */}
+              Each renders only when this run's finding carries that half. */}
           {showFigure && <CorrectedCodeBlock code={result!.correctedCode} />}
           {showFigure && <Recommendations items={result!.recommendations} />}
-          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg[3]} />}
+          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg3} />}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <InstrumentRail checkId={checkId} />
+          <InstrumentRail runKey={runKey} />
           <ReasoningConsole lines={revealed} running={isRunning} />
         </div>
       </div>

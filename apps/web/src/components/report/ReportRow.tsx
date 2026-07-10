@@ -6,23 +6,28 @@ import { ciLabel } from '@/lib/format';
 
 /**
  * One finding on the audit sheet, in the dark instrument language. A
- * signal-colored rule down the left edge marks the verdict; the check number
- * and name sit up top with a verdict chip; the figure lives on a bright
- * lightbox plate (the only white on the surface); then the named failure mode
- * in mono red, the scientist's claim struck through, the defensible rewrite
- * behind the redline caret, and the method citation footer.
+ * signal-colored rule down the left edge marks the verdict; the check number,
+ * name, and the claim this finding audited sit up top with a verdict chip; the
+ * figure lives on a bright lightbox plate (the only white on the surface); then
+ * the named failure mode in mono red, the scientist's claim struck through, the
+ * defensible rewrite behind the redline caret, and the method citation footer.
+ *
+ * `claimText` and `runKey` come from the run this finding belongs to, so two
+ * findings on the same check (two claims routed to it) are titled apart
+ * ("Fragility: {claim}") and carry distinct test ids, never collapsed into one.
  */
-export function ReportRow({ result }: { result: CheckResult }) {
+export function ReportRow({ result, claimText, runKey }: { result: CheckResult; claimText: string; runKey: string }) {
   const { checkId, state, error, original, corrected, missing, citation } = result;
   const light = signalColor(state);
   const meta = checkMeta(checkId);
   const num = checkId < 10 ? `0${checkId}` : String(checkId);
+  const title = claimText ? `${meta.name}: ${claimText}` : meta.name;
 
   return (
     <article
-      data-testid={`report-row-${checkId}`}
+      data-testid={`report-row-${runKey}`}
       data-tour={`report.row.${checkId}`}
-      aria-label={`Check ${num} ${meta.name}, ${stateLabel(state)}`}
+      aria-label={`Check ${num} ${meta.name}, auditing “${claimText}”, ${stateLabel(state)}`}
       style={{
         background: 'var(--panel)',
         border: '1px solid var(--edge)',
@@ -34,7 +39,7 @@ export function ReportRow({ result }: { result: CheckResult }) {
       {/* header: number · name · verdict chip */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--ink-4)', flex: 'none' }}>{num}</span>
-        <span style={{ font: '700 17px/1.15 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{meta.name}</span>
+        <span style={{ font: '700 17px/1.15 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)', minWidth: 0 }}>{title}</span>
         <span
           style={{
             marginLeft: 'auto',

@@ -9,6 +9,7 @@ import {
   CheckResult,
   DatasetInventory,
   ExtractedClaim,
+  type ExtractionAssessment,
   FieldSpec,
   type CheckConfigMap,
   type CheckId,
@@ -17,9 +18,16 @@ import {
 
 const FieldsResponse = z.object({ fields: z.array(FieldSpec) });
 const InspectResponse = z.object({ inventory: DatasetInventory });
+const ExtractionAssessmentSchema = z.object({
+  auditableClaims: z.number(),
+  evidenceKeys: z.array(z.string()),
+  suspiciouslyEmpty: z.boolean(),
+});
 const ClaimsResponse = z.object({
   claims: z.array(ExtractedClaim),
   source: z.enum(['model', 'curated']),
+  // Optional so an older server (or the curated path) still parses.
+  assessment: ExtractionAssessmentSchema.optional(),
 });
 const MapResponse = z.object({ claim: ExtractedClaim });
 
@@ -28,6 +36,9 @@ const MapResponse = z.object({ claim: ExtractedClaim });
 export interface ClaimsResult {
   claims: ExtractedClaim[];
   source: 'model' | 'curated';
+  /** Whether the extraction looks suppressed: nothing to audit on a dataset that
+   *  carries testable stored results. Absent on the curated path. */
+  assessment?: ExtractionAssessment;
 }
 
 async function postJson(url: string, body: unknown): Promise<unknown> {

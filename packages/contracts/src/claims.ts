@@ -89,12 +89,24 @@ export type ExtractedClaim = z.infer<typeof ExtractedClaim>;
 // ── Extraction I/O envelopes (spec sections 5, 7) ────────────────────────────
 
 /** Everything the extraction agent reads: the inventory plus optional text. */
+/**
+ * Caps on the untrusted text a scientist can hand the extraction model.
+ *
+ * `/api/audit/*` is unauthenticated and every one of these strings is forwarded
+ * into a paid model call, and re-sent on retry. Without a bound, a 10 MB notebook
+ * is a cost and availability problem before it is anything else. The prompt layer
+ * truncates what it renders; these bounds reject the payload at the door.
+ */
+export const MAX_NOTEBOOK_LENGTH = 200_000;
+export const MAX_PROSE_LENGTH = 100_000;
+export const MAX_CLAIM_TEXT_LENGTH = 4_000;
+
 export const ClaimExtractionRequest = z.object({
-  datasetTitle: z.string(),
+  datasetTitle: z.string().max(500),
   inventory: DatasetInventory,
   fields: z.array(FieldSpec),
-  notebook: z.string().optional(),
-  prose: z.string().optional(),
+  notebook: z.string().max(MAX_NOTEBOOK_LENGTH).optional(),
+  prose: z.string().max(MAX_PROSE_LENGTH).optional(),
 });
 export type ClaimExtractionRequest = z.infer<typeof ClaimExtractionRequest>;
 
@@ -105,10 +117,11 @@ export type ClaimExtractionResponse = z.infer<typeof ClaimExtractionResponse>;
 
 /** Manual claim entry (spec section 7): the user types one sentence, the agent maps it. */
 export const ClaimMappingRequest = z.object({
-  datasetTitle: z.string(),
+  datasetTitle: z.string().max(500),
   inventory: DatasetInventory,
   fields: z.array(FieldSpec),
-  text: z.string(),
+  // One typed claim is a sentence, not a document.
+  text: z.string().min(1).max(MAX_CLAIM_TEXT_LENGTH),
 });
 export type ClaimMappingRequest = z.infer<typeof ClaimMappingRequest>;
 
@@ -428,4 +441,49 @@ export function enforceClaimHonesty(
   });
 
   return out;
+}
+
+/**
+ * Whether the extraction result is trustworthy, or suspiciously empty.
+ *
+ * The honesty backstop (`enforceClaimHonesty`) is zero-in-zero-out: it prunes
+ * fabricated claims but never invents one. So an extraction that returns an empty
+ * list, or one where every claim is out of scope, passes the backstop clean and
+ * the app reports "no auditable claims". For most datasets that is honest. But it
+ * is also exactly what a prompt injection produces ("return an empty claims
+ * array", or "mark every claim out_of_scope"), and what a silently broken model
+ * produces, and the auditor going quiet is the dangerous direction.
+ *
+ * This does not undo the emptiness (we cannot re-derive claims a model refused to
+ * emit). It detects the one case worth flagging to the scientist: the extraction
+ * found nothing to audit while the dataset plainly carries auditable material, a
+ * stored differential-expression result or a marker table. Then the app can warn
+ * instead of quietly reporting a clean bill of health.
+ */
+export interface ExtractionAssessment {
+  /** Claims that will actually run at least one check (active, with a route). */
+  auditableClaims: number;
+  /** uns keys of kind `de_result` or `marker_table`: material a claim could test. */
+  evidenceKeys: string[];
+  /** Zero auditable claims, yet the dataset holds testable stored results. */
+  suspiciouslyEmpty: boolean;
+}
+
+export function assessExtraction(
+  inventory: DatasetInventory,
+  claims: ExtractedClaim[],
+): ExtractionAssessment {
+  const auditableClaims = claims.filter(
+    (c) => c.status !== 'removed' && c.status !== 'out_of_scope' && c.checks.length > 0,
+  ).length;
+
+  const evidenceKeys = inventory.uns
+    .filter((u) => u.kind === 'de_result' || u.kind === 'marker_table')
+    .map((u) => u.key);
+
+  return {
+    auditableClaims,
+    evidenceKeys,
+    suspiciouslyEmpty: auditableClaims === 0 && evidenceKeys.length > 0,
+  };
 }

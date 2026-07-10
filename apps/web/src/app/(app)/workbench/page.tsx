@@ -2,21 +2,21 @@
 
 import type { CheckId } from '@redline/contracts';
 import { CHECK_IDS, CHECK_REGISTRY } from '@redline/contracts';
+import type { PreparedRun } from '@redline/engine';
 import { useSession } from '@/state/session';
-import { CheckTile } from '@/components/workbench/CheckTile';
+import { RunTile } from '@/components/workbench/RunTile';
 
 /**
- * Workbench: the audit board. Every registered check is a live instrument you
- * open and operate — the founding core checks read as the spine, then the rigor
- * checks sit under a quiet subhead. "Re-run routed checks" fires every check a
- * confirmed claim routes to, and only those; a check no claim routes to renders
- * an honest empty state (see CheckTile) and is left untouched. When nothing is
- * routed the button has nothing to run, so it is disabled and says why rather
- * than posing as a live control.
+ * Workbench: the audit board. One dark tile per (claim, check) RUN, each a live
+ * instrument you open and operate. The founding core checks read as the spine,
+ * then the rigor checks sit under a quiet subhead — but on the run model a group
+ * holds every RUN whose check belongs to it, so two claims routed to the same
+ * check appear as two tiles, each auditing its own claim, neither silently
+ * dropped. "Re-run routed checks" fires every run a confirmed claim produced, and
+ * only those. When no claim routes to any check there are no runs, so the board is
+ * empty and says why rather than inventing tiles (honesty rules 1, 13); the re-run
+ * button is then disabled.
  */
-const CORE_IDS: CheckId[] = CHECK_IDS.filter((id) => CHECK_REGISTRY[id].group === 'core');
-const RIGOR_IDS: CheckId[] = CHECK_IDS.filter((id) => CHECK_REGISTRY[id].group === 'rigor');
-
 const boardStyle = {
   marginTop: 16,
   display: 'grid',
@@ -37,9 +37,30 @@ function GroupHead({ label, count }: { label: string; count: number }) {
   );
 }
 
+function RunGroup({ label, runs }: { label: string; runs: PreparedRun[] }) {
+  if (runs.length === 0) return null;
+  return (
+    <>
+      <GroupHead label={label} count={runs.length} />
+      <div style={boardStyle}>
+        {runs.map((run) => (
+          <RunTile key={run.key} run={run} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+const groupOf = (id: CheckId) => CHECK_REGISTRY[id].group;
+
 export default function WorkbenchPage() {
-  const { runAll, routedChecks } = useSession();
-  const noneRouted = routedChecks.length === 0;
+  const { runAll, runs } = useSession();
+  const noneRouted = runs.length === 0;
+
+  // Split the runs by their check's group. The registry, not a literal, decides
+  // which checks are core vs rigor, so a new rigor check joins its band for free.
+  const coreRuns = runs.filter((run) => groupOf(run.checkId) === 'core');
+  const rigorRuns = runs.filter((run) => groupOf(run.checkId) === 'rigor');
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '36px 40px 72px' }}>
@@ -87,26 +108,30 @@ export default function WorkbenchPage() {
         </button>
       </div>
 
-      {/* audit board: the founding spine, then the rigor checks under a quiet subhead */}
-      <div data-tour="workbench.board">
-        <GroupHead label="Core checks" count={CORE_IDS.length} />
-        <div style={boardStyle}>
-          {CORE_IDS.map((id) => (
-            <CheckTile key={id} checkId={id} />
-          ))}
+      {/* audit board: the founding spine then the rigor checks, one tile per run,
+          or an honest empty state when nothing routes */}
+      {noneRouted ? (
+        <div
+          data-tour="workbench.board"
+          style={{
+            marginTop: 30,
+            border: '1px dashed var(--edge-2)',
+            borderRadius: 14,
+            padding: '40px 28px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ font: '600 13px/1.5 var(--mono)', color: 'var(--ink-3)' }}>No claim routes to any check.</div>
+          <div style={{ margin: '10px auto 0', maxWidth: 440, font: '400 12.5px/1.6 var(--sans)', color: 'var(--ink-4)' }}>
+            Redline only audits the claims you ratified, so there is nothing to run yet. Route a claim to a check on the Claims step to bring it into the audit.
+          </div>
         </div>
-
-        {RIGOR_IDS.length > 0 && (
-          <>
-            <GroupHead label="Rigor checks" count={RIGOR_IDS.length} />
-            <div style={boardStyle}>
-              {RIGOR_IDS.map((id) => (
-                <CheckTile key={id} checkId={id} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      ) : (
+        <div data-tour="workbench.board">
+          <RunGroup label="Core checks" runs={coreRuns} />
+          <RunGroup label="Rigor checks" runs={rigorRuns} />
+        </div>
+      )}
     </div>
   );
 }

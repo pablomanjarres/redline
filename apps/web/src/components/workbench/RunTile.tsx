@@ -2,108 +2,34 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { CheckId } from '@redline/contracts';
-import { checkMeta } from '@redline/contracts';
+import type { PreparedRun } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { MiniChart } from '@/components/charts';
+import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
- * One station on the audit board: a whole-tile link into a check's stage. Dark
- * panel with a top strip tinted by the verdict signal, the check number + name +
- * failure mode, a verdict badge, the claim under audit, and a MiniChart floating
- * on a small white lightbox plate (the only white on the surface). The headline
- * and any error read as instrument output in mono.
+ * One station on the audit board: a whole-tile link into one (claim, check) RUN's
+ * stage. Dark panel with a top strip tinted by the verdict signal, the check
+ * number + name + failure mode, a verdict badge, the claim under audit, and a
+ * MiniChart floating on a small white lightbox plate (the only white on the
+ * surface). The headline and any error read as instrument output in mono.
  *
- * A check that no confirmed claim routes to (`routedChecks` does not include it)
- * has nothing to audit. It renders a quiet, explicit "no claim routes to this
- * check" panel instead of a verdict, and it is not a link, so there is no path
- * to run it. Inventing a verdict for an untargeted check would be crying wolf,
- * which is the failure this product exists to catch. The claim shown on a
- * routed tile comes from `claimForCheck` (the confirmed extracted claim routed
- * here, else the legacy scenario claim).
+ * Every tile IS a real run, so there is no "no claim routes here" branch: the
+ * workbench renders one tile per run, and when no claim routes to any check the
+ * board is empty and the page says so (honesty rules 1, 13). Two claims that
+ * route to the same check produce two tiles here, each auditing its own claim,
+ * neither silently dropped (the F2 fix). The claim shown is read straight off the
+ * run descriptor (`run.claimText`), so it is always the same claim whose params
+ * (`run.config`) drove the audit.
  */
-export function CheckTile({ checkId }: { checkId: CheckId }) {
-  const { results, running, routedChecks, claimForCheck } = useSession();
-  const meta = checkMeta(checkId);
-  const routed = routedChecks.includes(checkId);
-
-  // No confirmed claim routes here: an honest empty state, never a verdict.
-  if (!routed) {
-    const neutral = signalColor('ready');
-    return (
-      <div
-        data-tour={`workbench.tile.${checkId}`}
-        aria-label={`Check ${checkId}: ${meta.name}. No claim routes to this check.`}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          background: 'var(--panel)',
-          border: '1px solid var(--edge)',
-          borderRadius: 14,
-          overflow: 'hidden',
-          minHeight: 336,
-        }}
-      >
-        {/* neutral strip, no verdict glow */}
-        <div style={{ height: 3, background: neutral }} />
-
-        <div style={{ padding: '19px 21px 21px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-          {/* header: number · name · sub · quiet "no claim routed" badge */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
-            <span style={{ font: '700 12px/1 var(--mono)', color: neutral, marginTop: 3, flex: 'none' }}>0{checkId}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ font: '700 17px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink-2)' }}>{meta.name}</div>
-              <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
-            </div>
-            <span
-              style={{
-                flex: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 7,
-                font: '700 9.5px/1 var(--sans)',
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-3)',
-                border: '1px solid var(--edge-2)',
-                background: 'transparent',
-                padding: '6px 10px',
-                borderRadius: 7,
-              }}
-            >
-              <span style={{ width: 7, height: 7, borderRadius: 7, background: 'var(--ink-4)' }} />
-              No claim routed
-            </span>
-          </div>
-
-          {/* the honest empty state, in place of the plate + verdict */}
-          <div
-            style={{
-              marginTop: 16,
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              gap: 10,
-              padding: '20px 0',
-            }}
-          >
-            <div style={{ font: '600 13px/1.4 var(--mono)', color: 'var(--ink-3)' }}>No claim routes to this check.</div>
-            <div style={{ font: '400 12px/1.55 var(--sans)', color: 'var(--ink-4)', maxWidth: 300 }}>
-              Redline only audits the claims you ratified, so this check has nothing to test. Route a claim to it on the Claims step to bring it into the audit.
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const result = results[checkId];
-  const isRunning = running[checkId];
-  const claim = claimForCheck(checkId) ?? '';
+export function RunTile({ run }: { run: PreparedRun }) {
+  const { results, running } = useSession();
+  const checkId = run.checkId;
+  const meta = CHECK_META[checkId];
+  const result = results[run.key];
+  const isRunning = running[run.key];
+  const claim = run.claimText;
 
   const state = isRunning ? 'running' : result ? result.state : 'ready';
   const light = signalColor(state);
@@ -141,9 +67,9 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
   return (
     <Link
       data-tour={`workbench.tile.${checkId}`}
-      href={`/checks/${checkId}`}
-      data-testid={`check-tile-${checkId}`}
-      aria-label={`Open check ${checkId}: ${meta.name}`}
+      href={`/checks/${encodeURIComponent(run.key)}`}
+      data-testid={`run-tile-${run.key}`}
+      aria-label={`Open check ${checkId}: ${meta.name}, auditing “${claim}”`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -164,13 +90,13 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
       <div style={{ padding: '19px 21px 21px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* header: number · name · sub · verdict badge */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
-          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>{String(checkId).padStart(2, '0')}</span>
+          <span style={{ font: '700 12px/1 var(--mono)', color: light, marginTop: 3, flex: 'none' }}>0{checkId}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '700 17px/1.2 var(--sans)', letterSpacing: '-.01em', color: 'var(--ink)' }}>{meta.name}</div>
             <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
           </div>
           <span
-            data-testid={`tile-verdict-${checkId}`}
+            data-testid={`tile-verdict-${run.key}`}
             style={{
               flex: 'none',
               display: 'inline-flex',
@@ -203,7 +129,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
         {/* claim under audit */}
         {claim && (
           <div style={{ marginTop: 16, font: '400 12px/1.5 var(--mono)' }}>
-            <span style={{ color: 'var(--ink-4)' }}>AUDITING — </span>
+            <span style={{ color: 'var(--ink-4)' }}>AUDITING: </span>
             <span style={{ color: 'var(--ink-2)' }}>“{claim}”</span>
           </div>
         )}

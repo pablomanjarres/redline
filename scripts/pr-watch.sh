@@ -31,6 +31,13 @@ set -Eeuo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# gh resolves the repo from the current directory's git remote. Under launchd the
+# working directory is not this checkout (it is / or ~), so every gh call that
+# needs a repo fails "not a git repository". Pass the slug explicitly, read from
+# this checkout's origin remote, so it works from any cwd and is not hardcoded.
+REPO_SLUG="$(git -C "$REPO_ROOT" config --get remote.origin.url 2>/dev/null \
+  | sed -E 's#(git@github.com:|https://github.com/)##; s#\.git$##')"
 STATE_DIR="$REPO_ROOT/.claude/pr-watch"
 SEEN="$STATE_DIR/seen"                 # one PR number per line. The watermark.
 HEARTBEAT="$STATE_DIR/heartbeat"       # mtime is the liveness signal
@@ -77,6 +84,7 @@ fi
 # ── preflight: fail before doing any work ────────────────────────────────────
 command -v gh >/dev/null || { alert "gh not on PATH"; exit 2; }
 gh auth status >/dev/null 2>&1 || { alert "gh is not authenticated"; exit 2; }
+[[ -n "$REPO_SLUG" ]] || { alert "could not resolve the repo slug from $REPO_ROOT origin remote"; exit 2; }
 
 # ── list open PRs. -q keeps jq out of the failure path ───────────────────────
 # Distinguish "gh failed" from "genuinely zero PRs". Conflating them (gh ... ||
@@ -86,7 +94,7 @@ gh auth status >/dev/null 2>&1 || { alert "gh is not authenticated"; exit 2; }
 if [[ -n "$ONCE" ]]; then
   OPEN="$ONCE"
 else
-  if ! OPEN="$(gh pr list --state open --limit 50 --json number -q '.[].number' 2>/dev/null)"; then
+  if ! OPEN="$(gh pr list -R "$REPO_SLUG" --state open --limit 50 --json number -q '.[].number' 2>/dev/null)"; then
     alert "gh pr list failed (auth, network, or rate limit); cannot see open PRs"
     exit 2
   fi
@@ -128,7 +136,7 @@ for n in "${new[@]}"; do
   fi
   count=$((count + 1))
 
-  title="$(gh pr view "$n" --json title -q .title 2>/dev/null || echo '?')"
+  title="$(gh pr view "$n" -R "$REPO_SLUG" --json title -q .title 2>/dev/null || echo '?')"
 
   if (( DRY_RUN )); then
     log "DRY RUN: would alert, then run the pr-loop skill on #$n ($title)"

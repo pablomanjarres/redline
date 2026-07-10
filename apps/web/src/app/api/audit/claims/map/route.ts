@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BodyTooLarge, readJsonBounded } from '@/lib/body';
 import {
   ScenarioId,
   DatasetInventory,
@@ -39,8 +40,13 @@ const reasoner = createReasoner();
 export async function POST(req: Request) {
   let body: z.infer<typeof MapRequest>;
   try {
-    body = MapRequest.parse(await req.json());
+    body = MapRequest.parse(await readJsonBounded(req));
   } catch (err) {
+    // The body is forwarded into a paid model call and re-sent on retry, and this
+    // route is unauthenticated. Refuse an oversized payload before parsing it.
+    if (err instanceof BodyTooLarge) {
+      return Response.json({ error: 'Request body too large' }, { status: 413 });
+    }
     if (err instanceof z.ZodError) {
       return Response.json({ error: 'Invalid request', issues: err.issues }, { status: 400 });
     }

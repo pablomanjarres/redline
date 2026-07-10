@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { BodyTooLarge, readJsonBounded } from '@/lib/body';
 import {
   ScenarioId,
   DatasetInventory,
   FieldSpec,
   ClaimExtractionResponse,
+  assessExtraction,
   type ClaimExtractionRequest,
   type ExtractedClaim,
 } from '@redline/contracts';
@@ -51,8 +53,13 @@ const reasoner = createReasoner();
 export async function POST(req: Request) {
   let body: z.infer<typeof ClaimsRequest>;
   try {
-    body = ClaimsRequest.parse(await req.json());
+    body = ClaimsRequest.parse(await readJsonBounded(req));
   } catch (err) {
+    // The body is forwarded into a paid model call and re-sent on retry, and this
+    // route is unauthenticated. Refuse an oversized payload before parsing it.
+    if (err instanceof BodyTooLarge) {
+      return Response.json({ error: 'Request body too large' }, { status: 413 });
+    }
     if (err instanceof z.ZodError) {
       return Response.json({ error: 'Invalid request', issues: err.issues }, { status: 400 });
     }
@@ -86,7 +93,15 @@ export async function POST(req: Request) {
 
     // Validate the claim list against the contract before it leaves the route.
     const validated = ClaimExtractionResponse.parse({ claims });
-    return Response.json({ claims: validated.claims, source });
+
+    // The backstop is zero-in-zero-out, so an empty or all-out-of-scope result
+    // passes it clean. That is honest for most datasets, but it is also what a
+    // prompt injection ("return an empty claims array") and a broken model both
+    // produce, and an auditor going quiet is the dangerous direction. Flag the one
+    // case worth surfacing: nothing to audit, yet the data carries testable stored
+    // results. The UI warns rather than reporting a clean bill of health.
+    const assessment = assessExtraction(body.inventory, validated.claims);
+    return Response.json({ claims: validated.claims, source, assessment });
   } catch {
     return Response.json({ error: 'Internal error' }, { status: 500 });
   }

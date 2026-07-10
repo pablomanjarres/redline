@@ -26,6 +26,7 @@ import {
 import type { AuditReport, Chart, CheckResult, DatasetMeta, StatReadout } from '@redline/contracts';
 import { CHECK_COUNT, CHECK_REGISTRY } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
+import type { ReportFinding } from '@/state/session';
 import { ciLabel, fmt } from './format';
 
 // Canonical check names come from the single registry in @redline/contracts, so
@@ -403,17 +404,20 @@ function StatTable({ stats }: { stats: StatReadout[] }) {
   );
 }
 
-function CheckCard({ result }: { result: CheckResult }) {
+function CheckCard({ result, claimText }: { result: CheckResult; claimText?: string }) {
   const { checkId, state, headline, stats, error, original, corrected, missing, citation } = result;
   const t = tint(state);
   const num = String(checkId).padStart(2, '0');
   const ref = `${citation.authors} (${citation.year}) · ${citation.venue}`;
+  // Title the card with the claim this run audited, so two findings on the same
+  // check read apart on the page (mirrors the on-screen ReportRow).
+  const name = claimText ? `${checkName(checkId)}: ${claimText}` : checkName(checkId);
 
   return (
     <View style={[S.card, { borderLeftColor: t.fg }]} wrap={false}>
       <View style={S.cardHead}>
         <Text style={S.num}>{num}</Text>
-        <Text style={S.name}>{checkName(checkId)}</Text>
+        <Text style={S.name}>{name}</Text>
         <Text style={[S.chip, { color: t.fg, borderColor: t.fg, backgroundColor: t.bg }]}>{stateLabel(state)}</Text>
       </View>
 
@@ -467,13 +471,16 @@ function CheckCard({ result }: { result: CheckResult }) {
 function ReportDocument({
   report,
   dataset,
+  findings,
   generatedAt,
 }: {
   report: AuditReport;
   dataset: DatasetMeta;
+  findings: ReportFinding[];
   generatedAt: string;
 }) {
   const bandColor = report.flagged > 0 ? P.red : report.needInput > 0 ? P.amber : P.pass;
+  const ran = findings.length;
   const counts = [
     { n: report.flagged, label: 'flagged', c: P.red },
     { n: report.clean, label: 'verified', c: P.pass },
@@ -491,7 +498,7 @@ function ReportDocument({
           <Text style={S.metaFile}>{dataset.file}</Text>
         </Text>
         <Text style={[S.meta, { marginTop: 2 }]}>
-          Generated {generatedAt} · {report.results.length} of {CHECK_COUNT} checks run
+          Generated {generatedAt} · {ran} {ran === 1 ? 'check' : 'checks'} run
         </Text>
         <View style={S.rule} />
 
@@ -509,9 +516,10 @@ function ReportDocument({
           <Text style={S.verdict}>{safe(report.verdict)}</Text>
         </View>
 
-        {/* per-check findings */}
-        {report.results.length > 0 ? (
-          report.results.map((r) => <CheckCard key={r.checkId} result={r} />)
+        {/* per-run findings: one card per run that produced a result, titled with
+            the claim it audited so two findings on the same check read apart */}
+        {findings.length > 0 ? (
+          findings.map((f) => <CheckCard key={f.key} result={f.result} claimText={f.claimText} />)
         ) : (
           <Text style={{ color: P.ink4, fontFamily: 'Courier', fontSize: 10 }}>
             {`No checks have run yet. Confirm the design and run all ${CHECK_COUNT} checks to populate this report.`}
@@ -538,14 +546,20 @@ function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'report';
 }
 
-/** Build the report PDF and trigger a browser download. Client-only. */
-export async function downloadReportPdf(report: AuditReport, dataset: DatasetMeta): Promise<void> {
+/** Build the report PDF and trigger a browser download. Client-only. The
+ *  `findings` carry each run's claim so the cards title two findings on one check
+ *  apart, exactly as the on-screen report does. */
+export async function downloadReportPdf(
+  report: AuditReport,
+  dataset: DatasetMeta,
+  findings: ReportFinding[],
+): Promise<void> {
   const now = new Date();
   const generatedAt = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const stamp = now.toISOString().slice(0, 10);
 
   const blob = await pdf(
-    <ReportDocument report={report} dataset={dataset} generatedAt={generatedAt} />,
+    <ReportDocument report={report} dataset={dataset} findings={findings} generatedAt={generatedAt} />,
   ).toBlob();
 
   const url = URL.createObjectURL(blob);

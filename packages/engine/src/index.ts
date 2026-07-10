@@ -47,6 +47,7 @@ export {
   runKeyOf,
   runsFrom,
   configForRun,
+  prepareRuns,
   configForRunWithOutcome,
   routedChecksFrom,
   ownerClaimByCheck,
@@ -62,6 +63,7 @@ export {
 export type {
   RunKey,
   RunDescriptor,
+  PreparedRun,
   MergeOutcome,
   RunConfigOutcome,
   RoutedConfigOutcome,

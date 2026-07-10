@@ -343,6 +343,39 @@ export function configForRun<Id extends CheckId>(
   return configForRunWithOutcome<Id>(base, run).config;
 }
 
+/**
+ * One run, ready to execute: a RunDescriptor plus the config that run POSTs and
+ * the params its route carried that named no knob (the F1 honesty ledger, so a
+ * param that cannot reach a pillar is surfaced, never silently dropped).
+ */
+export interface PreparedRun extends RunDescriptor {
+  config: CheckConfigMap[CheckId];
+  unmapped: Array<{ check: CheckId; key: string }>;
+}
+
+/**
+ * Every (active claim, valid route) as a run ready to execute, in the
+ * deterministic order `runsFrom` gives. This is the one call the Workbench needs:
+ * it replaces routedChecksFrom (unique check ids) + mergeRoutedConfig (single
+ * owner), so two claims routed to one check yield two runs with their own params,
+ * not one run with the winner's params and the loser silently dropped.
+ *
+ * @param base The current check config map (the knob defaults, per check).
+ * @param claims The current claim list (null before extraction).
+ * @returns One PreparedRun per (active claim, valid route).
+ */
+export function prepareRuns(
+  base: CheckConfigMap,
+  claims: ExtractedClaim[] | null,
+): PreparedRun[] {
+  return runsFrom(claims).map((run) => {
+    const { config, unmapped } = configForRunWithOutcome(base, run);
+    // Tag each unmapped key with this run's check, matching PreparedRun's
+    // (check, key) ledger shape (the same shape mergeRoutedConfigWithOutcome uses).
+    return { ...run, config, unmapped: unmapped.map((key) => ({ check: run.checkId, key })) };
+  });
+}
+
 /** One check's unmapped params, tagged with the check id (see `mergeRoutedConfigWithOutcome`). */
 export interface RoutedConfigOutcome {
   config: CheckConfigMap;

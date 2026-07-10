@@ -211,13 +211,21 @@ export const KETAMINE_INVENTORY: DatasetInventory = {
 /**
  * Inventory by scenario, so a compute target can inspect one by id.
  *
- * Partial on purpose. Only the two demo scenarios carry a locked inventory. The
- * verification foils (pfc, clean, nocounts) have no fixture numbers at all: their
- * inventory only exists on a real compute target, which reads the .h5ad. Typing
- * this as a total Record would force us to invent one, and an invented inventory
- * is a fabricated dataset description shown to a scientist.
+ * Only the two locked demo scenarios carry a hand-written inventory. The foil
+ * scenarios (pfc, clean, nocounts) carry no fixture numbers either: they exist
+ * to be run against the real Python engine on `REDLINE_COMPUTE_TARGET=local`,
+ * which reads their real `.h5ad` and returns a real inventory. Inventing one
+ * here would present a fixture as an inspection of data we never read.
  */
 export const INVENTORIES: Partial<Record<ScenarioId, DatasetInventory>> = {
   marson: MARSON_INVENTORY,
   ketamine: KETAMINE_INVENTORY,
 };
+
+/**
+ * The fixture inventory for a scenario, or undefined when that scenario has no
+ * locked fixture. The caller must refuse rather than fabricate.
+ */
+export function inventoryFor(scenarioId: ScenarioId): DatasetInventory | undefined {
+  return INVENTORIES[scenarioId];
+}
