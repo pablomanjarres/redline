@@ -105,8 +105,8 @@ export function nextSpineIndex(depths: readonly TourDepth[], from: number): numb
 /**
  * The spine index presenter should rest on when it lands on `from`, honoring the
  * direction it was travelling. Forward skips ahead to the next spine step; a Back
- * press skips backward to the previous one, so Back is never a dead control that
- * bounces the reader onto the step they just left. Returns `-1` when a backward
+ * press skips backward to the previous one, so Back never bounces the reader onto
+ * the step they just left. Returns `-1` when a backward
  * search runs off the front (the caller keeps the reader where they are). Pure.
  */
 export function spineStepFor(
