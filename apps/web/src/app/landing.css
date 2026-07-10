@@ -1,0 +1,307 @@
+/*
+ * Landing (front door). Namespaced under `.lp` so it never touches the workbench.
+ * Every color is a design token from @redline/ui/tokens.css. The one editorial red
+ * (--red) appears only where it means a finding, per the honesty voice rules.
+ */
+
+.lp {
+  --lp-gutter: clamp(20px, 5vw, 72px);
+  --lp-maxw: 1120px;
+  color: var(--ink);
+}
+.lp *, .lp *::before, .lp *::after { box-sizing: border-box; }
+
+.lp-wrap {
+  max-width: var(--lp-maxw);
+  margin: 0 auto;
+  padding-inline: var(--lp-gutter);
+}
+
+/* ── wordmark ─────────────────────────────────────────────────────────── */
+.lp-mark { position: relative; display: inline-flex; align-items: baseline; text-decoration: none; }
+.lp-mark b {
+  font: 900 20px/1 var(--display);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.lp-mark i {
+  position: absolute; left: -2px; right: -2px; top: 54%;
+  height: 2.5px; background: var(--red); border-radius: 2px;
+  box-shadow: 0 0 8px rgba(229, 72, 77, 0.35);
+}
+.lp-chip {
+  font: 500 9.5px/1 var(--mono); letter-spacing: 0.22em;
+  color: var(--ink-3); border: 1px solid var(--edge-2);
+  padding: 5px 9px; border-radius: 5px; text-transform: uppercase;
+}
+
+/* ── nav ──────────────────────────────────────────────────────────────── */
+.lp-nav {
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.lp-nav-in {
+  display: flex; align-items: center; gap: 16px;
+  height: 64px; max-width: var(--lp-maxw); margin: 0 auto;
+  padding-inline: var(--lp-gutter);
+}
+.lp-nav-links { display: flex; align-items: center; gap: 26px; margin-inline: auto; }
+.lp-nav-links a {
+  font: 600 12.5px/1 var(--sans); color: var(--ink-2); text-decoration: none;
+  letter-spacing: -0.01em; transition: color 0.14s ease;
+}
+.lp-nav-links a:hover { color: var(--ink); }
+.lp-nav-cta { display: flex; align-items: center; gap: 12px; }
+
+/* ── buttons ──────────────────────────────────────────────────────────── */
+.lp-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font: 800 13px/1 var(--sans); letter-spacing: 0.02em;
+  padding: 14px 22px; border-radius: 11px; border: 1px solid transparent;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: transform 0.14s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+.lp-btn .lp-arrow { transition: transform 0.16s ease; }
+.lp-btn:hover .lp-arrow { transform: translateX(3px); }
+.lp-btn-primary {
+  color: #fff; background: var(--signal);
+  box-shadow: 0 10px 24px -8px rgba(37, 99, 235, 0.45);
+}
+.lp-btn-primary:hover { box-shadow: 0 14px 30px -8px rgba(37, 99, 235, 0.55); transform: translateY(-1px); }
+.lp-btn-ghost {
+  color: var(--ink); background: color-mix(in srgb, var(--panel) 70%, transparent);
+  border-color: var(--edge-2);
+}
+.lp-btn-ghost:hover { border-color: var(--edge-hi); background: var(--panel); }
+.lp-btn-sm { padding: 10px 15px; border-radius: 9px; font-size: 12px; }
+
+/* ── hero ─────────────────────────────────────────────────────────────── */
+.lp-hero { position: relative; overflow: hidden; isolation: isolate; }
+.lp-hero-art {
+  position: absolute; inset: 0; z-index: -2;
+  background: url('/hero.webp') center bottom / cover no-repeat;
+}
+.lp-hero-scrim {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(to bottom, var(--surface) 0%, color-mix(in srgb, var(--surface) 30%, transparent) 12%, transparent 34%),
+    linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 20%, transparent) 26%, transparent 52%);
+}
+.lp-hero-in {
+  max-width: var(--lp-maxw); margin: 0 auto; padding-inline: var(--lp-gutter);
+  padding-top: clamp(68px, 11vh, 124px); padding-bottom: clamp(150px, 24vh, 288px);
+  text-align: center;
+}
+.lp-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font: 600 11px/1 var(--mono); letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--red);
+}
+.lp-eyebrow .lp-tick { width: 6px; height: 6px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px rgba(229,72,77,0.14); }
+.lp-h1 {
+  margin: 22px auto 0; max-width: 15ch;
+  font: 900 clamp(38px, 6.6vw, 74px) / 1.01 var(--display);
+  letter-spacing: -0.035em; color: var(--ink);
+}
+.lp-sub {
+  margin: 22px auto 0; max-width: 60ch;
+  font: 400 clamp(15px, 1.5vw, 17.5px) / 1.6 var(--sans); color: var(--ink-2);
+}
+.lp-hero-cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.lp-hero-strip {
+  margin-top: 38px; display: flex; gap: 26px; justify-content: center; flex-wrap: wrap;
+  font: 600 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);
+  text-shadow: 0 1px 12px var(--surface), 0 0 4px var(--surface), 0 0 4px var(--surface);
+}
+.lp-hero-strip span { position: relative; }
+.lp-hero-strip span + span::before {
+  content: ''; position: absolute; left: -14px; top: 50%; width: 3px; height: 3px;
+  border-radius: 50%; background: var(--edge-hi); transform: translateY(-50%);
+}
+
+/* ── generic section rhythm ───────────────────────────────────────────── */
+.lp-section { padding-block: clamp(64px, 9vw, 128px); }
+.lp-kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font: 600 11px/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3);
+}
+.lp-kicker::before { content: ''; width: 22px; height: 1px; background: var(--red); }
+.lp-h2 {
+  margin: 18px 0 0; max-width: 22ch;
+  font: 800 clamp(26px, 3.4vw, 40px) / 1.06 var(--display); letter-spacing: -0.03em; color: var(--ink);
+}
+.lp-lead { margin: 16px 0 0; max-width: 62ch; font: 400 clamp(15px, 1.4vw, 17px)/1.6 var(--sans); color: var(--ink-2); }
+
+/* ── positioning strip ────────────────────────────────────────────────── */
+.lp-position {
+  border-block: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+}
+.lp-position-in {
+  padding-block: clamp(40px, 6vw, 72px);
+  font: 500 clamp(18px, 2.3vw, 27px)/1.42 var(--display); letter-spacing: -0.02em;
+  color: var(--ink); max-width: 30ch;
+}
+.lp-position-in .lp-em { color: var(--ink-4); }
+
+/* ── checks grid ──────────────────────────────────────────────────────── */
+.lp-group-label {
+  display: flex; align-items: center; gap: 12px; margin: 44px 0 18px;
+  font: 600 10.5px/1 var(--mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3);
+}
+.lp-group-label::after { content: ''; flex: 1; height: 1px; background: var(--edge); }
+.lp-checks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.lp-check {
+  position: relative; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 14px; padding: 20px 20px 22px; overflow: hidden;
+  transition: transform 0.16s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.lp-check::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--red); opacity: 0; transition: opacity 0.18s ease;
+}
+.lp-check:hover { transform: translateY(-3px); box-shadow: var(--glow); border-color: var(--edge-2); }
+.lp-check:hover::before { opacity: 0.85; }
+.lp-check-n {
+  font: 700 10px/1 var(--mono); letter-spacing: 0.14em; color: var(--red);
+}
+.lp-check-name { margin: 12px 0 0; font: 700 16px/1.2 var(--sans); letter-spacing: -0.01em; color: var(--ink); }
+.lp-check-what { margin: 9px 0 0; font: 400 13px/1.52 var(--sans); color: var(--ink-2); }
+.lp-check-fix {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--edge-2);
+  font: 500 11px/1.45 var(--mono); color: var(--ink-3);
+}
+.lp-check-fix b { color: var(--ink-2); font-weight: 600; }
+
+/* ── proof / benchmark ────────────────────────────────────────────────── */
+.lp-proof { background: var(--panel); border-block: 1px solid var(--edge); }
+.lp-proof-grid {
+  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(32px, 5vw, 72px); align-items: center;
+}
+.lp-stat-row { display: flex; gap: 40px; flex-wrap: wrap; margin-top: 26px; }
+.lp-stat b { display: block; font: 800 clamp(40px, 6vw, 66px)/1 var(--display); letter-spacing: -0.04em; }
+.lp-stat.good b { color: var(--green); }
+.lp-stat.bad b { color: var(--red); }
+.lp-stat span { display: block; margin-top: 8px; font: 500 12px/1.4 var(--mono); letter-spacing: 0.04em; color: var(--ink-3); max-width: 22ch; }
+.lp-vs {
+  margin-top: 30px; padding: 16px 18px; border: 1px solid var(--edge); border-radius: 12px;
+  background: var(--panel-2); font: 400 13.5px/1.55 var(--sans); color: var(--ink-2);
+}
+.lp-vs strong { color: var(--ink); font-weight: 700; }
+.lp-strike { color: var(--ink-4); text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px; }
+.lp-rules { display: grid; gap: 14px; }
+.lp-rule { display: flex; gap: 13px; align-items: flex-start; }
+.lp-rule .lp-dot { flex: none; margin-top: 4px; width: 9px; height: 9px; border-radius: 3px; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.lp-rule h4 { margin: 0; font: 700 14.5px/1.3 var(--sans); color: var(--ink); }
+.lp-rule p { margin: 4px 0 0; font: 400 13px/1.5 var(--sans); color: var(--ink-2); }
+
+/* ── how it works ─────────────────────────────────────────────────────── */
+.lp-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 34px; }
+.lp-step {
+  position: relative; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 13px; padding: 20px;
+}
+.lp-step-n { font: 700 11px/1 var(--mono); letter-spacing: 0.16em; color: var(--signal); }
+.lp-step h4 { margin: 12px 0 0; font: 700 15px/1.25 var(--sans); color: var(--ink); }
+.lp-step p { margin: 7px 0 0; font: 400 12.5px/1.5 var(--sans); color: var(--ink-2); }
+.lp-targets { margin-top: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; background: var(--edge); }
+.lp-target { background: var(--panel); padding: 15px 16px; }
+.lp-target b { font: 700 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.lp-target span { display: block; margin-top: 7px; font: 400 11.5px/1.45 var(--sans); color: var(--ink-3); }
+.lp-target.def { background: var(--signal-soft); }
+.lp-target.def b { color: var(--signal); }
+
+/* ── what it exposes (surfaces) ───────────────────────────────────────── */
+.lp-surfaces { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 34px; }
+.lp-surface {
+  position: relative; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 16px; padding: 26px 26px 24px; overflow: hidden;
+  transition: transform 0.16s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.lp-surface:hover { transform: translateY(-3px); box-shadow: var(--glow); border-color: var(--edge-2); }
+.lp-surface-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 600 10px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-4);
+}
+.lp-surface h3 { margin: 14px 0 0; font: 800 19px/1.15 var(--display); letter-spacing: -0.02em; color: var(--ink); }
+.lp-surface p { margin: 10px 0 0; font: 400 13.5px/1.55 var(--sans); color: var(--ink-2); max-width: 42ch; }
+.lp-surface-foot { margin-top: 16px; font: 500 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-3); }
+.lp-surface-foot a { color: var(--signal); text-decoration: none; }
+.lp-surface-foot a:hover { text-decoration: underline; }
+.lp-contract {
+  margin-top: 16px; padding: 16px 20px; border: 1px dashed var(--edge-2); border-radius: 12px;
+  font: 400 13px/1.55 var(--sans); color: var(--ink-2);
+}
+.lp-contract code { font: 600 12.5px/1 var(--mono); color: var(--ink); background: var(--void); padding: 2px 6px; border-radius: 5px; }
+
+/* ── dataset note ─────────────────────────────────────────────────────── */
+.lp-note { display: grid; grid-template-columns: auto 1fr; gap: clamp(20px,4vw,48px); align-items: start; }
+.lp-note-badge {
+  font: 700 10px/1.5 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); border: 1px solid var(--edge-2); border-radius: 10px; padding: 14px 16px; white-space: nowrap;
+}
+.lp-note p { margin: 0; font: 400 14.5px/1.62 var(--sans); color: var(--ink-2); max-width: 68ch; }
+.lp-note p + p { margin-top: 14px; }
+.lp-note b { color: var(--ink); font-weight: 600; }
+
+/* ── closing CTA ──────────────────────────────────────────────────────── */
+.lp-close { position: relative; overflow: hidden; isolation: isolate; border-top: 1px solid var(--edge); }
+.lp-close-art { position: absolute; inset: 0; z-index: -2; background: url('/field.webp') center / cover no-repeat; }
+.lp-close-scrim {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(to bottom, var(--surface) 0%, color-mix(in srgb,var(--surface) 62%, transparent) 40%, color-mix(in srgb,var(--surface) 78%, transparent) 100%);
+}
+.lp-close-in { text-align: center; padding-block: clamp(90px, 15vw, 180px); }
+.lp-close h2 { margin: 18px auto 0; max-width: 18ch; font: 900 clamp(30px,4.6vw,54px)/1.04 var(--display); letter-spacing: -0.035em; color: var(--ink); }
+.lp-close p { margin: 16px auto 0; max-width: 52ch; font: 400 clamp(14px,1.4vw,16.5px)/1.6 var(--sans); color: var(--ink-2); }
+.lp-close-cta { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* ── footer ───────────────────────────────────────────────────────────── */
+.lp-footer { border-top: 1px solid var(--edge); background: var(--panel); }
+.lp-footer-in { padding-block: 40px; display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
+.lp-footer-in .lp-mark b { font-size: 17px; }
+.lp-footer-meta { font: 400 12px/1.6 var(--sans); color: var(--ink-3); }
+.lp-footer-meta b { color: var(--ink-2); font-weight: 600; }
+.lp-footer-links { margin-inline-start: auto; display: flex; gap: 22px; }
+.lp-footer-links a { font: 600 12px/1 var(--sans); color: var(--ink-2); text-decoration: none; }
+.lp-footer-links a:hover { color: var(--ink); }
+.lp-tech { width: 100%; margin-top: 8px; padding-top: 22px; border-top: 1px solid var(--edge); font: 400 12px/1.7 var(--mono); letter-spacing: 0.02em; color: var(--ink-4); }
+
+/* ── entrance choreography (one orchestrated load) ────────────────────── */
+.lp-rise { animation: rl-rise 0.62s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.lp-d1 { animation-delay: 0.06s; }
+.lp-d2 { animation-delay: 0.14s; }
+.lp-d3 { animation-delay: 0.22s; }
+.lp-d4 { animation-delay: 0.30s; }
+.lp-d5 { animation-delay: 0.40s; }
+
+/* ── responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .lp-nav-links { display: none; }
+  .lp-nav-cta { margin-inline-start: auto; }
+  .lp-checks { grid-template-columns: repeat(2, 1fr); }
+  .lp-flow { grid-template-columns: repeat(2, 1fr); }
+  .lp-targets { grid-template-columns: repeat(2, 1fr); }
+  .lp-proof-grid { grid-template-columns: 1fr; }
+  .lp-surfaces { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .lp-chip { display: none; }
+  .lp-nav .lp-btn-ghost { display: none; }
+  .lp-checks { grid-template-columns: 1fr; }
+  .lp-flow { grid-template-columns: 1fr; }
+  .lp-targets { grid-template-columns: 1fr; }
+  .lp-note { grid-template-columns: 1fr; }
+  .lp-stat-row { gap: 26px; }
+  .lp-footer-links { margin-inline-start: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-rise { animation: none; }
+  .lp-btn, .lp-check, .lp-surface { transition: none; }
+}

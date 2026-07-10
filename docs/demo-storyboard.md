@@ -33,7 +33,8 @@ version of this in the first twenty seconds. It is a hard constraint, not a foot
 
 ## Beat 1 - Cold open and intake (0:00 to 0:20)
 
-- **Screen:** the standalone app at `page.tsx`, the Marson scenario already loaded.
+- **Screen:** the intake at `/start`, the Marson scenario already loaded. (The front-door
+  landing lives at `/`; the cold open opens the tool directly.)
   The dataset card reads "CD4+ T cells, IL2RA knockdown vs non-targeting, Perturb-seq,"
   about 52,000 cells, about 3,200 genes, 4 donors, 2.4 GB.
 - **Say:** "This is a real single-cell dataset from Gladstone. A scientist ran the

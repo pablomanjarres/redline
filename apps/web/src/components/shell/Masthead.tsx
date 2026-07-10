@@ -34,7 +34,7 @@ export function Masthead() {
         zIndex: 10,
       }}
     >
-      <Link href="/" aria-label="Redline home" style={{ position: 'relative', textDecoration: 'none' }}>
+      <Link href="/start" aria-label="Start a new audit" style={{ position: 'relative', textDecoration: 'none' }}>
         <span style={{ font: '900 20px/1 var(--display)', letterSpacing: '-.03em', color: 'var(--ink)' }}>REDLINE</span>
         <span
           style={{

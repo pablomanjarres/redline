@@ -216,7 +216,7 @@ describe('the tour script is structurally sound', () => {
     // `/claims` is the claim-review screen (intake and claim extraction).
     // `/corrected` is the corrected-analysis bundle (the correction layer).
     // `checks/[1-8]` because the rigor checks took the registry from four to eight.
-    const routes = /^\/(fields|claims|workbench|report|corrected|environment|checks\/[1-8])?$/;
+    const routes = /^\/(start|fields|claims|workbench|report|corrected|environment|checks\/[1-8])?$/;
     const bad = TOUR_STEPS.filter((s) => !routes.test(s.route));
     expect(bad.map((s) => `${s.id} -> ${s.route}`)).toEqual([]);
   });
