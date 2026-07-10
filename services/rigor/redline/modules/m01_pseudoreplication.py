@@ -57,6 +57,15 @@ from .base import Candidate, CheckModule, Claim, Clean, Design, Evidence
 
 _UNDERPOWERED_UNITS = 6  # below this many total replicates, the honest test is thin.
 
+
+def _honest_engine_label(method: str) -> str:
+    """The canonical name of the engine that produced the honest p, from the
+    kernel's own method report. "PyDESeq2 pseudobulk" is claimed only when the
+    real count-model path ran; anything else is the Welch fallback on per-unit
+    means. Reporting the truth here is what lets the real-stack harness catch a
+    silent PyDESeq2 -> Welch downgrade instead of trusting a fallback number."""
+    return "PyDESeq2 pseudobulk" if "PyDESeq2" in method else "Welch t (pseudobulk means)"
+
 _CITATION = MethodRef(
     authors="Squair et al.",
     year=2021,
@@ -359,6 +368,10 @@ class Pseudoreplication(CheckModule):
             stat("Naive p", fmt_p(p_naive), bad=True),
             stat("Honest p", fmt_p(p_honest), good=(not honest.sig)),
             stat("True n", f"{int(nums['n_units'])} {_noun(unit_col)}"),
+            # Surface which engine produced the honest p, so a PyDESeq2 -> Welch
+            # downgrade (missing heavy stack, or an API change) is visible, never
+            # silent. This is the provenance the real-stack harness checks.
+            stat("Honest engine", _honest_engine_label(str(nums.get("method", "")))),
         ]
         return Evidence(
             state=state,

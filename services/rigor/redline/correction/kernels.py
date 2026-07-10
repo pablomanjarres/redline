@@ -558,6 +558,28 @@ def _embed(adata, seed):
     return _pca(_lognorm(counts), seed)
 
 
+def _clustering_engine() -> str:
+    """The name of the backend the resolution sweeps will use, decided by the
+    same import probe as ``_cluster``: scanpy Leiden when a graph backend is
+    installed, else deterministic KMeans, else a first-component binning. The
+    sweep records this so a silent Leiden -> KMeans downgrade (a different
+    algorithm than the method paper describes) is visible, never assumed away."""
+    try:
+        import igraph  # noqa: F401
+        import leidenalg  # noqa: F401
+        import scanpy  # noqa: F401
+
+        return "Leiden (scanpy)"
+    except Exception:
+        pass
+    try:
+        from sklearn.cluster import KMeans  # noqa: F401
+
+        return "KMeans (fallback)"
+    except Exception:
+        return "first-component bins (fallback)"
+
+
 def _cluster(emb, res, seed):
     """Cluster an embedding at one resolution, for the resolution sweeps (checks
     3 and 7). scanpy Leiden at that resolution when a graph backend is installed,
@@ -907,8 +929,17 @@ def check2_double_dipping(adata, grouping, target_group, markers, split, seed):
 
     log_tr = np.log1p(train.astype(float))
     log_te = np.log1p(test.astype(float))
+    # No markers named: derive the group's own top markers by discovery AUC on the
+    # discovery half, so the held-out re-test validates the genes that actually
+    # define the cluster. Without this the loop scores nothing, hold_mean defaults
+    # to 0.5, and a genuine cluster is flagged for lack of input rather than for
+    # failing to replicate. Mirrors pillars/double_dipping's empty-marker path.
+    marker_names = [str(x) for x in (markers or [])]
+    if not marker_names:
+        disc_all = np.array([_auc(log_tr[:, j], y) for j in range(log_tr.shape[1])])
+        marker_names = [str(names[j]) for j in np.argsort(-disc_all)[:4]]
     report, discs, holds, surviving = {}, [], [], 0
-    for m in [str(x) for x in (markers or [])]:
+    for m in marker_names:
         if m not in names:
             report[m] = {"disc": None, "hold": None, "survives": False}
             continue
@@ -944,6 +975,7 @@ def check3_fragility(adata, track, track_column, min_res, max_res, step, seed):
 
     resolutions = _grid(min_res, max_res, step)
     emb = _embed(adata, seed)
+    engine = _clustering_engine()
     labels = [_cluster(emb, r, seed) for r in resolutions]
     clusters = [int(np.unique(l).size) for l in labels]
 
@@ -970,6 +1002,7 @@ def check3_fragility(adata, track, track_column, min_res, max_res, step, seed):
         "present_lo": float(lo),
         "present_hi": float(hi),
         "steps": steps,
+        "engine": engine,
     }
 
 

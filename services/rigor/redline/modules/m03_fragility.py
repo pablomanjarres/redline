@@ -143,7 +143,14 @@ class Fragility(CheckModule):
             return Evidence(
                 state=CLEAN,
                 headline=head,
-                stats=[stat("Stability", fmt_pct(stability), good=True), stat("Present range", span)],
+                stats=[
+                    stat("Stability", fmt_pct(stability), good=True),
+                    stat("Present range", span),
+                    # The clustering backend that actually ran the sweep, so a
+                    # Leiden -> KMeans downgrade is visible. The real-stack harness
+                    # reads this to prove the method paper's algorithm ran.
+                    stat("Clustering engine", str(nums.get("engine", ""))),
+                ],
                 chart=chart,
                 numbers=nums,
                 method=self.citation,
@@ -163,6 +170,7 @@ class Fragility(CheckModule):
             stats=[
                 stat("Stability", fmt_pct(stability), bad=True),
                 stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
+                stat("Clustering engine", str(nums.get("engine", ""))),
             ],
             chart=chart,
             numbers=nums,
