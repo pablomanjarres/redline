@@ -28,7 +28,7 @@ step. The skill references them by name:
 | Resolve obs roles | `redline_resolve_fields` | `redline_audit.py --check fields` |
 | Pseudoreplication | `redline_check_pseudoreplication` | `redline_audit.py --check 1` |
 | Double dipping | `redline_check_double_dipping` | `redline_audit.py --check 2` |
-| Clustering fragility | `redline_check_clustering_fragility` | `redline_audit.py --check 3` |
+| Clustering fragility | `redline_check_fragility` | `redline_audit.py --check 3` |
 | Confounding | `redline_check_confounding` | `redline_audit.py --check 4` |
 
 Every tool and the CLI return the same contract shapes (a `ComputeResult` per

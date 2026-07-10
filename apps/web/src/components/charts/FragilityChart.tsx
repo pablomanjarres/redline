@@ -33,8 +33,12 @@ export function FragilityChart({
   const th = 30;
   const tw = steps.length > 1 ? Math.min(34, RX(steps[1]!.r) - RX(steps[0]!.r) - 8) : 26;
 
+  const hasPresence = steps.some((s) => typeof s.presence === 'number');
   add(txt(64, 44, `Is ‘${track}’ a discrete cluster across the resolution sweep?`, { fill: C.ink3, style: { font: fSans(600, 11) } }));
   add(txt(588, 44, 'resolution →', { textAnchor: 'end', fill: C.ink4, style: { font: fMono(500, 10) } }));
+  if (hasPresence) {
+    add(txt(588, 58, 'shade = fraction of runs present', { textAnchor: 'end', fill: C.ink4, style: { font: fSans(400, 8.5) } }));
+  }
 
   // shaded present-band (only when fragile: the narrow window it exists in)
   if (fragile) {
@@ -44,10 +48,25 @@ export function FragilityChart({
     add(<text x={(bx0 + bx1b) / 2} y={ty - 16} textAnchor="middle" fill={C.redDeep} style={{ font: fSans(600, 10.5) }}>present only here</text>);
   }
 
-  // presence tiles
+  // presence tiles: shaded by the fraction of repeated runs the group is present
+  // at each setting when that distribution is available, else a solid present/absent.
   steps.forEach((s) => {
     const x = RX(s.r) - tw / 2;
-    add(<rect x={x} y={ty} width={tw} height={th} rx={5} fill={s.present ? on : C.panel2} stroke={s.present ? 'none' : C.line2} strokeWidth={1} />);
+    const p = typeof s.presence === 'number' ? s.presence : s.present ? 1 : 0;
+    const empty = p <= 0.001;
+    add(
+      <rect
+        x={x}
+        y={ty}
+        width={tw}
+        height={th}
+        rx={5}
+        fill={empty ? C.panel2 : on}
+        opacity={empty ? 1 : 0.2 + 0.8 * p}
+        stroke={empty ? C.line2 : 'none'}
+        strokeWidth={1}
+      />,
+    );
     add(txt(RX(s.r), ty + th + 15, s.r.toFixed(1), { textAnchor: 'middle', fill: C.ink4, style: { font: fMono(400, 9) } }));
   });
 

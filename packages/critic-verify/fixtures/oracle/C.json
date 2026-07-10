@@ -1,0 +1,51 @@
+{
+  "caseId": "C",
+  "checks": {
+    "1": {
+      "naiveP": 0.0,
+      "honestP": 4.818807220093829e-06,
+      "n": 6,
+      "icc": 0.8138837686800194,
+      "verdict": "clean",
+      "perGroup": 3
+    },
+    "2": {
+      "discAUC": 1.0,
+      "holdAUC": 1.0,
+      "markersHolding": 4,
+      "nMarkers": 4,
+      "verdict": "clean"
+    },
+    "3": {
+      "resolutions": [
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        1.2,
+        1.4,
+        1.6,
+        1.8,
+        2.0
+      ],
+      "spurious": {
+        "group": "Rare",
+        "stability": 1.0,
+        "settings": 10,
+        "totalSettings": 10,
+        "presentRange": [
+          0.2,
+          2.0
+        ],
+        "verdict": "clean"
+      }
+    },
+    "4": {
+      "cramersV": 0.03333379502344234,
+      "rankDeficient": false,
+      "separable": true,
+      "verdict": "clean"
+    }
+  }
+}

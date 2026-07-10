@@ -37,7 +37,6 @@ from ..contracts import (
     groups_chart,
     stat,
 )
-from ..correction import kernels
 from ..pillars import cfg_get
 from .base import Candidate, CheckModule, Claim, Design, Evidence
 
@@ -148,36 +147,72 @@ class DoubleDipping(CheckModule):
                 caveat=_CLUSTERDE,
             )
 
-        # One held-out re-test in the kernel feeds the chart, the preview, and the
-        # emitted script, so the mean discovery and held-out AUC agree everywhere.
-        nums = kernels.check2_double_dipping(
-            adata, grouping=grouping, target_group=target_group, markers=markers, split=split, seed=seed
-        )
-        report = nums["markers"]
-        tested = [(g, r) for g, r in report.items() if r.get("hold") is not None]
-        marker_rows = [Marker(gene=g, disc=float(r["disc"]), hold=float(r["hold"])) for g, r in tested]
-        surviving_rows = [Marker(gene=g, disc=float(r["disc"]), hold=float(r["hold"])) for g, r in tested if r["survives"]]
-        disc_auc = nums["original"]
-        hold_auc = nums["corrected"]
-        surviving = int(nums["surviving"])
-        total = len(tested)
+        # Compose the raw pillar for the honest re-test. The pillar owns the two
+        # parts the single-split kernel lacks: auto-selecting the group's top
+        # markers when the scientist named none, and reporting the held-out AUC as
+        # the median across many independent count-splits rather than one noisy
+        # draw. A single split flags a clean, real state whenever its one draw
+        # dips; the median does not. So compute_result(2, ...) returns the SAME
+        # verdict, stats, and chart the raw pillar produces, which is the contract
+        # the verify harness (and every other caller) depends on. The correction
+        # facts below are built around the pillar's authoritative numbers.
+        from ..pillars import double_dipping as P
 
-        chart = groups_chart(marker_rows, split, verified=True, disc_auc=disc_auc, hold_auc=hold_auc)
-        stats = [
-            stat("Discovery AUC", f"{disc_auc:.2f}"),
-            stat("Held-out AUC", f"{hold_auc:.2f}", bad=(hold_auc < _CLEAN_MEAN_AUC), good=(hold_auc >= _CLEAN_MEAN_AUC)),
-            stat("Markers holding", f"{surviving} / {total}", bad=(surviving == 0)),
-        ]
-        group = target_group or grouping or "the group"
+        cr = P.run(
+            adata,
+            {
+                "split": split,
+                "grouping": grouping or None,
+                "target_group": target_group or None,
+                "seed": seed,
+                "markers": markers or None,
+            },
+            design.fields,
+        ).to_json()
+        state = cr.get("state")
+        chart = cr.get("chart") or {}
+        stats = _restat(cr)
+        rows = [m for m in (chart.get("markers") or []) if m.get("hold") is not None]
+        disc_auc = chart.get("discAUC")
+        hold_auc = chart.get("holdAUC")
+        surviving = sum(1 for m in rows if float(m["hold"]) >= _SURVIVE_AUC)
+        numbers = {
+            "original": disc_auc,
+            "corrected": hold_auc,
+            "surviving": int(surviving),
+            "markers": {
+                str(m.get("gene")): {
+                    "disc": m.get("disc"),
+                    "hold": m.get("hold"),
+                    "survives": float(m["hold"]) >= _SURVIVE_AUC,
+                }
+                for m in rows
+            },
+        }
 
-        if hold_auc >= _CLEAN_MEAN_AUC and surviving >= max(1, total // 2 + total % 2):
-            head = f"'{group}' holds up: {surviving} of {total} markers still separate it on a held-out split."
+        # The pillar degraded (no counts, a held-out half too small, or no markers
+        # found): nothing was proven, so no corrected result is shown.
+        if state == FLAG_ONLY:
+            return Evidence(
+                state=FLAG_ONLY,
+                headline=cr.get("headline", candidate.headline),
+                stats=stats or list(candidate.stats),
+                chart=chart or groups_chart([], split, verified=False),
+                numbers={"original": None, "corrected": None},
+                method=self.citation,
+                feasibility=NEEDS_NEW_DATA,
+                params=params,
+                corrected_artifact=None,
+                caveat=_CLUSTERDE,
+            )
+
+        if state == CLEAN:
             return Evidence(
                 state=CLEAN,
-                headline=head,
+                headline=cr.get("headline", ""),
                 stats=stats,
                 chart=chart,
-                numbers=nums,
+                numbers=numbers,
                 method=self.citation,
                 feasibility=FIXABLE_NOW,
                 params=params,
@@ -185,17 +220,18 @@ class DoubleDipping(CheckModule):
                 caveat=_CLUSTERDE,
             )
 
-        head = (
-            f"'{group}' separates at discovery AUC {disc_auc:.2f} and collapses to {hold_auc:.2f} on a "
-            f"held-out split; only {surviving} of {total} markers survive."
-        )
+        surviving_rows = [
+            Marker(gene=str(m["gene"]), disc=float(m["disc"]), hold=float(m["hold"]))
+            for m in rows
+            if float(m["hold"]) >= _SURVIVE_AUC
+        ]
         after = groups_chart(surviving_rows, split, verified=True, disc_auc=disc_auc, hold_auc=hold_auc)
         return Evidence(
             state=FLAGGED,
-            headline=head,
+            headline=cr.get("headline", ""),
             stats=stats,
             chart=chart,
-            numbers=nums,
+            numbers=numbers,
             method=self.citation,
             feasibility=FIXABLE_NOW,
             params=params,
@@ -256,6 +292,18 @@ class DoubleDipping(CheckModule):
         from .m05_multiple_testing import render_or_fallback
 
         return render_or_fallback(self.id, evidence.params)
+
+
+def _restat(cr: dict) -> list:
+    """Rebuild StatReadout objects from the pillar's already-serialized stats, so
+    compute_result(2, ...) surfaces the pillar's exact stat labels and values
+    (including 'Discovery clustering', the backend name the module used to drop)."""
+    from ..contracts import StatReadout
+
+    out = []
+    for s in cr.get("stats", []):
+        out.append(StatReadout(label=s["label"], value=s["value"], bad=s.get("bad"), good=s.get("good")))
+    return out
 
 
 def _h5ad_hint(design: Design) -> str:

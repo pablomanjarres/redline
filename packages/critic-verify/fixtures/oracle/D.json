@@ -1,0 +1,53 @@
+{
+  "caseId": "D",
+  "checks": {
+    "1": {
+      "naiveP": 0.00017627678535472288,
+      "honestP": null,
+      "n": 4,
+      "icc": 0.29191846809094646,
+      "verdict": "flag_only",
+      "perGroup": 2,
+      "note": "no integer counts; honest replicate-level re-test needs raw counts"
+    },
+    "2": {
+      "discAUC": null,
+      "holdAUC": null,
+      "markersHolding": 0,
+      "nMarkers": 0,
+      "verdict": "flag_only",
+      "note": "no integer counts available"
+    },
+    "3": {
+      "resolutions": [
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        1.2,
+        1.4,
+        1.6,
+        1.8,
+        2.0
+      ],
+      "spurious": {
+        "group": "Naive",
+        "stability": 0.4,
+        "settings": 4,
+        "totalSettings": 10,
+        "presentRange": [
+          0.2,
+          0.8
+        ],
+        "verdict": "flagged"
+      }
+    },
+    "4": {
+      "cramersV": 1.0,
+      "rankDeficient": true,
+      "separable": false,
+      "verdict": "flagged"
+    }
+  }
+}

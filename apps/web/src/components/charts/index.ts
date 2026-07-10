@@ -6,3 +6,4 @@ export { VolcanoChart } from './VolcanoChart';
 export { FdrChart } from './FdrChart';
 export { MiniChart } from './MiniChart';
 export { renderChart } from './renderChart';
+export { DistributionStrip } from './DistributionStrip';

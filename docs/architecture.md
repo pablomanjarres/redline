@@ -42,15 +42,19 @@ redline/
         checks/[id]/         One check panel with its knobs, chart, and correction.
         report/              The assembled audit across every registered check.
         environment/         The compute-target surface (fixture / local / cloudrun / endpoint).
-      src/app/api/audit/     Route handlers: /fields, /check, /preview; plus /bundle.
+        corrected/           The corrected-analysis bundle: one runnable script per flagged check, assembled client-side.
+        verifications/       The self-verification surface: the actor-critic acceptance-harness run record.
+      src/app/api/audit/     Route handlers: /fields and /check (the /check path runs the critic and returns the correction).
+      src/app/api/verify/    /run: reruns the actor-critic acceptance harness.
       src/state/session.tsx  Client session store (React context + localStorage).
       src/components/         shell, intake, fields, workbench, check, charts, report.
       src/lib/                api client, formatting.
   packages/
     contracts/               @redline/contracts: the Zod shapes every surface speaks. Built.
     ui/                      @redline/ui: tokens (palette C, FONT, stateColor, stateLabel) + primitives. Built.
-    engine/                  @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS.
-    reasoning/               @redline/reasoning: Claude via Bedrock + curated fallback.
+    engine/                  @redline/engine: the ComputeTarget seam, fixtures, DEFAULT_CONFIG, SCENARIOS, the critic gate.
+    reasoning/               @redline/reasoning: Claude via Bedrock + curated fallback. narrate, proposeFields, critique.
+    critic-verify/           @redline/critic-verify: the actor-critic acceptance harness (Add-on 1).
   services/
     rigor/                   Python engine (scanpy / decoupler / PyDESeq2 / numpy): MCP server + Cloud Run job.
     skill/                   The same engine packaged as a Claude Skill for Claude Science.
@@ -77,13 +81,19 @@ registered checks, then a report. Nothing downstream runs until the design is co
         v
   /workbench + /checks/[id]
         |  runCheck(id)  --POST /api/audit/check-->
-        |        getComputeTarget().computeCheck()   -> EngineResult (numbers + chart + verdict + correction)
-        |        createReasoner().narrate()          -> Narrative    (failure mode + citation + rewrite)
+        |        getComputeTarget().computeCheck()   -> EngineResult   (numbers + chart + verdict + correction)
+        |        if verdict is flagged and a backend is wired:
+        |          createReasoner().critique()       -> CriticJudgment (confirm | downgrade | veto)
+        |          applyCriticGate()                 -> effective verdict + CriticAssessment
+        |        createReasoner().narrate()          -> Narrative      (for the effective verdict)
         |        merge                                -> CheckResult
-        |  previewCheck(id)  --POST /api/audit/preview--> the heavy re-analysis, dispatched as a job
+        |  the correction (corrected code, recommendations, before/after preview) rides back on
+        |  the same /check response; the heavy re-analysis behind a preview is a job the remote
+        |  adapter dispatches, never a web route.
         v
-  /report   AuditReport derived from the CheckResults
-  /bundle   --GET /api/bundle--> CorrectedBundle (readme + notebook + one script per flagged check)
+  /report        AuditReport derived from the CheckResults
+  /corrected     buildBundle(report) -> CorrectedBundle (readme + notebook + one script per flagged check), assembled client-side and downloaded
+  /verifications the actor-critic acceptance-harness run record (POST /api/verify/run reruns it)
 ```
 
 The correction layer adds two seams to this path. The `check` op now returns an
@@ -91,9 +101,9 @@ The correction layer adds two seams to this path. The `check` op now returns an
 corrected code and the recommendations arrive with the numbers. A separate `preview` op on
 the remote adapter dispatches the heavy re-analysis (the pseudobulk re-test, the count-split
 reclustering, the resolution sweep) as a job, so a runaway re-run cannot block the app. The
-bundle route assembles the downloadable artifact (`CorrectedBundle`: a README, a
-consolidated notebook, and one runnable script per flagged check) that the scientist leaves
-with. See `correction-layer.md`.
+`/corrected` page assembles the downloadable artifact (`CorrectedBundle`: a README, a
+consolidated notebook, and one runnable script per flagged check) from the report via
+`buildBundle`, client-side, so the scientist leaves with it. See `correction-layer.md`.
 
 Route handlers stay thin. They validate the body with the contract schemas and
 delegate: all numeric logic lives in `@redline/engine`, all prose in
@@ -128,13 +138,33 @@ and it isolates the one part that calls a model.
   returns is `EngineResult = ComputeResult.extend(Correction.shape)`: the numbers plus
   whatever correction the module could produce, before the prose is added.
 
-`CheckResult = ComputeResult.merge(Narrative).extend(Correction.shape)` is what the UI
-renders per check: numbers, prose, and correction. The `state` enum (`flagged`, `clean`,
-`flag_only`, `hard_stop`) is the verdict the whole system agrees on; `ready` and `running`
-are UI-only transient states and are deliberately not part of the engine's return contract.
-The correction shape is attached with `.extend()` so the sibling add-ons (the critic
-assessment, the per-stat confidence intervals) can attach their own optional keys to the
-same `CheckResult` without restructuring the type. See `correction-layer.md`.
+Between the numbers and the prose sits the **actor-critic pass** (Add-on 1, see
+`docs/build/ADDON-1-ACTOR-CRITIC.md`). A candidate finding (a `flagged` `ComputeResult`)
+is never shown on one pass. When a backend is wired, `createReasoner().critique()` makes
+an independent, adversarial Claude call that returns a `CriticJudgment`
+(`confirm | downgrade | veto`), and `applyCriticGate` maps it to the effective verdict:
+confirm keeps the flag, downgrade lowers it to a soft advisory, veto flips it to clean. A
+parse failure fails safe toward showing the finding, marked critic-unverified. The finding
+card shows the critic line, and the acceptance harness (`@redline/critic-verify`, surfaced
+at `/verifications`) proves the critic vetoes over-fired flags on the clean foil and
+downgrades an underpowered split, not only confirms.
+
+Two optional readouts ride alongside. The stochastic checks carry **confidence intervals**
+(`StatReadout.interval`, Add-on 3): a median and CI behind a stat, so a marker count or a
+stability score reads as a distribution rather than a bare point. And every `ComputeResult`
+can carry **compute provenance** (`ComputeProvenance`): which target produced the numbers
+and how, so a value on screen traces to the run that made it. Both are absent on older
+payloads and never load-bearing.
+
+`CheckResult = ComputeResult.merge(Narrative).extend({ computeState, critic,
+...Correction.shape })` is what the UI renders per check: numbers, prose, correction, the
+pre-critic `computeState`, and the `critic` assessment. The `state` enum (`flagged`,
+`clean`, `flag_only`, `hard_stop`) is the effective, post-critic verdict the whole system
+agrees on (a veto flips a flag to clean); `computeState` preserves the actor's pre-critic
+verdict for audit. `ready` and `running` are UI-only transient states and are deliberately
+not part of the engine's return contract. Every add-on is attached optionally, so the
+fixture, the pre-critic payload, and any surface that omits an add-on all still validate.
+See `correction-layer.md`.
 
 ## The ComputeTarget seam
 

@@ -29,11 +29,12 @@ from ..contracts import (
     groups_chart,
     stat,
 )
-from . import cfg_get, obs_series, rng, safe_auc
+from . import cfg_get, interval, lognorm, obs_series, rng, safe_auc, seed_stream
 
 _MARKER_KEYS = ("markers", "marker_genes", "genes")
 _SURVIVE_AUC = 0.60  # a marker "survives" if it still separates the group out of sample
 _CLEAN_MEAN_AUC = 0.62  # the group as a whole is real if held-out separation stays here
+_DEFAULT_REPEATS = 200  # independent count-splits behind the held-out AUC interval
 
 
 def _dense_counts(adata: Any) -> tuple[Optional[np.ndarray], list[str]]:
@@ -52,13 +53,75 @@ def _thin(counts: np.ndarray, eps: float, seed: Any) -> tuple[np.ndarray, np.nda
     return train.astype(float), test.astype(float)
 
 
-def _recluster_train(train: np.ndarray, k: int, seed: Any) -> np.ndarray:
-    """Cluster the discovery (train) half. scanpy leiden if present, else KMeans.
+_RES_LO, _RES_HI, _RES_STEPS = 0.02, 2.0, 8
+
+
+def _seed_int(seed: Any) -> int:
+    try:
+        return int(seed)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _leiden_labels(sc: Any, a: Any, res: float, seed: int) -> np.ndarray:
+    sc.tl.leiden(a, resolution=float(res), key_added="_rl_k", random_state=seed)
+    return np.asarray(a.obs["_rl_k"].astype(str).to_numpy())
+
+
+def _leiden_at_k(sc: Any, a: Any, k: int, seed: int, hint: Optional[float]) -> tuple[np.ndarray, float]:
+    """Leiden takes a resolution, not a k. Find the resolution whose cluster count
+    matches the granularity the claimed grouping implies, and return it.
+
+    Without this, leiden at a fixed resolution over-partitions and
+    `_best_match_cluster` locks onto a fragment of the group the scientist named.
+    Its real markers then score near chance against that fragment and a clean
+    analysis gets flagged. KMeans was always handed k, so the two backends
+    disagreed and the verdict depended on which one happened to be installed.
+
+    `hint` is a resolution that already hit k on comparable data. Repeated checks
+    (the interval loop) pass the previous one, so the bisect runs once, not once
+    per repetition.
+    """
+    if hint is not None:
+        lab = _leiden_labels(sc, a, hint, seed)
+        if int(np.unique(lab).size) == k:
+            return lab, float(hint)
+
+    lo, hi = _RES_LO, _RES_HI
+    best_lab, best_gap, best_res = None, None, _RES_HI
+    for _ in range(_RES_STEPS):
+        mid = (lo + hi) / 2.0
+        lab = _leiden_labels(sc, a, mid, seed)
+        n = int(np.unique(lab).size)
+        gap = abs(n - k)
+        if best_gap is None or gap < best_gap:
+            best_lab, best_gap, best_res = lab, gap, mid
+        if n == k:
+            return lab, float(mid)
+        if n > k:
+            hi = mid
+        else:
+            lo = mid
+    return (best_lab if best_lab is not None else np.zeros(a.n_obs, dtype=str)), float(best_res)
+
+
+def _recluster_train(
+    train: np.ndarray, k: int, seed: Any, res_hint: Optional[float] = None
+) -> tuple[np.ndarray, str, Optional[float]]:
+    """Cluster the discovery (train) half, name the engine, and return the leiden
+    resolution it settled on (None off the leiden path) so a repeated check can
+    reuse it.
 
     Runs on the train half only so the group definition is independent of the
-    held-out half the markers are validated on.
+    held-out half the markers are validated on. Both backends target `k` groups,
+    so the verdict does not depend on which one is installed.
     """
-    log = np.log1p(train)
+    # Depth-normalize before log: the discovery clustering must not partition by
+    # sequencing depth. Marker AUCs below stay on raw log1p, which is rank-based
+    # per gene and unchanged by this.
+    log = lognorm(train)
+    k = int(max(2, k))
+    rs = _seed_int(seed)
     try:
         import anndata as ad
         import scanpy as sc
@@ -67,16 +130,20 @@ def _recluster_train(train: np.ndarray, k: int, seed: Any) -> np.ndarray:
         sc.pp.scale(a, max_value=10)
         sc.pp.pca(a, n_comps=int(min(30, max(2, min(a.shape) - 1))))
         sc.pp.neighbors(a, n_neighbors=15)
-        sc.tl.leiden(a, resolution=1.0, random_state=int(seed) if str(seed).isdigit() else 0)
-        return np.asarray(a.obs["leiden"].astype(str).to_numpy())
-    except Exception:
-        from sklearn.cluster import KMeans
-        from sklearn.decomposition import PCA
+        lab, res = _leiden_at_k(sc, a, k, rs, res_hint)
+        return lab, "Leiden (scanpy)", res
+    except ImportError as exc:
+        reason = f"missing {exc.name or 'scanpy'}"
+    except Exception as exc:
+        reason = type(exc).__name__
 
-        n_comp = int(min(30, max(2, min(log.shape) - 1)))
-        emb = PCA(n_components=n_comp, random_state=0).fit_transform(log - log.mean(axis=0))
-        km = KMeans(n_clusters=int(max(2, k)), n_init=10, random_state=0).fit(emb)
-        return km.labels_.astype(str)
+    from sklearn.cluster import KMeans
+    from sklearn.decomposition import PCA
+
+    n_comp = int(min(30, max(2, min(log.shape) - 1)))
+    emb = PCA(n_components=n_comp, random_state=0).fit_transform(log - log.mean(axis=0))
+    km = KMeans(n_clusters=k, n_init=10, random_state=rs).fit(emb)
+    return km.labels_.astype(str), f"KMeans fallback ({reason})", None
 
 
 def _claimed_mask(adata: Any, grouping: Optional[str], target_group: Optional[str],
@@ -125,7 +192,9 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
     eps = min(max(eps, 0.05), 0.95)
     grouping = cfg_get(config, "grouping", None)
     target_group = cfg_get(config, "target_group", None) or cfg_get(config, "group", None)
-    seed = cfg_get(config, "seed", 0)
+    base_seed = cfg_get(config, "seed", 0)
+    repeats = int(cfg_get(config, "repeats", cfg_get(config, "reps", _DEFAULT_REPEATS)) or _DEFAULT_REPEATS)
+    repeats = max(1, min(repeats, 400))
 
     markers = None
     for key in _MARKER_KEYS:
@@ -156,23 +225,23 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
             groups_chart([Marker(m, 0.0, 0.0) for m in (markers or [])], eps, verified=False),
         )
 
-    train, test = _thin(C, eps, seed)
-
     labels = obs_series(adata, grouping) if grouping else None
     n_levels = int(np.unique([str(x) for x in labels]).size) if labels is not None else 8
-    labels_train = _recluster_train(train, k=max(2, n_levels), seed=seed)
 
+    # Resolve the claim ONCE, so every split tests the SAME group and the SAME
+    # markers. The stochastic part being sampled is the count-split (and the
+    # discovery-half reclustering it feeds), not the claim under test.
+    seeds = seed_stream(base_seed, repeats)
+    train0, _ = _thin(C, eps, seeds[0])
+    labels_train0, cluster_engine, res_hint = _recluster_train(train0, k=max(2, n_levels), seed=seeds[0])
     claimed = _claimed_mask(adata, grouping, target_group, markers or [], var_names, C)
     if claimed is None or claimed.sum() == 0:
-        # No claimed group resolved: take the largest train cluster as the group.
-        vals, counts = np.unique(labels_train, return_counts=True)
-        claimed = labels_train == vals[int(np.argmax(counts))]
-    y = _best_match_cluster(labels_train, claimed).astype(int)
-
+        vals, counts = np.unique(labels_train0, return_counts=True)
+        claimed = labels_train0 == vals[int(np.argmax(counts))]
     if not markers:
-        # Default markers: the genes that most define the group on the train half.
-        log_train = np.log1p(train)
-        aucs = np.array([safe_auc(log_train[:, j], y) for j in range(log_train.shape[1])])
+        y0 = _best_match_cluster(labels_train0, claimed).astype(int)
+        log_train0 = np.log1p(train0)
+        aucs = np.array([safe_auc(log_train0[:, j], y0) for j in range(log_train0.shape[1])])
         markers = [var_names[j] for j in np.argsort(-aucs)[:4]]
 
     idx = [(m, var_names.index(m)) for m in markers if m in var_names]
@@ -185,32 +254,96 @@ def run(adata: Any, config: Any, fields: Any = None) -> ComputeResult:
             groups_chart([], eps, verified=False),
         )
 
-    log_train = np.log1p(train)
-    log_test = np.log1p(test)
-    marker_rows: list[Marker] = []
-    for name, j in idx:
-        disc = safe_auc(log_train[:, j], y)  # discovery: dips into the definition
-        hold = safe_auc(log_test[:, j], y)  # held-out: independent of the definition
-        marker_rows.append(Marker(gene=name, disc=disc, hold=hold))
+    total = len(idx)
+    # Repeat the split across seeds, scoring the same markers on the same claim
+    # each time. The spread of the held-out separation across splits is the
+    # reported interval: it answers "your one split could be luck" with a
+    # distribution instead of a point. It is a spread over the algorithm's own
+    # randomness, not a confidence interval over the data.
+    disc_samples: list[float] = []
+    hold_samples: list[float] = []
+    surviving_samples: list[float] = []
+    per_marker_disc: dict[str, list[float]] = {name: [] for name, _ in idx}
+    per_marker_hold: dict[str, list[float]] = {name: [] for name, _ in idx}
+    for sd in seeds:
+        train, test = _thin(C, eps, sd)
+        # Reuse the resolution the first sweep settled on: the granularity is a
+        # property of the data, not of the split seed. Re-bisecting every repeat
+        # costs ~7s each.
+        labels_train, cluster_engine, res_hint = _recluster_train(
+            train, k=max(2, n_levels), seed=sd, res_hint=res_hint
+        )
+        y = _best_match_cluster(labels_train, claimed).astype(int)
+        log_train = np.log1p(train)
+        log_test = np.log1p(test)
+        discs: list[float] = []
+        holds: list[float] = []
+        for name, j in idx:
+            d = safe_auc(log_train[:, j], y)  # discovery: dips into the definition
+            h = safe_auc(log_test[:, j], y)  # held-out: independent of the definition
+            discs.append(d)
+            holds.append(h)
+            per_marker_disc[name].append(d)
+            per_marker_hold[name].append(h)
+        disc_samples.append(float(np.mean(discs)))
+        hold_samples.append(float(np.mean(holds)))
+        surviving_samples.append(float(sum(1 for h in holds if h >= _SURVIVE_AUC)))
 
-    disc_auc = float(np.mean([m.disc for m in marker_rows]))
-    hold_auc = float(np.mean([m.hold for m in marker_rows]))
-    surviving = int(sum(1 for m in marker_rows if m.hold >= _SURVIVE_AUC))
-    total = len(marker_rows)
-    chart = groups_chart(marker_rows, eps, verified=True, disc_auc=disc_auc, hold_auc=hold_auc)
+    hold_dist = interval(hold_samples)
+    disc_dist = interval(disc_samples)
+    surviving_dist = interval(surviving_samples)
+
+    # Point estimates are the medians of their distributions, so the card value
+    # and its interval never disagree.
+    disc_auc = float(disc_dist["median"]) if disc_dist else float(np.median(disc_samples))
+    hold_auc = float(hold_dist["median"]) if hold_dist else float(np.median(hold_samples))
+    surviving = int(round(float(surviving_dist["median"]))) if surviving_dist else int(round(np.median(surviving_samples)))
+
+    # Per-marker dots are each marker's median disc/hold across the splits.
+    marker_rows = [
+        Marker(gene=name, disc=float(np.median(per_marker_disc[name])), hold=float(np.median(per_marker_hold[name])))
+        for name, _ in idx
+    ]
+    chart = groups_chart(
+        marker_rows,
+        eps,
+        verified=True,
+        disc_auc=disc_auc,
+        hold_auc=hold_auc,
+        hold_auc_dist=hold_dist,
+        disc_auc_dist=disc_dist,
+        markers_holding_dist=surviving_dist,
+    )
 
     stats = [
-        stat("Discovery AUC", f"{disc_auc:.2f}"),
-        stat("Held-out AUC", f"{hold_auc:.2f}", bad=(hold_auc < _CLEAN_MEAN_AUC), good=(hold_auc >= _CLEAN_MEAN_AUC)),
-        stat("Markers holding", f"{surviving} / {total}", bad=(surviving == 0)),
+        stat("Discovery AUC", f"{disc_auc:.2f}", interval=disc_dist),
+        stat(
+            "Held-out AUC",
+            f"{hold_auc:.2f}",
+            bad=(hold_auc < _CLEAN_MEAN_AUC),
+            good=(hold_auc >= _CLEAN_MEAN_AUC),
+            interval=hold_dist,
+        ),
+        stat("Markers holding", f"{surviving} / {total}", bad=(surviving == 0), interval=surviving_dist),
+        # The group definition comes from this clustering, so a backend swap can
+        # move the verdict. Name it, the way Pillars 1 and 3 name theirs.
+        stat("Discovery clustering", cluster_engine),
     ]
 
+    ci = _ci_phrase(hold_dist, repeats)
     if hold_auc >= _CLEAN_MEAN_AUC and surviving >= max(1, total // 2 + total % 2):
-        head = f"The group holds up: {surviving} of {total} markers still separate it on a held-out split."
+        head = f"The group holds up: {surviving} of {total} markers still separate it on a held-out split{ci}."
         return compute_result(2, CLEAN, head, stats, chart)
 
     head = (
-        f"The group separates at discovery AUC {disc_auc:.2f} and collapses to {hold_auc:.2f} "
+        f"The group separates at discovery AUC {disc_auc:.2f} and collapses to {hold_auc:.2f}{ci} "
         f"on independent counts; {surviving} of {total} markers survive."
     )
     return compute_result(2, FLAGGED, head, stats, chart)
+
+
+def _ci_phrase(dist: Optional[Any], repeats: int) -> str:
+    """A parenthetical CI clause for a headline, or empty when there is no interval."""
+    if not dist:
+        return ""
+    return f" (95% interval {dist['lo']:.2f}-{dist['hi']:.2f} over {int(repeats)} splits)"

@@ -355,11 +355,20 @@ class Pseudoreplication(CheckModule):
                 f"'{gene}' is significant across {int(nums['n_cells']):,} cells (p {fmt_p(p_naive)}) but not at the "
                 f"replicate level (p {fmt_p(p_honest)}); the significance is inflated by pseudoreplication."
             )
+        # Mirror the raw pillar's stat set so compute_result(1, ...) is
+        # pillar-equivalent. The honest-engine label makes a silent
+        # PyDESeq2 -> Welch degrade visible instead of vanishing.
+        method = str(nums.get("method", "") or "")
+        honest_engine = "PyDESeq2 pseudobulk" if "PyDESeq2" in method else "Welch t (pseudobulk means)"
         stats = [
             stat("Naive p", fmt_p(p_naive), bad=True),
             stat("Honest p", fmt_p(p_honest), good=(not honest.sig)),
             stat("True n", f"{int(nums['n_units'])} {_noun(unit_col)}"),
         ]
+        icc = nums.get("icc")
+        if icc is not None:
+            stats.append(stat("Intra-unit corr.", f"ICC {float(icc):.2f}", bad=(float(icc) >= 0.05)))
+        stats.append(stat("Honest engine", honest_engine))
         return Evidence(
             state=state,
             headline=head,

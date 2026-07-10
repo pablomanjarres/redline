@@ -46,7 +46,7 @@ The four rigor checks, on the same interface:
 
 - **Correct, and show your work.** Redline corrects the analysis and previews the corrected result. Everything it asserts, recommends, or corrects is shown, reproducible, and cited: the corrected code is downloadable and runs, the preview is the output of that code, and the recommendation names the method and its limits. The reported numbers, the preview, and the output of the downloadable code agree within tolerance, or the check fails its own harness.
 - **No fabricated fixes.** When there is no valid fix (a full confound, n=1, an unsalvageable design), Redline says so plainly and shows no corrected result anywhere. This is enforced structurally: the contract refuses to carry a corrected artifact on an unsalvageable finding. An honest "this cannot be fixed from this data" is worth more than a fake correction.
-- **Never cry wolf.** When a check passes, Redline says so plainly and confidently. It never manufactures a flag to have something to show. A clean analysis is a real answer, and a passed check renders as **Verified** in green, stated with the same confidence Redline gives a flag. A tool that always finds a problem is a tool nobody trusts.
+- **Never cry wolf.** When a check passes, Redline says so plainly and confidently. It never manufactures a flag to have something to show. A clean analysis is a real answer, and a passed check renders as **Verified** in green, stated with the same confidence Redline gives a flag. A tool that always finds a problem is a tool nobody trusts. Two mechanisms hold this line. An actor-critic pass makes an independent, adversarial Claude call that can veto an over-fired flag back to clean before it ever shows (surfaced at `/verifications`), and we measured the result end to end: on a 46-case benchmark of planted errors and clean controls, Redline catches 100% of the planted errors at a **0% false-positive rate**, while a single Claude call given the same analysis write-up catches 100% at **74%**. See `services/rigor/bench`.
 
 ## How it works
 
@@ -81,6 +81,8 @@ redline/
 
 Every finding is numbers plus narrative plus correction: a `ComputeResult` (the verdict, the stats, the chart payload) from the compute target, merged with a `Narrative` (the named failure mode, the citation, the struck-through claim, the defensible rewrite) from the reasoning layer, and a `Correction` (the runnable corrected script, the recommended next actions, the corrected result rendered beside the claim) from the same module. All three are Zod-typed in `@redline/contracts`, so the fixture, the Python engine, the reasoning layer, and the UI all speak one shape.
 
+Three further layers sit around that core, each optional and each shown. An **actor-critic pass** re-checks every candidate flag with an independent, adversarial Claude call that can confirm it, downgrade it to an advisory, or veto it back to clean, and the `/verifications` surface carries the acceptance-harness record that proves the critic vetoes over-fired flags, not only confirms real ones. The stochastic checks (double dipping, fragility) carry **confidence intervals** on their stats, so a marker count or a stability score reads as a distribution with a median and interval rather than a bare number. And every `ComputeResult` can carry **compute provenance** recording which target produced the numbers and how, so a value on screen traces to the run that made it. The verify harness (`services/verify`, `packages/critic-verify`) exercises all of this against fixed oracle cases.
+
 ## What you leave with
 
 Redline does not stop at the flags. For every corrected check it hands back a runnable Python script that reproduces the honest re-analysis, and it assembles them into a downloadable bundle: a README that explains what was wrong and what each script fixes, a consolidated notebook, and one script per flagged check. Each script takes `--h5ad PATH` and runs on the scientist's own data. The corrected result the app shows is the output of that code, and the two agree by construction, so what you download is exactly what you saw. When a finding cannot be fixed from the data, the bundle says so and ships no fabricated correction. See `docs/correction-layer.md`.
@@ -89,13 +91,16 @@ Redline does not stop at the flags. For every corrected check it hands back a ru
 
 | Path | What it is | Status |
 |---|---|---|
-| `packages/contracts` | `@redline/contracts`: Zod schemas for every shape the system exchanges. Field roles and verdicts (`primitives`), resolved `obs` columns (`fields`), seven discriminated chart payloads (`charts`), the compute-plus-narrative-plus-correction finding (`checks`), the correction shapes (`correction`), scenarios and datasets (`dataset`), the reasoning request/response (`reasoning`), and the assembled `AuditReport`. | built |
+| `packages/contracts` | `@redline/contracts`: Zod schemas for every shape the system exchanges. Field roles and verdicts (`primitives`), resolved `obs` columns (`fields`), seven discriminated chart payloads plus per-stat confidence intervals (`charts`), the compute-plus-narrative-plus-correction finding with its pre-critic state and provenance (`checks`), the correction shapes (`correction`), the actor-critic judgment (`critic`), the verification records (`verification`), scenarios and datasets (`dataset`), the reasoning request/response (`reasoning`), and the assembled `AuditReport`. | built |
 | `packages/ui` | `@redline/ui`: the design system. The audit-instrument tokens (a light instrument surface, a reserved red for findings, a blue signal), Archivo and JetBrains Mono, and verdict-to-color / verdict-to-label helpers. | built |
-| `packages/engine` | Orchestration across the foundation step and the eight registered checks, the `ComputeTarget` dispatch seam, and the locked deterministic fixtures that keep the demo path bulletproof. | built |
-| `packages/reasoning` | The reasoning layer. Claude names the failure mode, cites the fixing method, rewrites the conclusion, and writes the clean verdict when a check passes — over the first-party Claude API (the path you run, with your own key) or AWS Bedrock (the hosted demo), with a curated deterministic fallback when no key is set. | built |
-| `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. Deploys to Vercel. | built |
+| `packages/engine` | Orchestration across the foundation step and the eight registered checks, the `ComputeTarget` dispatch seam, the correction bundle assembly, the critic gate, and the locked deterministic fixtures that keep the demo path bulletproof. | built |
+| `packages/reasoning` | The reasoning layer. Claude names the failure mode, cites the fixing method, rewrites the conclusion, writes the clean verdict when a check passes, and critiques each candidate flag — over the first-party Claude API (the path you run, with your own key) or AWS Bedrock (the hosted demo), with a curated deterministic fallback when no key is set. | built |
+| `packages/critic-verify` | `@redline/critic-verify`: the actor-critic acceptance harness. Runs fixed oracle cases through the critic gate and proves it vetoes over-fired flags and downgrades an underpowered split, not only confirms real ones. | built |
+| `apps/web` | The plots-first workbench. Next.js, one panel per check with its knobs exposed, findings marked on the figures. The `/corrected` page hands back the runnable bundle and `/verifications` shows the actor-critic run record. Deploys to Vercel. | built |
+| `services/verify` | The verification harness that drives the engine against fixed cases and records the run behind `/verifications`. | built |
 | `services/rigor` | The real statistics in Python (scanpy, decoupler, PyDESeq2, numpy), exposed as an MCP server and runnable as a GCP Cloud Run job. | built |
 | `services/skill` | The rigor engine packaged as a Claude Skill (`SKILL.md` plus scripts), so the same core loads natively into Claude Science. | built |
+| `services/rigor/bench` | The detection benchmark: 46 labeled cases with planted statistical errors and clean controls, an independent ground-truth labeler, and the Redline-vs-single-Claude-call comparison. Reproduces from committed transcripts (`--replay` / `--score-only`). | built |
 
 ## The reference dataset
 
@@ -120,7 +125,7 @@ cd redline
 pnpm install
 pnpm build        # builds the four packages, then the Next.js workbench
 pnpm typecheck
-pnpm test         # engine (42) + reasoning (11) + guided tour (32)
+pnpm test         # contracts, engine, reasoning, critic-verify, and the guided tour
 ```
 
 ### Take the tour

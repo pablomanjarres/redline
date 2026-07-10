@@ -1,7 +1,8 @@
 import type { CheckResult } from '@redline/contracts';
 import { checkMeta } from '@redline/contracts';
 import { signalColor, stateLabel } from '@redline/ui';
-import { MiniChart } from '@/components/charts';
+import { DistributionStrip, MiniChart } from '@/components/charts';
+import { ciLabel } from '@/lib/format';
 
 /**
  * One finding on the audit sheet, in the dark instrument language. A
@@ -19,6 +20,7 @@ export function ReportRow({ result }: { result: CheckResult }) {
 
   return (
     <article
+      data-testid={`report-row-${checkId}`}
       data-tour={`report.row.${checkId}`}
       aria-label={`Check ${num} ${meta.name}, ${stateLabel(state)}`}
       style={{
@@ -93,6 +95,26 @@ export function ReportRow({ result }: { result: CheckResult }) {
             </span>
             <span>{corrected}</span>
           </p>
+
+          {/* confidence intervals: the repeated-run distribution behind a stat */}
+          {result.stats.some((s) => s.interval) && (
+            <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 18 }}>
+              {result.stats
+                .filter((s) => s.interval)
+                .map((s, i) => (
+                  <div key={i} style={{ minWidth: 148 }}>
+                    <div style={{ font: '400 9px/1.2 var(--mono)', letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>{s.label}</div>
+                    <div style={{ marginTop: 4, font: '600 13px/1.3 var(--mono)', color: s.bad ? 'var(--red)' : s.good ? 'var(--green)' : 'var(--ink-2)' }}>
+                      {s.value} <span style={{ color: 'var(--ink-4)', fontWeight: 400 }}>{ciLabel(s.interval!, s.value)}</span>
+                    </div>
+                    <div style={{ marginTop: 5, width: 148 }}>
+                      <DistributionStrip iv={s.interval!} height={18} accent={s.bad ? 'var(--red)' : s.good ? 'var(--green)' : 'var(--ink-3)'} />
+                    </div>
+                    <div style={{ marginTop: 3, font: '400 8.5px/1.3 var(--mono)', color: 'var(--ink-4)' }}>{s.interval!.n} runs</div>
+                  </div>
+                ))}
+            </div>
+          )}
 
           {missing && (
             <div

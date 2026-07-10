@@ -1,0 +1,62 @@
+{
+  "caseId": "A",
+  "checks": {
+    "1": {
+      "naiveP": 2.3519057614703889e-07,
+      "honestP": 0.774814770578524,
+      "n": 4,
+      "icc": 0.5242503313558332,
+      "verdict": "flagged",
+      "perGroup": 2
+    },
+    "2": {
+      "discAUC": 0.6103353332206636,
+      "holdAUC": 0.5806627091431469,
+      "markersHolding": 0,
+      "nMarkers": 4,
+      "verdict": "flagged"
+    },
+    "3": {
+      "resolutions": [
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0,
+        1.2,
+        1.4,
+        1.6,
+        1.8,
+        2.0
+      ],
+      "spurious": {
+        "group": "Effector",
+        "stability": 0.0,
+        "settings": 0,
+        "totalSettings": 10,
+        "presentRange": [
+          null,
+          null
+        ],
+        "verdict": "flagged"
+      },
+      "stable": {
+        "group": "Naive",
+        "stability": 1.0,
+        "settings": 10,
+        "totalSettings": 10,
+        "presentRange": [
+          0.2,
+          2.0
+        ],
+        "verdict": "clean"
+      }
+    },
+    "4": {
+      "cramersV": 1.0,
+      "rankDeficient": true,
+      "separable": false,
+      "verdict": "flagged"
+    }
+  }
+}

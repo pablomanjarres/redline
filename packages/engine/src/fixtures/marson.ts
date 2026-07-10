@@ -21,6 +21,7 @@ import {
   cit,
   fdr,
   groupInt,
+  iv,
   mkCode,
   rec,
   script1,
@@ -325,6 +326,12 @@ function m2(cfg: Check2Config): FullCheck {
     split: cfg.split,
     seed: 0,
   };
+  // Distributions over 200 independent count-splits (illustrative reference; see
+  // shared.ts `iv`). The held-out AUC lands near chance every split; discovery
+  // stays high because the markers were chosen on those same cells.
+  const holdDist = iv(0.57, 0.54, 0.61, 200);
+  const discDist = iv(0.9, 0.87, 0.92, 200);
+  const holdingDist = iv(0, 0, 1, 200);
   return {
     checkId: 2,
     state: 'flagged',
@@ -337,13 +344,23 @@ function m2(cfg: Check2Config): FullCheck {
       Math.round((1 - cfg.split) * 100) +
       '/' +
       Math.round(cfg.split * 100) +
-      ' split the four markers separate the group at AUC 0.57, near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
+      ' split the four markers separate the group at AUC 0.57 (95% interval 0.54–0.61 over 200 splits), near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
     stats: [
-      { label: 'Discovery AUC', value: discAUC.toFixed(2) },
-      { label: 'Held-out AUC', value: holdAUC.toFixed(2), bad: true },
-      { label: 'Markers holding', value: '0 / 4' },
+      { label: 'Discovery AUC', value: discAUC.toFixed(2), interval: discDist },
+      { label: 'Held-out AUC', value: holdAUC.toFixed(2), bad: true, interval: holdDist },
+      { label: 'Markers holding', value: '0 / 4', interval: holdingDist },
     ],
-    chart: { kind: 'groups', markers, split: cfg.split, verified: true, discAUC, holdAUC },
+    chart: {
+      kind: 'groups',
+      markers,
+      split: cfg.split,
+      verified: true,
+      discAUC,
+      holdAUC,
+      holdAUCDist: holdDist,
+      discAUCDist: discDist,
+      markersHoldingDist: holdingDist,
+    },
     correctedCode: mkCode('02_double_dipping.py', script2(p2), p2),
     recommendations: [
       rec(
@@ -373,13 +390,27 @@ function m2(cfg: Check2Config): FullCheck {
 
 // CHECK 3 - track "Effector" (spurious, res 0.8-1.2) -> flagged; "Naive" -> clean.
 function m3(cfg: Check3Config): FullCheck {
-  const present: [number, number] = cfg.track === 'Effector' ? [0.8, 1.2] : [0.0, 9.9];
-  const steps = buildSteps(cfg.min, cfg.max, cfg.step, present);
-  const nPresent = steps.filter((s) => s.present).length;
-  const stability = steps.length ? nPresent / steps.length : 0;
+  const isSpurious = cfg.track === 'Effector';
+  const present: [number, number] = isSpurious ? [0.8, 1.2] : [0.0, 9.9];
+  const steps0 = buildSteps(cfg.min, cfg.max, cfg.step, present);
+  const nPresent = steps0.filter((s) => s.present).length;
+  const stability = steps0.length ? nPresent / steps0.length : 0;
   const pct = Math.round(stability * 100);
 
-  if (cfg.track === 'Effector') {
+  // Per-setting presence probability over 40 re-seeded sweeps (illustrative
+  // reference): a present setting shows in most runs, its immediate neighbours
+  // flicker, the rest almost never. A stable group is present nearly always.
+  const presentP = isSpurious ? 0.82 : 0.97;
+  const steps = steps0.map((s) => {
+    const nearBand =
+      !s.present &&
+      (Math.abs(s.r - present[0]) <= cfg.step + 1e-9 || Math.abs(s.r - present[1]) <= cfg.step + 1e-9);
+    return { ...s, presence: s.present ? presentP : nearBand ? 0.26 : 0.04 };
+  });
+  const stabilityDist = isSpurious ? iv(stability, 0.2, 0.45, 40) : iv(stability, 0.95, 1.0, 40);
+  const sCI = Math.round(stabilityDist.lo * 100) + '–' + Math.round(stabilityDist.hi * 100) + '%';
+
+  if (isSpurious) {
     const p3 = {
       h5ad: H5AD,
       track: 'Effector',
@@ -406,15 +437,17 @@ function m3(cfg: Check3Config): FullCheck {
         nPresent +
         ' of ' +
         steps.length +
-        ' settings tested (' +
+        ' settings tested (stability ' +
         pct +
-        '%). It is a boundary of the algorithm, not a discrete population.',
+        '%, 95% interval ' +
+        sCI +
+        ' over 40 runs). It is a boundary of the algorithm, not a discrete population.',
       stats: [
-        { label: 'Stability', value: pct + '%', bad: true },
+        { label: 'Stability', value: pct + '%', bad: true, interval: stabilityDist },
         { label: 'Appears in', value: nPresent + ' / ' + steps.length + ' settings' },
         { label: 'Present range', value: present[0].toFixed(1) + '–' + present[1].toFixed(1) },
       ],
-      chart: { kind: 'fragility', steps, present, track: cfg.track, stability },
+      chart: { kind: 'fragility', steps, present, track: cfg.track, stability, stabilityDist },
       correctedCode: mkCode('03_fragility.py', script3(p3), p3),
       recommendations: [
         rec(
@@ -458,12 +491,14 @@ function m3(cfg: Check3Config): FullCheck {
       steps.length +
       ' resolution settings (' +
       pct +
-      '%). It is stable to the clustering parameter and safe to report as a discrete population.',
+      '%, 95% interval ' +
+      sCI +
+      ' over 40 runs). It is stable to the clustering parameter and safe to report as a discrete population.',
     stats: [
-      { label: 'Stability', value: pct + '%', good: true },
+      { label: 'Stability', value: pct + '%', good: true, interval: stabilityDist },
       { label: 'Appears in', value: nPresent + ' / ' + steps.length + ' settings' },
     ],
-    chart: { kind: 'fragility', steps, present, track: cfg.track, stability },
+    chart: { kind: 'fragility', steps, present, track: cfg.track, stability, stabilityDist },
   };
 }
 

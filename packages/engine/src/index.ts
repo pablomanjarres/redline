@@ -29,3 +29,7 @@ export { assembleReport } from './report.js';
 
 // The corrected-analysis bundle (README + notebook + per-finding scripts).
 export { buildBundle } from './bundle.js';
+
+// The actor-critic gate: maps the critic's ruling to the effective verdict.
+export { applyCriticGate, unverifiedAssessment } from './critic-gate.js';
+export type { CriticGateResult } from './critic-gate.js';

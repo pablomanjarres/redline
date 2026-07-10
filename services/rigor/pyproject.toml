@@ -22,16 +22,13 @@ dependencies = [
 # fixture target and the MCP contract tests run without it.
 stats = [
   "scanpy>=1.10",
+  # scanpy's sc.tl.leiden imports leidenalg lazily; without it Pillar 3 silently
+  # degrades to a KMeans fallback, which is a different statistic entirely.
+  "leidenalg>=0.10",
+  "igraph>=0.11",
   "decoupler>=1.8",
   "pydeseq2>=0.4",
   "statsmodels>=0.14",
-  # scanpy imports these lazily inside `sc.tl.leiden`. Without them the leiden
-  # call raises, the clustering path falls back to KMeans, and every check that
-  # sweeps a resolution silently measures a different algorithm than the one the
-  # method paper describes. Declaring them is what keeps the engine honest about
-  # what it ran.
-  "leidenalg>=0.10",
-  "igraph>=0.11",
 ]
 mcp = ["mcp>=1.2"]
 cloud = ["boto3>=1.34", "s3fs>=2024.2"]
@@ -50,3 +47,6 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "slow: exercises the real engine (PyDESeq2 / Leiden); deselect with -m 'not slow'",
+]

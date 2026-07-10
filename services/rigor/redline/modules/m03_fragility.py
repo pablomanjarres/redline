@@ -143,7 +143,11 @@ class Fragility(CheckModule):
             return Evidence(
                 state=CLEAN,
                 headline=head,
-                stats=[stat("Stability", fmt_pct(stability), good=True), stat("Present range", span)],
+                stats=[
+                    stat("Stability", fmt_pct(stability), good=True),
+                    stat("Present range", span),
+                    stat("Clustering engine", _clustering_engine()),
+                ],
                 chart=chart,
                 numbers=nums,
                 method=self.citation,
@@ -163,6 +167,7 @@ class Fragility(CheckModule):
             stats=[
                 stat("Stability", fmt_pct(stability), bad=True),
                 stat("Appears in", f"{len(present_res)} / {len(steps)} settings"),
+                stat("Clustering engine", _clustering_engine()),
             ],
             chart=chart,
             numbers=nums,
@@ -217,6 +222,29 @@ class Fragility(CheckModule):
         from .m05_multiple_testing import render_or_fallback
 
         return render_or_fallback(self.id, evidence.params)
+
+
+def _clustering_engine() -> str:
+    """The clustering backend the resolution sweep runs on, named the way the raw
+    pillar names it. Mirrors ``kernels._cluster``'s backend gate: scanpy Leiden
+    (igraph flavor) when the graph stack imports, else the KMeans fallback. So
+    ``compute_result(3, ...)`` surfaces the same 'Clustering engine' stat the raw
+    pillar does, and a silent Leiden -> KMeans degrade stays visible."""
+    try:
+        import anndata  # noqa: F401
+        import igraph  # noqa: F401
+        import leidenalg  # noqa: F401
+        import scanpy  # noqa: F401
+
+        return "Leiden (scanpy)"
+    except Exception:
+        pass
+    try:
+        import sklearn.cluster  # noqa: F401
+
+        return "KMeans fallback"
+    except Exception:
+        return "1-D binning fallback"
 
 
 def _h5ad_hint(design: Design) -> str:
