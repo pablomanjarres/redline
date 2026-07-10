@@ -1,39 +1,25 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
+import { checkMeta, checkRecord } from '@redline/contracts';
 import type { RunKey } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
-import { ConfoundChart, DistributionStrip, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
+import { DistributionStrip, renderChart } from '@/components/charts';
 import { ciLabel } from '@/lib/format';
 import { InstrumentRail } from '@/components/check/InstrumentRail';
 import { ReasoningConsole } from '@/components/check/ReasoningConsole';
 import { VerdictReadout } from '@/components/check/VerdictReadout';
+import { CorrectedCodeBlock } from '@/components/check/CorrectedCodeBlock';
+import { Recommendations } from '@/components/check/Recommendations';
+import { BeforeAfter } from '@/components/check/BeforeAfter';
 
-export const CHECK_META: Record<CheckId, { name: string; sub: string }> = {
-  1: { name: 'Pseudoreplication', sub: 'Non-independent data inflating a p-value' },
-  2: { name: 'Double dipping', sub: "Clusters that don't replicate out of sample" },
-  3: { name: 'Fragility', sub: 'A result that hinges on an arbitrary parameter' },
-  4: { name: 'Confounding', sub: "Two variables that can't be separated" },
-};
-
-function figure(result: CheckResult, cfg3: Check3Config): ReactNode {
-  const chart = result.chart;
-  switch (chart.kind) {
-    case 'significance':
-    case 'hardstop':
-      return <SignificanceChart chart={chart} />;
-    case 'groups':
-      return <GroupsChart chart={chart} />;
-    case 'fragility':
-      return <FragilityChart chart={chart} cfg={cfg3} />;
-    case 'confound':
-      return <ConfoundChart chart={chart} />;
-    default:
-      return null;
-  }
-}
+/** Name + sub for every check, keyed by id for the workbench tile and the report
+ *  row (both import this). Derived from the contract registry so all eight checks
+ *  (four core + four rigor) live in exactly one place. */
+export const CHECK_META: Record<CheckId, { name: string; sub: string }> = checkRecord(
+  (id) => ({ name: checkMeta(id).name, sub: checkMeta(id).sub }),
+);
 
 /** Slug a stat label into a stable kebab-case test id: lowercase, runs of
  *  non-alphanumerics collapse to a single dash, no leading/trailing dash.
@@ -59,9 +45,11 @@ function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
 }
 
 /** The audit stage for one (claim, check) RUN: figure on a lightbox plate (the
- *  hero), the verdict, and the instrument + console rail. The run's claim and its
- *  check both come from one run descriptor, so the named target and the audited
- *  target can never disagree (honesty rule 2). */
+ *  hero), the verdict, the corrected code, the recommendations, the before/after
+ *  preview, and the instrument + console rail. The run's claim and its check both
+ *  come from one run descriptor, so the named target and the audited target can
+ *  never disagree (honesty rule 2). Every correction section renders from this
+ *  run's result and only when the finding carries that half. */
 export function CheckStage({ runKey }: { runKey: RunKey }) {
   const { runs, runCfg, results, running, reasoning, reveal, cfg, runOne } = useSession();
   const run = runs.find((r) => r.key === runKey);
@@ -156,7 +144,7 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
             </div>
             <div style={{ padding: '22px 24px 24px', minHeight: 360, display: 'flex', alignItems: 'center' }}>
               {showFigure ? (
-                <div style={{ width: '100%' }}>{figure(result!, cfg3)}</div>
+                <div style={{ width: '100%' }}>{renderChart(result!.chart, cfg3)}</div>
               ) : (
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -187,6 +175,13 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
               <VerdictReadout result={result!} checkId={checkId} />
             </div>
           )}
+
+          {/* The correction layer: the code that reproduces the honest analysis,
+              what to do next, and the corrected result rendered beside the claim.
+              Each renders only when this run's finding carries that half. */}
+          {showFigure && <CorrectedCodeBlock code={result!.correctedCode} />}
+          {showFigure && <Recommendations items={result!.recommendations} />}
+          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg3} />}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

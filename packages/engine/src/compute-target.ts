@@ -2,12 +2,10 @@ import type {
   ScenarioId,
   CheckId,
   FieldSpec,
-  ComputeResult,
   DatasetInventory,
-  Check1Config,
-  Check2Config,
-  Check3Config,
-  Check4Config,
+  EngineResult,
+  AnyCheckConfig,
+  PreviewArtifact,
 } from '@redline/contracts';
 import { fixtureTarget } from './targets/fixture.js';
 import { createRemoteTarget } from './targets/remote.js';
@@ -16,15 +14,16 @@ import { createRemoteTarget } from './targets/remote.js';
 export interface ComputeInput {
   scenarioId: ScenarioId;
   checkId: CheckId;
-  config: Check1Config | Check2Config | Check3Config | Check4Config;
+  config: AnyCheckConfig;
   fields: FieldSpec[];
 }
 
 /**
  * The compute seam. The fixture target is deterministic and always available; the
  * remote targets shell out to (or fetch) the real Python engine and return the
- * SAME ComputeResult shape. A remote target whose env is unwired reports
- * `available: false` so a dead control is never presented as live.
+ * SAME EngineResult shape (statistics plus whatever correction the check could
+ * produce). A remote target whose env is unwired reports `available: false` so a
+ * dead control is never presented as live.
  */
 export interface ComputeTarget {
   readonly id: 'fixture' | 'local' | 'cloudrun' | 'endpoint';
@@ -38,7 +37,14 @@ export interface ComputeTarget {
    */
   inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory>;
   inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]>;
-  computeCheck(input: ComputeInput): Promise<ComputeResult>;
+  computeCheck(input: ComputeInput): Promise<EngineResult>;
+  /**
+   * The heavier fix-and-preview render, kept separate so the overview can load
+   * fast and a card can fetch its preview on demand. Optional: a target that
+   * does not render previews (or is unwired) returns null, and the card shows
+   * the corrected code and recommendations it already has.
+   */
+  preview?(input: ComputeInput): Promise<PreviewArtifact | null>;
 }
 
 /**

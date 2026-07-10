@@ -129,7 +129,7 @@ For a clean demo run with no tour, open the app with `?tour=0` once.
   to reach past the card and operate the spotlighted control, so the rest of the page has
   to stay in the accessibility tree.
 - Focus moves to the card on every step, and returns where it came from when the tour ends.
-- Escape ends the tour. Left and Right move between steps, and both stand down when focus
+- Presenter mode plays the spine and skips detail steps; Left and Right honor that, so Back steps to the previous spine step rather than bouncing forward onto the one it just left. Escape ends the tour. Left and Right move between steps, and both stand down when focus
   is inside a slider or a select, because those controls own their arrow keys.
 - `prefers-reduced-motion` drops the ring halo, the card rise, and the presenter scrub
   sweep.

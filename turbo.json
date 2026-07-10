@@ -11,7 +11,12 @@
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^build"]
+      // Also depends on this package's own build, not only its dependencies'.
+      // `apps/web/tsconfig.json` includes `.next/types/**/*.ts`, and `next build`
+      // rewrites that directory. Run the two concurrently and tsc globs a file
+      // that next has already deleted, so the gate fails with TS6053 on a race
+      // rather than on a real type error.
+      "dependsOn": ["^build", "build"]
     },
     "test": {
       "dependsOn": ["^build"]

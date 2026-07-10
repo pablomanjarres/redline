@@ -6,16 +6,22 @@ import {
   Check2Config,
   Check3Config,
   Check4Config,
+  Check5Config,
+  Check6Config,
+  Check7Config,
+  Check8Config,
   FieldSpec,
   CheckResult,
   type Chart,
   type CheckState,
+  type Citation,
   type ComputeResult,
   type CriticAssessment,
   type CriticRequest,
+  type EngineResult,
   type Narrative,
   type NarrativeRequest,
-  type Citation,
+  type Recommendation,
 } from '@redline/contracts';
 import {
   applyCriticGate,
@@ -28,11 +34,20 @@ import { createReasoner } from '@redline/reasoning';
 
 export const runtime = 'nodejs';
 
-/** Request body: a scenario, a pillar, its knob config, and the resolved fields. */
+/** Request body: a scenario, a check, its knob config, and the resolved fields. */
 const CheckRequest = z.object({
   scenarioId: ScenarioId,
   checkId: CheckId,
-  config: z.union([Check1Config, Check2Config, Check3Config, Check4Config]),
+  config: z.union([
+    Check1Config,
+    Check2Config,
+    Check3Config,
+    Check4Config,
+    Check5Config,
+    Check6Config,
+    Check7Config,
+    Check8Config,
+  ]),
   fields: z.array(FieldSpec),
   // The (claim, check) run's identity, sent by the session store. `claim` is the
   // exact claimText whose route params drove this run; `claimId` and `runKey`
@@ -138,6 +153,24 @@ function chartEvidence(chart: Chart): Record<string, string | number | boolean> 
       if (chart.cramersV !== null) e.cramersV = chart.cramersV;
       return e;
     }
+    case 'volcano':
+      return {
+        chartKind: chart.kind,
+        label: chart.label,
+        alpha: chart.alpha,
+        fcThreshold: chart.fcThreshold,
+        nSig: chart.nSig,
+        pointCount: chart.points.length,
+      };
+    case 'fdr':
+      return {
+        chartKind: chart.kind,
+        tests: chart.tests,
+        alpha: chart.alpha,
+        rawHits: chart.rawHits,
+        adjustedHits: chart.adjustedHits,
+        method: chart.method,
+      };
   }
 }
 
@@ -180,6 +213,8 @@ const CRITIC_METHOD: Record<Chart['kind'], string> = {
   groups: 'Poisson count-split, held-out marker AUC',
   fragility: 'Leiden resolution sweep, cluster persistence across settings',
   confound: "design-matrix rank and Cramer's V on the resolved columns",
+  volcano: 'Benjamini-Hochberg false-discovery correction across the tested genes',
+  fdr: 'discoveries surviving false-discovery control at the stated alpha',
 };
 
 /** The resolved roles behind the audit, so the critic can judge the design. */
@@ -238,6 +273,10 @@ const FALLBACK_CITATION: Record<CheckId, Citation> = {
   2: { authors: 'Neufeld et al.', year: 2024, venue: 'Biostatistics', note: 'Count splitting tests markers on data that did not define the group. ClusterDE is the stronger method.' },
   3: { authors: 'Luecken and Theis', year: 2019, venue: 'Molecular Systems Biology', note: 'Clustering resolution is a free parameter. A real group is stable across it.' },
   4: { authors: 'Hicks et al.', year: 2018, venue: 'Biostatistics', note: 'A biological effect confounded with a technical variable cannot be separated.' },
+  5: { authors: 'Benjamini and Hochberg', year: 1995, venue: 'J. R. Stat. Soc. B', note: 'Control the false discovery rate across many tests. A raw p-value is not a discovery.' },
+  6: { authors: 'Hicks et al.', year: 2018, venue: 'Biostatistics', note: 'A technical variable separable from the effect belongs in the model. Leaving it out biases the estimate.' },
+  7: { authors: 'Luecken and Theis', year: 2019, venue: 'Molecular Systems Biology', note: 'Choose clustering resolution by a stability or quality criterion, not by eye.' },
+  8: { authors: 'Soneson and Robinson', year: 2018, venue: 'Nature Methods', note: 'Match the test to the count distribution. A t-test on raw counts violates its own assumptions.' },
 };
 
 const FAILURE_MODE: Record<CheckId, string> = {
@@ -245,6 +284,10 @@ const FAILURE_MODE: Record<CheckId, string> = {
   2: 'Double dipping (post-clustering marker testing)',
   3: 'Clustering fragility',
   4: 'Technical-biological confounding',
+  5: 'Uncorrected multiple testing',
+  6: 'Unmodeled covariate',
+  7: 'Unjustified resolution choice',
+  8: 'Violated test assumptions',
 };
 
 /**
@@ -302,7 +345,10 @@ export async function POST(req: Request) {
 
   try {
     const target = getComputeTarget();
-    const compute = await target.computeCheck(body);
+    // The compute target now returns statistics AND the optional correction
+    // (corrected code, recommendations, before/after preview). Both flow to the
+    // client untouched; a model failure below can never drop them.
+    const compute: EngineResult = await target.computeCheck(body);
 
     // The claim this run audits. The session sends the run's exact claimText
     // (whose route params produced these numbers); a legacy numbers-only caller
@@ -383,10 +429,35 @@ export async function POST(req: Request) {
 
     const vetoed = critic?.verdict === 'veto';
 
+    // The engine's own recommendations carry the DETERMINISTIC feasibilities
+    // (fixable_now / needs_new_data / unsalvageable), decided by the compute
+    // layer and never by the model. When a reasoner is wired, ask it only to
+    // improve the prose, handing it those fixed feasibilities. On any failure,
+    // keep the engine's curated recommendations. A model failure never drops the
+    // correction payload.
+    let recommendations: Recommendation[] | undefined = compute.recommendations;
+    if (reasoner.available && recommendations && recommendations.length > 0) {
+      try {
+        const prose = await reasoner.recommend({
+          ...buildRequest(body.scenarioId, compute, effectiveState),
+          // The feasibility slots the engine already decided. The model fills in
+          // prose against them and cannot change them; `enforceRecommendationHonesty`
+          // overwrites whatever it returns.
+          feasibilities: recommendations.map((r) => r.feasibility),
+          fields: body.fields.map((f) => f.id),
+          method: recommendations[0]?.citation ?? narrative.citation,
+        });
+        if (prose.length > 0) recommendations = prose;
+      } catch {
+        recommendations = compute.recommendations;
+      }
+    }
+
     const result = CheckResult.parse({
       ...compute,
       ...(vetoed ? clearComputeForVeto(compute) : {}),
       ...narrative,
+      ...(recommendations ? { recommendations } : {}),
       source,
       state: effectiveState,
       ...(critic ? { computeState: compute.state, critic } : {}),

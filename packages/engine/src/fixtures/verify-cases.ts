@@ -334,6 +334,12 @@ const nocountsFields: FieldSpec[] = [
  * the nuisance candidates differ per scenario. Check 4's variable of interest is
  * the grouping itself (the confound check asks whether that grouping is
  * separable from the technical columns).
+ *
+ * Checks 5 to 8 are the rigor checks the correction layer added. These foils
+ * were written to exercise the four founding pillars, so 5 to 8 carry neutral
+ * defaults over the same fields: the config map is total (a complete object per
+ * `CheckConfigMap`), and the harness that consumes it may still choose which
+ * ids to run.
  */
 export function verifyDefaults(opts: {
   unit: string;
@@ -346,6 +352,10 @@ export function verifyDefaults(opts: {
     2: { split: 0.5, grouping: 'cell_state' },
     3: { min: 0.2, max: 2.0, step: 0.2, track: opts.track, scrub: 1.0 },
     4: { interest: opts.grouping, nuisance: opts.nuisance },
+    5: { alpha: 0.05, method: 'bh' },
+    6: { interest: opts.grouping, covariate: opts.nuisance[0] ?? opts.grouping, alpha: 0.05 },
+    7: { min: 0.2, max: 2.0, step: 0.2, criterion: 'silhouette', chosen: 1.0 },
+    8: { grouping: opts.grouping, claimedTest: 'ttest', alpha: 0.05 },
   };
 }
 

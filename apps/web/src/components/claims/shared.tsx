@@ -1,4 +1,5 @@
 import type { CheckId, Confidence } from '@redline/contracts';
+import { CHECK_IDS as REGISTERED_CHECK_IDS, CHECK_REGISTRY } from '@redline/contracts';
 
 /**
  * Shared, presentational parts for the Claim Review screen. Kept in one place so
@@ -8,15 +9,17 @@ import type { CheckId, Confidence } from '@redline/contracts';
  * matrix row: same confidence colors, same "Low, please check" wording.
  */
 
-/** The real check names, shown on every routing chip (01..04). */
-export const CHECK_NAMES: Record<CheckId, string> = {
-  1: 'Pseudoreplication',
-  2: 'Double dipping',
-  3: 'Fragility',
-  4: 'Confounding',
-};
+/**
+ * The real check names, shown on every routing chip. Derived from the registry
+ * so a routing chip appears for every registered check and can never name a
+ * different set than the board runs. When the correction layer added the rigor
+ * checks, this list grew with them instead of pinning four.
+ */
+export const CHECK_NAMES: Record<CheckId, string> = Object.fromEntries(
+  REGISTERED_CHECK_IDS.map((id) => [id, CHECK_REGISTRY[id].name]),
+) as Record<CheckId, string>;
 
-export const CHECK_IDS: CheckId[] = [1, 2, 3, 4];
+export const CHECK_IDS: readonly CheckId[] = REGISTERED_CHECK_IDS;
 
 /** The confidence light color: green holds, amber checks, red is unsure. */
 export const CONF_COLOR: Record<Confidence, string> = {

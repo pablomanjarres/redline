@@ -4,18 +4,20 @@ import { C, stateColor } from '@redline/ui';
 import { keyer } from './svg';
 
 /**
- * The card thumbnail: a small, clean glyph per check, tinted by the verdict
- * color. Miniatures of the full figures (bars, dumbbell, presence strip, 2x2
- * grid), read from the result union. No hand-drawn marks.
+ * The card thumbnail: a small, clean glyph per finding, tinted by the verdict
+ * color. Miniatures of the full figures, read from the chart union and switched
+ * on `chart.kind` (the real discriminator), so a new chart kind slots in here
+ * without a per-check branch. No hand-drawn marks.
  */
 export function MiniChart({
   checkId,
   result,
 }: {
-  checkId: 1 | 2 | 3 | 4;
+  checkId: RC.CheckId;
   result: RC.CheckResult;
 }): ReactElement {
   const col = stateColor(result.state);
+  const chart = result.chart;
   const { add, els } = keyer();
   const wrap = (kids: ReactElement[]): ReactElement => (
     <svg viewBox="0 0 210 96" width="100%" height="100%" style={{ display: 'block' }} role="img" aria-label={`Check ${checkId} result thumbnail`}>
@@ -23,7 +25,7 @@ export function MiniChart({
     </svg>
   );
 
-  if (checkId === 1) {
+  if (chart.kind === 'significance' || chart.kind === 'hardstop') {
     // two bars on a baseline with a dashed alpha rule: tall reported, short honest
     add(<line x1={54} y1={82} x2={156} y2={82} stroke={C.line2} strokeWidth={1} />);
     add(<line x1={54} y1={40} x2={156} y2={40} stroke={C.line2} strokeWidth={1} strokeDasharray="3 3" />);
@@ -32,7 +34,7 @@ export function MiniChart({
     return wrap(els);
   }
 
-  if (checkId === 2) {
+  if (chart.kind === 'groups') {
     // dumbbell rows: discovery (ink) to held-out (verdict), collapsing left
     for (let i = 0; i < 4; i++) {
       const y = 22 + i * 17;
@@ -44,9 +46,9 @@ export function MiniChart({
     return wrap(els);
   }
 
-  if (checkId === 3) {
-    const fragile = result.chart.kind === 'fragility' ? result.chart.steps.some((s) => !s.present) : false;
-    const stability = result.chart.kind === 'fragility' ? result.chart.stability : 0;
+  if (chart.kind === 'fragility') {
+    const fragile = chart.steps.some((s) => !s.present);
+    const stability = chart.stability;
     for (let i = 0; i < 8; i++) {
       const x = 26 + i * 20;
       const on = fragile ? i >= 3 && i <= 5 : true;
@@ -57,11 +59,42 @@ export function MiniChart({
     return wrap(els);
   }
 
-  // 2x2 contingency grid; occupied diagonal ringed when confounded
+  if (chart.kind === 'volcano') {
+    // a cloud with a threshold cross; survivors and claimed points in verdict color
+    add(<line x1={105} y1={12} x2={105} y2={84} stroke={C.line2} strokeWidth={1} strokeDasharray="3 3" />);
+    add(<line x1={30} y1={40} x2={180} y2={40} stroke={C.line2} strokeWidth={1} strokeDasharray="3 3" />);
+    for (let i = 0; i < 26; i++) {
+      const a = i * 2.399963;
+      const rr = 8 + (i % 7) * 4.4;
+      const x = 105 + Math.cos(a) * rr;
+      const y = 50 + Math.sin(a) * rr * 0.5;
+      add(<circle cx={x} cy={y} r={1.8} fill={C.line2} />);
+    }
+    const sig = chart.points.filter((p) => p.sig).slice(0, 6);
+    sig.forEach((p, i) => {
+      const x = 128 + (i % 3) * 16 + (p.log2fc < 0 ? -60 : 0);
+      const y = 22 + Math.floor(i / 3) * 12;
+      add(<circle cx={x} cy={y} r={3} fill={col} />);
+    });
+    return wrap(els);
+  }
+
+  if (chart.kind === 'fdr') {
+    // two bars: raw hits (verdict) beside surviving hits (ink)
+    const maxV = Math.max(chart.rawHits, 1);
+    const hRaw = Math.max(6, (chart.rawHits / maxV) * 60);
+    const hAdj = Math.max(4, (chart.adjustedHits / maxV) * 60);
+    add(<line x1={54} y1={80} x2={156} y2={80} stroke={C.line2} strokeWidth={1} />);
+    add(<rect x={74} y={80 - hRaw} width={22} height={hRaw} rx={3} fill={col} />);
+    add(<rect x={116} y={80 - hAdj} width={22} height={hAdj} rx={3} fill={C.ink} />);
+    return wrap(els);
+  }
+
+  // confound: 2x2 contingency grid; occupied diagonal ringed when confounded
   const ox = 76;
   const oy = 20;
   const s = 30;
-  const verified = result.chart.kind === 'confound' ? result.chart.verified : false;
+  const verified = chart.kind === 'confound' ? chart.verified : false;
   for (let r = 0; r < 2; r++) {
     for (let cc = 0; cc < 2; cc++) {
       const f = r === cc;
