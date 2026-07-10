@@ -82,4 +82,6 @@ export {
   ClaimExtractionResponse,
   ClaimMappingRequest,
   ClaimMappingResponse,
+  ClaimImprovementRequest,
+  ClaimImprovementResponse,
 } from './claims.js';

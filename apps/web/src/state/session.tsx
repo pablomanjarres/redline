@@ -71,7 +71,7 @@ import {
   reasoningLines,
 } from '@redline/engine';
 import type { PreparedRun, RunKey } from '@redline/engine';
-import { postCheck, postClaims, postFields, postInspect, postMapClaim } from '@/lib/api';
+import { postCheck, postClaims, postFields, postImproveClaim, postInspect, postMapClaim } from '@/lib/api';
 
 const IDS: CheckId[] = [1, 2, 3, 4];
 const DEFAULT_SCENARIO: ScenarioId = 'marson';
@@ -162,6 +162,14 @@ export interface SessionValue {
   setClaimText(id: string, text: string): void;
   setClaimRouting(id: string, checks: CheckRoute[]): void;
   addClaim(text: string): Promise<void>;
+  /**
+   * Improve one claim's wording with the reasoner (the "Improve with AI"
+   * affordance). Returns the sharper rewrite for the caller to drop into the edit
+   * field; the scientist still Saves or Cancels, so nothing is persisted here.
+   * Rejects when no honest rewrite is possible, so the caller can leave the
+   * wording untouched.
+   */
+  improveClaimText(input: { text: string; restsOn?: string; checks?: CheckId[] }): Promise<string>;
   setNotebook(text: string): void;
   setProse(text: string): void;
   /** Confirm the claim list and run every (claim, check) run in the workbench. */
@@ -709,6 +717,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Improve a claim's wording (spec section 6, the "Improve with AI" affordance).
+  // A pure request: it reads the audit context (scenario, inventory, fields),
+  // asks the reasoner to sharpen the wording, and returns the rewrite. It does not
+  // touch the store, because the rewrite lands in the card's edit field as a draft
+  // the scientist still confirms. On a 503 (no honest rewrite) it rejects, and the
+  // card leaves the wording untouched rather than fabricating one.
+  const improveClaimText = useCallback(
+    async (input: { text: string; restsOn?: string; checks?: CheckId[] }): Promise<string> => {
+      const s = coreRef.current;
+      const inventory = s.inventory;
+      const text = input.text.trim();
+      if (text === '') throw new Error('Nothing to improve: the wording is empty.');
+      if (!inventory) throw new Error('Inspect the dataset before improving a claim.');
+      return postImproveClaim({
+        scenarioId: s.scenarioId,
+        inventory,
+        fields: s.fields ?? [],
+        text,
+        restsOn: input.restsOn,
+        checks: input.checks,
+      });
+    },
+    [],
+  );
+
   const setNotebook = useCallback((text: string) => {
     const next: CoreState = { ...coreRef.current, notebook: text };
     coreRef.current = next;
@@ -890,6 +923,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setClaimText,
     setClaimRouting,
     addClaim,
+    improveClaimText,
     setNotebook,
     setProse,
     confirmClaims,
