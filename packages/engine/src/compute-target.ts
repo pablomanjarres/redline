@@ -3,6 +3,7 @@ import type {
   CheckId,
   FieldSpec,
   ComputeResult,
+  DatasetInventory,
   Check1Config,
   Check2Config,
   Check3Config,
@@ -28,6 +29,14 @@ export interface ComputeInput {
 export interface ComputeTarget {
   readonly id: 'fixture' | 'local' | 'cloudrun' | 'endpoint';
   readonly available: boolean;
+  /**
+   * The thin inspection of a scenario's `.h5ad` (spec section 3): the obs
+   * columns, the stored uns results, the cluster fields, and whether raw counts
+   * are present. The fixture returns the hand-written inventory; a real target
+   * reads it from the file. This is the raw material the claim-extraction agent
+   * reads to propose auditable claims.
+   */
+  inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory>;
   inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]>;
   computeCheck(input: ComputeInput): Promise<ComputeResult>;
 }

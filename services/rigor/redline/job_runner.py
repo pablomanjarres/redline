@@ -149,6 +149,37 @@ def load_adata(h5ad: str) -> Any:
         return adata
 
 
+def load_adata_backed(h5ad: str) -> tuple[Any, bool]:
+    """Open an ``.h5ad`` without reading the expression matrix into memory.
+
+    Returns ``(adata, we_opened_it)``. The caller must close it when the flag is
+    True; a backed AnnData holds an open HDF5 handle.
+
+    ``inspect`` is the intake step. It reads obs, uns, var_names and samples a few
+    hundred cells to decide whether raw counts are present. Reading X for that is a
+    full-matrix load on a file that is routinely gigabytes, which is exactly the
+    cost the thin inspection exists to avoid. Measured on a 160 MB matrix: a plain
+    read costs +180 MB of RSS, backed costs +21 MB, and both return the same
+    inventory.
+
+    If the full-read cache already holds this file (a check ran first) reuse it,
+    because that memory is already spent. Never cache the backed object: it is not
+    what ``compute_result`` needs.
+    """
+    import anndata  # lazy; heavy import
+
+    path = os.path.abspath(os.path.expanduser(str(h5ad)))
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"h5ad file not found: {path}")
+    stat = os.stat(path)
+    key = f"{path}:{stat.st_mtime_ns}:{stat.st_size}"
+    with _quiet_stdout():
+        cached = _ADATA_CACHE.get("entry")
+        if cached is not None and cached[0] == key:
+            return cached[1], False
+        return anndata.read_h5ad(path, backed="r"), True
+
+
 def _prepare_source(h5ad: str) -> Any:
     """A local ``.h5ad`` becomes a loaded AnnData; anything else (a remote URI)
     is handed to the engine untouched so it can open it however it opens it."""
@@ -281,6 +312,39 @@ def compute_result(
     return out
 
 
+def inspect_dataset(h5ad: str) -> dict[str, Any]:
+    """Thin inspection of an ``.h5ad`` (spec section 3): the obs columns and their
+    types, the stored ``uns`` results (marker tables, DE results) with their genes
+    and shape, the cluster label fields, and whether raw counts are present.
+
+    Opens the file BACKED, so the expression matrix is never read into memory.
+    ``inspect_h5ad`` samples at most a few hundred cells to decide whether raw
+    counts are present; everything else it reads lives in obs, uns and var.
+
+    This deliberately does not share ``load_adata``'s full-read cache slot, which
+    would defeat the property: that cache holds a fully materialized AnnData
+    because ``compute_result`` needs one. If a check already loaded this exact
+    file, the cached object is reused and nothing extra is paid.
+
+    Returns the ``DatasetInventory`` as a JSON-safe dict. ``inspect_h5ad`` is
+    imported lazily so importing this module stays light for the Cloud Run and
+    contract paths."""
+    from redline.inspect import inspect_h5ad
+
+    path = os.path.abspath(os.path.expanduser(str(h5ad)))
+    adata, we_opened_it = load_adata_backed(h5ad)
+    try:
+        with _quiet_stdout():
+            inventory = inspect_h5ad(adata, file=os.path.basename(path))
+    finally:
+        if we_opened_it:
+            try:
+                adata.file.close()
+            except Exception:
+                pass
+    return _jsonable(inventory)
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def _read_spec(spec_path: str | None) -> dict[str, Any]:
     if spec_path and spec_path != "-":
@@ -323,6 +387,18 @@ def main(argv: list[str] | None = None) -> int:
     if not h5ad:
         print("redline-job: job spec is missing 'h5ad'.", file=sys.stderr)
         return 2
+
+    # The intake 'inspect' op reads the object's metadata (no check, no checkId).
+    if spec.get("op") == "inspect":
+        try:
+            inventory = inspect_dataset(h5ad)
+        except Exception as exc:  # surface a clean failure; never emit partial JSON
+            print(f"redline-job: {type(exc).__name__}: {exc}", file=sys.stderr)
+            return 1
+        sys.stdout.write(to_json(inventory) + "\n")
+        sys.stdout.flush()
+        return 0
+
     try:
         check_id = int(check_id)
     except (TypeError, ValueError):

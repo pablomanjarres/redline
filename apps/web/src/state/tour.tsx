@@ -27,7 +27,7 @@ import {
   type ReactNode,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { ScenarioId } from '@redline/contracts';
+import type { Check3Config, ScenarioId } from '@redline/contracts';
 import { useSession, type SessionValue } from '@/state/session';
 import { TOUR_STEPS } from '@/lib/tour/steps';
 import { anchorSelector } from '@/lib/tour/anchors';
@@ -90,6 +90,20 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+/**
+ * The first Check-3 run and its live config, or null before the workbench has any
+ * runs. The tour's fragility beat (track + scrub) drives this one run; with the
+ * (claim, check) run model there is no single per-check cfg[3] any more, so the
+ * tour targets the first run of Check 3 and no-ops gracefully when there is none.
+ */
+function firstCheck3Run(s: SessionValue): { key: string; cfg: Check3Config } | null {
+  const run = s.runs.find((r) => r.checkId === 3);
+  if (!run) return null;
+  const cfg = s.runCfg[run.key];
+  if (!cfg) return null;
+  return { key: run.key, cfg: cfg as Check3Config };
+}
+
 /** Arrow keys belong to a focused slider or select, never to the tour. */
 function inFormControl(el: Element | null): boolean {
   if (!el) return false;
@@ -117,8 +131,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const stepRef = useRef(step);
   stepRef.current = step;
 
-  // What the tour moved, so it can put it back.
-  const restore = useRef<{ scenarioId: ScenarioId; track?: string; scrub?: number } | null>(null);
+  // What the tour moved, so it can put it back. `check3` is the first Check-3
+  // run's key plus its pre-tour track/scrub, captured the first time the tour
+  // moves it (the run only exists after the workbench has run).
+  const restore = useRef<{
+    scenarioId: ScenarioId;
+    check3?: { key: string; track: string; scrub: number };
+  } | null>(null);
   // Where focus was before the tour took it, so Escape returns the reader there.
   const focusReturn = useRef<HTMLElement | null>(null);
 
@@ -130,7 +149,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback((mode: TourMode) => {
     const s = sessionRef.current;
-    restore.current = { scenarioId: s.scenarioId, track: s.cfg[3].track, scrub: s.cfg[3].scrub };
+    // Capture the scenario now; the Check-3 run only exists once the workbench has
+    // run, so its pre-tour state is captured lazily when the tour first moves it
+    // (see the setCheck3Track ensure). If a run already exists, capture it here.
+    const c3 = firstCheck3Run(s);
+    restore.current = {
+      scenarioId: s.scenarioId,
+      ...(c3 ? { check3: { key: c3.key, track: c3.cfg.track, scrub: c3.cfg.scrub } } : {}),
+    };
     const active = document.activeElement;
     focusReturn.current = active instanceof HTMLElement ? active : null;
     dispatch({ type: 'start', mode, index: 0 });
@@ -145,9 +171,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
         // The tour switched scenarios to narrate Marson. Switching back resets
         // the session wholesale, so there is nothing further to put right.
         s.loadScenario(r.scenarioId);
-      } else if (r.track !== s.cfg[3].track || r.scrub !== s.cfg[3].scrub) {
-        // Put back only what actually moved, and re-run the check that owns it.
-        s.setCfg(3, { track: r.track, scrub: r.scrub });
+      } else if (r.check3) {
+        // Put back only what actually moved, on the same run, and re-run it.
+        const curCfg = s.runCfg[r.check3.key] as Check3Config | undefined;
+        if (curCfg && (curCfg.track !== r.check3.track || curCfg.scrub !== r.check3.scrub)) {
+          s.setRunCfg(r.check3.key, { track: r.check3.track, scrub: r.check3.scrub });
+        }
       }
     }
     restore.current = null;
@@ -179,22 +208,48 @@ export function TourProvider({ children }: { children: ReactNode }) {
         if (!s.fields) await s.resolveFields();
         return;
       case 'confirmFields':
+        // Confirming the design no longer runs the checks. It inspects the file
+        // and extracts the claims, so this leaves the Claim Review screen with a
+        // real, unconfirmed list for the reader to look at.
         if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
         if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
         return;
+      case 'confirmClaims':
+        // The workbench runs only after the claim list is confirmed. Walk the
+        // whole front door, each hop idempotent, so a reader who deep-links to a
+        // check or the report still lands on real, routed results.
+        if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
+        if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
+        if (!sessionRef.current.claimsConfirmed) await sessionRef.current.confirmClaims();
+        return;
       case 'runCheck': {
         const id = e.checkId;
-        if (!s.fieldsConfirmed) {
-          if (!s.fields) await s.resolveFields();
-          await sessionRef.current.confirmFields();
-          return; // confirmFields runs all four
-        }
-        if (s.results[id] == null && !s.running[id]) await s.runCheck(id);
+        // Results come from confirming the claim list, which runs every (claim,
+        // check) run. Make sure the whole chain ran, then fill the FIRST run of
+        // this check directly if it has not produced a result yet. runOne is a
+        // real session action, so the step is never dead.
+        if (!sessionRef.current.fields) await sessionRef.current.resolveFields();
+        if (!sessionRef.current.fieldsConfirmed) await sessionRef.current.confirmFields();
+        if (!sessionRef.current.claimsConfirmed) await sessionRef.current.confirmClaims();
+        const cur = sessionRef.current;
+        const run = cur.runs.find((r) => r.checkId === id);
+        if (run && cur.results[run.key] == null && !cur.running[run.key]) await cur.runOne(run.key);
         return;
       }
-      case 'setCheck3Track':
-        if (s.cfg[3].track !== e.track) s.setCfg(3, { track: e.track });
+      case 'setCheck3Track': {
+        const c3 = firstCheck3Run(s);
+        if (!c3) return; // no Check-3 run yet; the beat no-ops rather than crash
+        // Lazily remember the pre-tour state the first time the tour moves it, so
+        // stop() can restore this exact run.
+        if (restore.current && !restore.current.check3) {
+          restore.current = {
+            ...restore.current,
+            check3: { key: c3.key, track: c3.cfg.track, scrub: c3.cfg.scrub },
+          };
+        }
+        if (c3.cfg.track !== e.track) s.setRunCfg(c3.key, { track: e.track });
         return;
+      }
     }
   }, []);
 
@@ -260,9 +315,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
     if (!state.active || state.mode !== 'presenter' || state.paused || !step.sweepScrub) return;
     if (prefersReducedMotion()) return;
 
-    const s = sessionRef.current;
-    const lo = s.cfg[3].min;
-    const hi = s.cfg[3].max;
+    const c3 = firstCheck3Run(sessionRef.current);
+    if (!c3) return; // no Check-3 run to sweep; skip rather than crash
+    const runKey = c3.key;
+    const lo = c3.cfg.min;
+    const hi = c3.cfg.max;
     if (!(hi > lo)) return;
 
     const dwell = Math.max(1200, step.dwellMs);
@@ -272,7 +329,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       // out and back, so the group appears and then vanishes again
       const phase = t < 0.5 ? t * 2 : (1 - t) * 2;
       const value = Number((lo + (hi - lo) * phase).toFixed(2));
-      sessionRef.current.setCfg(3, { scrub: value }, { rerun: false });
+      sessionRef.current.setRunCfg(runKey, { scrub: value }, { rerun: false });
     }, SWEEP_MS);
     return () => clearInterval(id);
   }, [state.active, state.mode, state.paused, state.index, step.sweepScrub, step.dwellMs]);

@@ -1,17 +1,19 @@
 'use client';
 
-import type { CheckId } from '@redline/contracts';
 import { useSession } from '@/state/session';
-import { CheckTile } from '@/components/workbench/CheckTile';
-
-const IDS: CheckId[] = [1, 2, 3, 4];
+import { RunTile } from '@/components/workbench/RunTile';
 
 /**
- * Workbench: the audit board. Four checks as dark tiles, each a live instrument
- * you open and operate. "Re-run all four" fires every check at once.
+ * Workbench: the audit board. One dark tile per (claim, check) RUN, each a live
+ * instrument you open and operate. "Re-run routed checks" fires every run a
+ * confirmed claim produced, and only those. Two claims that route to the same
+ * check appear as two tiles, each auditing its own claim. When no claim routes to
+ * any check there are no runs, so the board is empty and says why rather than
+ * inventing tiles (honesty rules 1, 13); the re-run button is then disabled.
  */
 export default function WorkbenchPage() {
-  const { runAll } = useSession();
+  const { runAll, runs } = useSession();
+  const noneRouted = runs.length === 0;
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '36px 40px 72px' }}>
@@ -34,6 +36,13 @@ export default function WorkbenchPage() {
         <button
           data-tour="workbench.rerun"
           onClick={() => runAll()}
+          disabled={noneRouted}
+          aria-label={
+            noneRouted
+              ? 'No claim routes to any check yet, so there is nothing to re-run'
+              : 'Re-run the routed checks'
+          }
+          title={noneRouted ? 'No claim routes to any check yet. Route a claim on the Claims step first.' : undefined}
           style={{
             flex: 'none',
             font: '700 11px/1 var(--sans)',
@@ -44,19 +53,38 @@ export default function WorkbenchPage() {
             border: '1px solid var(--edge-2)',
             padding: '12px 18px',
             borderRadius: 10,
-            cursor: 'pointer',
+            cursor: noneRouted ? 'not-allowed' : 'pointer',
+            opacity: noneRouted ? 0.5 : 1,
           }}
         >
-          Re-run all four
+          Re-run routed checks
         </button>
       </div>
 
-      {/* audit board */}
-      <div data-tour="workbench.board" style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
-        {IDS.map((id) => (
-          <CheckTile key={id} checkId={id} />
-        ))}
-      </div>
+      {/* audit board: one tile per run, or an honest empty state when nothing routes */}
+      {noneRouted ? (
+        <div
+          data-tour="workbench.board"
+          style={{
+            marginTop: 30,
+            border: '1px dashed var(--edge-2)',
+            borderRadius: 14,
+            padding: '40px 28px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ font: '600 13px/1.5 var(--mono)', color: 'var(--ink-3)' }}>No claim routes to any check.</div>
+          <div style={{ margin: '10px auto 0', maxWidth: 440, font: '400 12.5px/1.6 var(--sans)', color: 'var(--ink-4)' }}>
+            Redline only audits the claims you ratified, so there is nothing to run yet. Route a claim to a check on the Claims step to bring it into the audit.
+          </div>
+        </div>
+      ) : (
+        <div data-tour="workbench.board" style={{ marginTop: 30, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
+          {runs.map((run) => (
+            <RunTile key={run.key} run={run} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

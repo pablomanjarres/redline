@@ -134,6 +134,33 @@ describe('tour copy obeys the repo voice rules', () => {
       expect(text).toMatch(/compute target|disabled|wired|connect/);
     }
   });
+
+  it('never says Redline wrote or invented a claim', () => {
+    // The Claim Review screen rests on one honesty invariant (spec section 11):
+    // Redline EXTRACTS the claims the analysis already makes. It reads, proposes,
+    // and routes them; it never authors one to fill the list. A step that said it
+    // did would sell the exact fabrication the product exists to catch.
+    const bad = COPY.filter(
+      (c) =>
+        /\b(invent(s|ed)?|fabricat(e|es|ed)|conjure[sd]?|made up|make up|dream(s|t|ed)? up)\b[^.?!]{0,40}\bclaims?\b/i.test(
+          c.text,
+        ) ||
+        /\bclaims?\b[^.?!]{0,40}\b(invent(s|ed)?|fabricat(e|es|ed)|made up|conjured)\b/i.test(c.text) ||
+        /\bredline\b[^.?!]{0,30}\b(wrote|writes|authored)\b[^.?!]{0,20}\bclaims?\b/i.test(c.text),
+    );
+    expect(bad.map((b) => `${b.where}: ${b.text}`)).toEqual([]);
+  });
+
+  it('shows the out-of-scope group as claims it does not audit', () => {
+    // Spec sections 6, 8, and 11: an out-of-scope claim is labeled and left
+    // untested, never silently audited. A step must cover that group and say so.
+    const scope = TOUR_STEPS.filter((s) => s.target === 'claims.out-of-scope');
+    expect(scope.length, 'a step must cover the out-of-scope group').toBeGreaterThan(0);
+    for (const s of scope) {
+      const text = `${s.what} ${s.why ?? ''}`.toLowerCase();
+      expect(text).toMatch(/out of scope|not (tested|audited|audit|checked|run)|set aside/);
+    }
+  });
 });
 
 describe('tour copy stays inside its layout budget', () => {
@@ -155,7 +182,10 @@ describe('tour copy stays inside its layout budget', () => {
 describe('the tour script is structurally sound', () => {
   it('has a workable length', () => {
     expect(TOUR_STEPS.length).toBeGreaterThanOrEqual(13);
-    expect(TOUR_STEPS.length).toBeLessThanOrEqual(20);
+    // The tour grew from 19 to 23 steps when Intake and Claim Review shipped:
+    // four steps now cover the extracted claim card, its routing chips, the
+    // out-of-scope group, and the confirm gate that runs the workbench.
+    expect(TOUR_STEPS.length).toBeLessThanOrEqual(23);
   });
 
   it('has unique step ids', () => {
@@ -177,7 +207,9 @@ describe('the tour script is structurally sound', () => {
   });
 
   it('only routes to real app routes', () => {
-    const routes = /^\/(fields|workbench|report|environment|checks\/[1-4])?$/;
+    // `/claims` is the Claim Review screen, the second interactive surface added
+    // when Intake and claim extraction shipped.
+    const routes = /^\/(fields|claims|workbench|report|environment|checks\/[1-4])?$/;
     const bad = TOUR_STEPS.filter((s) => !routes.test(s.route));
     expect(bad.map((s) => `${s.id} -> ${s.route}`)).toEqual([]);
   });

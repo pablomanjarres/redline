@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
+import type { RunKey } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { ConfoundChart, DistributionStrip, FragilityChart, GroupsChart, SignificanceChart } from '@/components/charts';
@@ -57,18 +58,25 @@ function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
   );
 }
 
-/** The audit stage for one check: figure on a lightbox plate (the hero), the
- *  verdict, and the instrument + console rail. */
-export function CheckStage({ checkId }: { checkId: CheckId }) {
-  const { results, running, reasoning, reveal, cfg, claims, runCheck } = useSession();
-  const result = results[checkId];
-  const isRunning = running[checkId];
+/** The audit stage for one (claim, check) RUN: figure on a lightbox plate (the
+ *  hero), the verdict, and the instrument + console rail. The run's claim and its
+ *  check both come from one run descriptor, so the named target and the audited
+ *  target can never disagree (honesty rule 2). */
+export function CheckStage({ runKey }: { runKey: RunKey }) {
+  const { runs, runCfg, results, running, reasoning, reveal, cfg, runOne } = useSession();
+  const run = runs.find((r) => r.key === runKey);
+  const checkId: CheckId = run?.checkId ?? 1; // the route guards the no-run case
+  const claim = run?.claimText ?? '';
+  const result = results[runKey];
+  const isRunning = running[runKey];
   const meta = CHECK_META[checkId];
-  const claim = claims.find((c) => c.check === checkId)?.text ?? '';
-  const revealed = (reasoning[checkId] ?? []).slice(0, reveal[checkId] ?? 0);
+  const revealed = (reasoning[runKey] ?? []).slice(0, reveal[runKey] ?? 0);
   const state = isRunning ? 'running' : result ? result.state : 'ready';
   const light = signalColor(state);
   const showFigure = !!result && !isRunning;
+  // The fragility figure needs this run's live Check-3 config (the scrub); other
+  // checks never read it, so fall back to the base for a non-3 run.
+  const cfg3: Check3Config = checkId === 3 && runCfg[runKey] ? (runCfg[runKey] as Check3Config) : cfg[3];
 
   return (
     <div style={{ maxWidth: 1360, margin: '0 auto', padding: '30px 40px 72px' }}>
@@ -86,7 +94,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             {meta.name}
           </h1>
           <div style={{ marginTop: 12, font: '400 12.5px/1.5 var(--mono)', color: 'var(--ink-3)', maxWidth: 720 }}>
-            <span style={{ color: 'var(--ink-4)' }}>AUDITING — </span>
+            <span style={{ color: 'var(--ink-4)' }}>AUDITING: </span>
             <span style={{ color: 'var(--ink-2)' }}>“{claim}”</span>
           </div>
         </div>
@@ -116,7 +124,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
           <button
             data-testid="rerun-check"
             data-tour="check.rerun"
-            onClick={() => void runCheck(checkId)}
+            onClick={() => void runOne(runKey)}
             style={{
               font: '700 11px/1 var(--sans)',
               letterSpacing: '.06em',
@@ -148,7 +156,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
             </div>
             <div style={{ padding: '22px 24px 24px', minHeight: 360, display: 'flex', alignItems: 'center' }}>
               {showFigure ? (
-                <div style={{ width: '100%' }}>{figure(result!, cfg[3])}</div>
+                <div style={{ width: '100%' }}>{figure(result!, cfg3)}</div>
               ) : (
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -182,7 +190,7 @@ export function CheckStage({ checkId }: { checkId: CheckId }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <InstrumentRail checkId={checkId} />
+          <InstrumentRail runKey={runKey} />
           <ReasoningConsole lines={revealed} running={isRunning} />
         </div>
       </div>

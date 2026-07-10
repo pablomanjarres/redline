@@ -2,25 +2,34 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { CheckId } from '@redline/contracts';
+import type { PreparedRun } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
 import { MiniChart } from '@/components/charts';
 import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
- * One station on the audit board: a whole-tile link into a check's stage. Dark
- * panel with a top strip tinted by the verdict signal, the check number + name +
- * failure mode, a verdict badge, the claim under audit, and a MiniChart floating
- * on a small white lightbox plate (the only white on the surface). The headline
- * and any error read as instrument output in mono.
+ * One station on the audit board: a whole-tile link into one (claim, check) RUN's
+ * stage. Dark panel with a top strip tinted by the verdict signal, the check
+ * number + name + failure mode, a verdict badge, the claim under audit, and a
+ * MiniChart floating on a small white lightbox plate (the only white on the
+ * surface). The headline and any error read as instrument output in mono.
+ *
+ * Every tile IS a real run, so there is no "no claim routes here" branch: the
+ * workbench renders one tile per run, and when no claim routes to any check the
+ * board is empty and the page says so (honesty rules 1, 13). Two claims that
+ * route to the same check produce two tiles here, each auditing its own claim,
+ * neither silently dropped (the F2 fix). The claim shown is read straight off the
+ * run descriptor (`run.claimText`), so it is always the same claim whose params
+ * (`run.config`) drove the audit.
  */
-export function CheckTile({ checkId }: { checkId: CheckId }) {
-  const { results, running, claims } = useSession();
-  const result = results[checkId];
-  const isRunning = running[checkId];
+export function RunTile({ run }: { run: PreparedRun }) {
+  const { results, running } = useSession();
+  const checkId = run.checkId;
   const meta = CHECK_META[checkId];
-  const claim = claims.find((c) => c.check === checkId)?.text ?? '';
+  const result = results[run.key];
+  const isRunning = running[run.key];
+  const claim = run.claimText;
 
   const state = isRunning ? 'running' : result ? result.state : 'ready';
   const light = signalColor(state);
@@ -58,9 +67,9 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
   return (
     <Link
       data-tour={`workbench.tile.${checkId}`}
-      href={`/checks/${checkId}`}
-      data-testid={`check-tile-${checkId}`}
-      aria-label={`Open check ${checkId}: ${meta.name}`}
+      href={`/checks/${encodeURIComponent(run.key)}`}
+      data-testid={`run-tile-${run.key}`}
+      aria-label={`Open check ${checkId}: ${meta.name}, auditing “${claim}”`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -87,7 +96,7 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
             <div style={{ marginTop: 5, font: '400 11px/1.45 var(--mono)', color: 'var(--ink-4)' }}>{meta.sub}</div>
           </div>
           <span
-            data-testid={`tile-verdict-${checkId}`}
+            data-testid={`tile-verdict-${run.key}`}
             style={{
               flex: 'none',
               display: 'inline-flex',
@@ -120,12 +129,12 @@ export function CheckTile({ checkId }: { checkId: CheckId }) {
         {/* claim under audit */}
         {claim && (
           <div style={{ marginTop: 16, font: '400 12px/1.5 var(--mono)' }}>
-            <span style={{ color: 'var(--ink-4)' }}>AUDITING — </span>
+            <span style={{ color: 'var(--ink-4)' }}>AUDITING: </span>
             <span style={{ color: 'var(--ink-2)' }}>“{claim}”</span>
           </div>
         )}
 
-        {/* lightbox plate — the only white on the surface */}
+        {/* lightbox plate, the only white on the surface */}
         <div
           style={{
             marginTop: 16,

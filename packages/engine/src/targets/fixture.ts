@@ -1,6 +1,7 @@
-import type { FieldSpec, ComputeResult, ScenarioId } from '@redline/contracts';
+import type { FieldSpec, ComputeResult, ScenarioId, DatasetInventory } from '@redline/contracts';
 import type { ComputeInput, ComputeTarget } from '../compute-target.js';
 import { fixtureCompute, fixtureFields } from '../fixtures/index.js';
+import { INVENTORIES } from '../inventories.js';
 
 /**
  * The deterministic fixture target. Reproduces the locked demo numbers with no
@@ -11,6 +12,18 @@ import { fixtureCompute, fixtureFields } from '../fixtures/index.js';
 export class FixtureTarget implements ComputeTarget {
   readonly id = 'fixture' as const;
   readonly available = true;
+
+  async inspect(input: { scenarioId: ScenarioId }): Promise<DatasetInventory> {
+    const inventory = INVENTORIES[input.scenarioId];
+    if (!inventory) {
+      // The foil scenarios have no locked fixture. They are inspected for real by
+      // the Python engine on `local`. Refusing is the honest answer here.
+      throw new Error(
+        `scenario '${input.scenarioId}' has no fixture inventory; run it on REDLINE_COMPUTE_TARGET=local`,
+      );
+    }
+    return inventory;
+  }
 
   async inferFields(input: { scenarioId: ScenarioId }): Promise<FieldSpec[]> {
     return fixtureFields(input.scenarioId);

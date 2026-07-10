@@ -11,8 +11,12 @@ export type { Reasoner, InvokeFn } from './reasoner.js';
 export {
   SYSTEM_PROMPT,
   FIELD_SYSTEM_PROMPT,
+  CLAIMS_SYSTEM_PROMPT,
   buildNarrativePrompt,
   buildFieldProposalPrompt,
+  buildClaimExtractionPrompt,
+  buildClaimMappingPrompt,
 } from './prompts.js';
 export type { PromptPair } from './prompts.js';
+export { parseClaimsReply, parseClaimReply } from './claims.js';
 export { CRITIC_SYSTEM_PROMPT, buildCriticPrompt } from './critic-prompts.js';

@@ -22,6 +22,8 @@ ROLES = ("unit", "grouping", "observation", "nuisance", "covariate", "derived", 
 CONFIDENCES = ("high", "medium", "low")
 CHECK_STATES = ("flagged", "clean", "flag_only", "hard_stop")
 CHECK_IDS = (1, 2, 3, 4)
+# Mirror packages/contracts/src/inventory.ts (UnsEntry.kind).
+UNS_KINDS = ("de_result", "marker_table", "unknown")
 
 # Convenience constants for the four states.
 FLAGGED = "flagged"
@@ -377,4 +379,145 @@ def field_spec(
         reason=reason,
         sample=sample,
         edited=edited,
+    )
+
+
+# ── DatasetInventory (thin inspection output) ─────────────────────────────────
+# Mirrors packages/contracts/src/inventory.ts. This is what the inspector reads
+# from an AnnData WITHOUT loading the matrix. Every key here is the EXACT
+# camelCase key the TS/Zod side parses: nCells, nGenes, hasRawCounts,
+# countsSource, varNamesSample, clusterFields.
+@dataclass
+class ObsColumn:
+    name: str
+    dtype: str
+    levels: Optional[int]
+    missing: int
+    sample: Sequence[str]
+
+    def __post_init__(self) -> None:
+        if self.dtype not in DTYPES:
+            raise ValueError(f"dtype must be one of {DTYPES}, got {self.dtype!r}")
+
+    def to_json(self) -> Json:
+        return {
+            "name": str(self.name),
+            "dtype": self.dtype,
+            "levels": (None if self.levels is None else int(self.levels)),
+            "missing": int(self.missing),
+            "sample": [str(x) for x in self.sample],
+        }
+
+
+@dataclass
+class UnsEntry:
+    key: str
+    kind: str
+    shape: str
+    columns: Sequence[str]
+    groups: Sequence[str]
+    genes: Sequence[str]
+    preview: str
+
+    def __post_init__(self) -> None:
+        if self.kind not in UNS_KINDS:
+            raise ValueError(f"kind must be one of {UNS_KINDS}, got {self.kind!r}")
+
+    def to_json(self) -> Json:
+        return {
+            "key": str(self.key),
+            "kind": self.kind,
+            "shape": str(self.shape),
+            "columns": [str(x) for x in self.columns],
+            "groups": [str(x) for x in self.groups],
+            "genes": [str(x) for x in self.genes],
+            "preview": str(self.preview),
+        }
+
+
+@dataclass
+class DatasetInventory:
+    file: str
+    n_cells: int
+    n_genes: int
+    obs: Sequence[ObsColumn]
+    uns: Sequence[UnsEntry]
+    cluster_fields: Sequence[str]
+    has_raw_counts: bool
+    counts_source: Optional[str]
+    layers: Sequence[str]
+    obsm: Sequence[str]
+    var_names_sample: Sequence[str]
+
+    def to_json(self) -> Json:
+        return {
+            "file": str(self.file),
+            "nCells": int(self.n_cells),
+            "nGenes": int(self.n_genes),
+            "obs": [o.to_json() for o in self.obs],
+            "uns": [u.to_json() for u in self.uns],
+            "clusterFields": [str(x) for x in self.cluster_fields],
+            "hasRawCounts": bool(self.has_raw_counts),
+            "countsSource": (None if self.counts_source is None else str(self.counts_source)),
+            "layers": [str(x) for x in self.layers],
+            "obsm": [str(x) for x in self.obsm],
+            "varNamesSample": [str(x) for x in self.var_names_sample],
+        }
+
+
+def obs_column(
+    name: str,
+    dtype: str,
+    levels: Optional[int],
+    missing: int,
+    sample: Optional[Sequence[str]] = None,
+) -> ObsColumn:
+    return ObsColumn(name=name, dtype=dtype, levels=levels, missing=missing, sample=list(sample or []))
+
+
+def uns_entry(
+    key: str,
+    kind: str,
+    shape: str = "",
+    columns: Optional[Sequence[str]] = None,
+    groups: Optional[Sequence[str]] = None,
+    genes: Optional[Sequence[str]] = None,
+    preview: str = "",
+) -> UnsEntry:
+    return UnsEntry(
+        key=key,
+        kind=kind,
+        shape=shape,
+        columns=list(columns or []),
+        groups=list(groups or []),
+        genes=list(genes or []),
+        preview=preview,
+    )
+
+
+def dataset_inventory(
+    file: str,
+    n_cells: int,
+    n_genes: int,
+    obs: Optional[Sequence[ObsColumn]] = None,
+    uns: Optional[Sequence[UnsEntry]] = None,
+    cluster_fields: Optional[Sequence[str]] = None,
+    has_raw_counts: bool = False,
+    counts_source: Optional[str] = None,
+    layers: Optional[Sequence[str]] = None,
+    obsm: Optional[Sequence[str]] = None,
+    var_names_sample: Optional[Sequence[str]] = None,
+) -> DatasetInventory:
+    return DatasetInventory(
+        file=file,
+        n_cells=n_cells,
+        n_genes=n_genes,
+        obs=list(obs or []),
+        uns=list(uns or []),
+        cluster_fields=list(cluster_fields or []),
+        has_raw_counts=has_raw_counts,
+        counts_source=counts_source,
+        layers=list(layers or []),
+        obsm=list(obsm or []),
+        var_names_sample=list(var_names_sample or []),
     )

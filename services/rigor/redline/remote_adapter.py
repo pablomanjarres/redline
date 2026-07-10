@@ -4,6 +4,7 @@ The TS `RemoteTarget` (`packages/engine/src/targets/remote.ts`) speaks a small
 envelope keyed by `op` + `scenarioId` and expects exactly one JSON value on
 stdout:
 
+    {"op": "inspect", "scenarioId": "marson"}
     {"op": "resolve_fields", "scenarioId": "marson"}
     {"op": "check", "scenarioId": "marson", "checkId": 1, "config": {...}, "fields": [...]}
 
@@ -32,7 +33,7 @@ import json
 import os
 import sys
 
-from redline.job_runner import compute_result, resolve_fields, to_json
+from redline.job_runner import compute_result, inspect_dataset, resolve_fields, to_json
 
 # scenarioId -> the env var that holds that scenario's built .h5ad path.
 SCENARIO_H5AD_ENV = {
@@ -60,6 +61,8 @@ def handle(req: dict) -> object:
         raise ValueError("request is missing 'scenarioId'")
     h5ad = _h5ad_for(scenario_id)
 
+    if op == "inspect":
+        return inspect_dataset(h5ad)
     if op == "resolve_fields":
         return {"fields": resolve_fields(h5ad)}
     if op == "check":
@@ -67,7 +70,7 @@ def handle(req: dict) -> object:
         if check_id not in (1, 2, 3, 4):
             raise ValueError("'checkId' must be one of 1, 2, 3, 4")
         return compute_result(int(check_id), h5ad, req.get("config") or {}, req.get("fields"))
-    raise ValueError(f"unknown op '{op}' (expected 'resolve_fields' or 'check')")
+    raise ValueError(f"unknown op '{op}' (expected 'inspect', 'resolve_fields' or 'check')")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -10,8 +10,10 @@ import type {
   Check4Config,
   CheckConfigMap,
   UnitProfile,
+  ExtractedClaim,
 } from '@redline/contracts';
 import { buildSteps, cit, groupInt, iv, type FullCheck } from './shared.js';
+import { KETAMINE_INVENTORY } from '../inventories.js';
 
 // ---------------------------------------------------------------------------
 // Scenario `ketamine` - the LOCKED fallback. This is an exact reproduction of
@@ -229,7 +231,7 @@ function k2(cfg: Check2Config): FullCheck {
       Math.round((1 - cfg.split) * 100) +
       '/' +
       Math.round(cfg.split * 100) +
-      ' split the four markers separate the group at AUC 0.58 (95% interval 0.55–0.62 over 200 splits) — near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
+      ' split the four markers separate the group at AUC 0.58 (95% interval 0.55–0.62 over 200 splits), near chance. The state is an artifact of choosing the markers and the cluster on the same cells.',
     stats: [
       { label: 'Discovery AUC', value: discAUC.toFixed(2), interval: discDist },
       { label: 'Held-out AUC', value: holdAUC.toFixed(2), bad: true, interval: holdDist },
@@ -466,10 +468,104 @@ export const KETAMINE_DEFAULTS: CheckConfigMap = {
   4: { interest: 'condition', nuisance: ['seq_batch'] },
 };
 
+// ---------------------------------------------------------------------------
+// The curated extracted claims (spec section 5) for the fallback scenario. Same
+// fan-out shape as Marson but built on this dataset's own genes and columns, so
+// the two claim lists are never identical (the anti-faking guard). Each claim
+// passes enforceClaimHonesty against KETAMINE_INVENTORY unchanged. Authored
+// under the voice rules (no em dashes), even though the locked fixture copy
+// above reproduces the reference verbatim.
+// ---------------------------------------------------------------------------
+export const KETAMINE_CLAIMS: ExtractedClaim[] = [
+  {
+    id: 'ketamine-bdnf-significance',
+    text: 'Ketamine significantly upregulates Bdnf in microglia (p < 0.001).',
+    source: 'stored_result',
+    restsOn:
+      'The stored differential-expression result de_ket_vs_sal, comparing ketamine against saline on the condition field.',
+    evidenceRefs: {
+      obsColumns: ['condition', 'mouse_id', 'seq_batch'],
+      unsKeys: ['de_ket_vs_sal'],
+      genes: ['Bdnf'],
+    },
+    checks: [
+      {
+        check: 1,
+        params: {
+          grouping: 'condition',
+          unit: 'mouse_id',
+          gene: 'Bdnf',
+          reported: 'p = 3.1e-9',
+        },
+      },
+      { check: 4, params: { interest: 'condition', nuisance: 'seq_batch' } },
+    ],
+    confidence: 'high',
+    status: 'proposed',
+  },
+  {
+    id: 'ketamine-activated-microglia-state',
+    text: 'An activated-microglia state defined by Il1b, Tnf, Ccl4, and Nfkbia, enriched in ketamine.',
+    source: 'stored_result',
+    restsOn:
+      'The stored marker table rank_genes_groups, which defines the Activated microglia state over the leiden clustering.',
+    evidenceRefs: {
+      obsColumns: ['leiden', 'condition'],
+      unsKeys: ['rank_genes_groups'],
+      genes: ['Il1b', 'Tnf', 'Ccl4', 'Nfkbia'],
+    },
+    checks: [
+      {
+        check: 2,
+        params: {
+          grouping: 'leiden',
+          cluster: 'Activated microglia',
+          markers: ['Il1b', 'Tnf', 'Ccl4', 'Nfkbia'],
+        },
+      },
+      { check: 3, params: { cluster: 'Activated microglia' } },
+    ],
+    confidence: 'high',
+    status: 'proposed',
+  },
+  {
+    id: 'ketamine-responder-state',
+    text: 'A distinct ketamine-responsive Responder microglia subcluster.',
+    source: 'stored_result',
+    restsOn: 'The Responder cluster in the leiden clustering.',
+    evidenceRefs: {
+      obsColumns: ['leiden'],
+      unsKeys: [],
+      genes: [],
+    },
+    checks: [{ check: 3, params: { cluster: 'Responder' } }],
+    confidence: 'medium',
+    status: 'proposed',
+  },
+  {
+    id: 'ketamine-ligand-receptor',
+    text: 'Ketamine rewires microglia to neuron ligand-receptor signaling.',
+    source: 'stored_result',
+    restsOn: 'A ligand-receptor interaction score computed between cell types.',
+    evidenceRefs: {
+      obsColumns: [],
+      unsKeys: [],
+      genes: [],
+    },
+    checks: [],
+    confidence: 'medium',
+    status: 'out_of_scope',
+    outOfScopeReason:
+      "Redline's four checks cover pseudoreplication, double dipping, clustering fragility, and technical confounding. A cell-cell communication claim needs interaction-specific validation these checks do not provide, so it is labeled and set aside.",
+  },
+];
+
 export const ketamineScenario: Scenario = {
   id: 'ketamine',
   name: 'Ketamine vs. saline (PFC)',
   dataset,
   claims,
   fields,
+  inventory: KETAMINE_INVENTORY,
+  extractedClaims: KETAMINE_CLAIMS,
 };

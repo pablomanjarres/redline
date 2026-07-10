@@ -29,6 +29,15 @@ export const TOUR_ANCHORS = [
   'fields.tally',
   'fields.confirm',
 
+  // claim review (/claims)
+  'claims.tally',
+  'claims.confirm',
+  'claims.list',
+  'claims.card.1',
+  'claims.routing.1',
+  'claims.out-of-scope',
+  'claims.add',
+
   // the board (/workbench)
   'workbench.board',
   'workbench.tile.1',
@@ -86,6 +95,8 @@ export const ANCHORS_REQUIRING_CONFIRMED_FIELDS: readonly TourAnchor[] = ['shell
 export const THREADED_ANCHORS: readonly TourAnchor[] = [
   'fields.unit-row', // passed to <FieldMatrixRow tourId=...> for the row whose role is `unit`
   'fields.unit-role', // passed to <FieldMatrixRow tourRoleId=...>
+  'claims.card.1', // passed to <ClaimCard tourCardId=...> for the first in-scope claim
+  'claims.routing.1', // passed to <ClaimCard tourRoutingId=...> for that claim's routing chips
   'workbench.tile.1', // emitted as data-tour={`workbench.tile.${checkId}`}
   'report.row.1', // emitted as data-tour={`report.row.${checkId}`}
 ];

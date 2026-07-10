@@ -121,9 +121,92 @@ producing numbers. On the Marson scenario, resolving the unit to a two-level
 - **In copy:** "no valid test is possible" and what to do about it (assign a field with
   replicate units, or collect more), never a fabricated statistic.
 
+## Intake and claim extraction (the front door)
+
+Rules 9 through 14 govern the front door: how a claim gets into the system. Full detail
+is in `intake-and-claims.md`. The deterministic enforcement point for all of them is
+`enforceClaimHonesty` in `packages/contracts/src/claims.ts`, the pure gate every model
+output passes through before it reaches the user or the Workbench. A model call proposes
+claims; this gate has the last word.
+
+## 9. Never fabricate a claim to fill the list
+
+Extraction reports the claims the analysis actually makes. When there are none it says so
+plainly and offers manual entry. It does not invent a claim to have something to audit,
+and it does not pad a short list.
+
+- **In the contract:** `enforceClaimHonesty` maps over the input and only ever drops or
+  edits a claim. It never adds, reorders, or fills. Zero in, zero out.
+- **In the UI:** an empty result renders an honest "no claim Redline can audit here"
+  panel with manual entry, never a placeholder claim. A successful model call that returns
+  zero claims stays a model result with an empty list; it is never topped up with curated
+  claims.
+
+## 10. An out-of-scope claim is labeled and carries zero checks
+
+A claim Redline cannot audit is listed, clearly marked outside scope, and never silently
+audited as if it were in scope.
+
+- **In the contract:** the `ExtractedClaim` status `out_of_scope` and the
+  `outOfScopeReason` field. `enforceClaimHonesty` forces `checks` to `[]` for any
+  out-of-scope claim, so it can never be routed to a check.
+- **In the UI:** out-of-scope claims sit in their own labeled group with a per-claim
+  reason, and never carry a check chip.
+
+## 11. Extraction is a real model call that adapts to the data
+
+The extraction agent reads the actual inventory and proposes claims that reference the
+real genes, clusters, and groupings present. It is a real Claude call, never a template
+that returns the same list regardless of input.
+
+- **In the contract:** the extractor reads `DatasetInventory` and its claims cite
+  `evidenceRefs` drawn from that inventory. `enforceClaimHonesty` drops any claim whose
+  cited `obs` column or `uns` key is absent from the inventory.
+- **The test:** identical claims across two different datasets means the extractor is
+  faked. The generality check in `intake-and-claims.md` (case A versus case B, disjoint
+  genes and non-identical claims) is what proves this. It is a test, not a suggestion.
+
+## 12. Surface uncertainty, never resolve it silently
+
+A wrong claim routed to a check produces a confident wrong audit, so uncertainty goes to
+the user. Low confidence and ambiguous routing are shown, not smoothed over.
+
+- **In the contract:** the `confidence` field (`high`, `medium`, `low`) and the
+  `ambiguousRouting` note. `enforceClaimHonesty` demotes a claim that references an unknown
+  gene to `low` and sets `ambiguousRouting`, rather than dropping it silently or auditing
+  it as if the gene were real.
+- **In the UI:** the confidence light (green high, amber medium, red low) and a visible
+  amber note when routing is ambiguous, so the user's attention lands on the uncertain
+  claims first.
+
+## 13. A check with no routed claim renders no verdict
+
+The Workbench audits only the claims the user ratified. A check that no confirmed claim
+routes to has nothing to test, and it says so instead of showing a verdict.
+
+- **In the session:** `confirmClaims()` writes `routedChecks`, and `runAll()` runs only
+  those checks. A non-routed check is cleared to `null`.
+- **In the UI:** an unrouted check tile is a quiet, non-link panel ("no claim routes to
+  this check"), and the rail keeps it locked so there is no in-app path to run it. It
+  never renders a manufactured verdict.
+
+## 14. A curated fallback list is always labeled as such
+
+When no model backend is configured, Redline shows a curated reference list for the
+built-in scenario so the app still renders. That list is always labeled and is never
+passed off as a live reading.
+
+- **In the contract:** `curatedClaimsFor(scenarioId, inventory)` (in `@redline/engine`, the
+  single home both fallback paths share) adapts the curated set to the inventory and runs it
+  through `enforceClaimHonesty`, so a curated claim can never cite absent data either.
+- **In the UI:** the curated path shows `CURATED_CLAIMS_NOTICE` next to the list, naming
+  it curated and pointing at how to configure a real backend. The curated list carries a
+  `source` of `curated`, distinct from a `model` reading.
+
 ## How to use this doc
 
 Before you write any user-facing string (a reasoning line, a report sentence, a headline,
-a caption), check it against these eight rules. Before you wire any control, check rule 6.
-Before you script any demo beat, check rule 5. If a change would make Redline claim more
-than it can defend, the change is wrong, not the rule.
+a caption), check it against these rules. Before you wire any control, check rule 6.
+Before you show a claim, check rules 9 through 14. Before you script any demo beat, check
+rule 5. If a change would make Redline claim more than it can defend, the change is wrong,
+not the rule.
