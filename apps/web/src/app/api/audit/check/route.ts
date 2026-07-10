@@ -34,6 +34,21 @@ const CheckRequest = z.object({
   checkId: CheckId,
   config: z.union([Check1Config, Check2Config, Check3Config, Check4Config]),
   fields: z.array(FieldSpec),
+  // The (claim, check) run's identity, sent by the session store. `claim` is the
+  // exact claimText whose route params drove this run; `claimId` and `runKey`
+  // (`${claimId}::${checkId}`) name the run. The reasoning layer and the critic
+  // judge THIS claim, never one looked up by check id: one check can hold several
+  // runs (on marson both the Activated Treg-like and the Effector claim route to
+  // Check 3), and each must narrate and be critiqued against its own claim, or the
+  // struck-through conclusion belongs to a different run of the same check.
+  //
+  // All three are optional so a legacy numbers-only caller still validates (200,
+  // not 400): the verification harness and the critic oracle send none. On that
+  // path the route falls back to the scenario's single per-check claim, which is
+  // honest because that path probes one check at a time with one claim per check.
+  claim: z.string().optional(),
+  claimId: z.string().optional(),
+  runKey: z.string().optional(),
   // The verification harness sets this on liveness / re-run probes that only
   // need the numbers, so a sweep of knob changes does not throttle the model.
   noReason: z.boolean().optional(),
@@ -136,21 +151,23 @@ function computeEvidence(
   return { ...statsEvidence, ...chartEvidence(compute.chart) };
 }
 
-/** The scientist's claim under audit for one check, or an empty string. */
+/** The scenario's single per-check claim, or an empty string. The fallback for a
+ *  legacy numbers-only caller that sends no run claim (see CheckRequest). */
 function claimFor(scenarioId: ScenarioId, checkId: CheckId): string {
   return SCENARIOS[scenarioId].claims.find((c) => c.check === checkId)?.text ?? '';
 }
 
-/** Assemble the reasoning-layer request from the scenario claim + computed numbers. */
+/** Assemble the reasoning-layer request from the run's claim + computed numbers. */
 function buildRequest(
   scenarioId: ScenarioId,
   compute: ComputeResult,
   state: CheckState,
+  claim: string,
 ): NarrativeRequest {
   return {
     checkId: compute.checkId,
     state,
-    claim: claimFor(scenarioId, compute.checkId),
+    claim,
     datasetTitle: SCENARIOS[scenarioId].dataset.title,
     evidence: computeEvidence(compute),
   };
@@ -177,17 +194,20 @@ function resolveDesign(fields: FieldSpec[]): string {
   return parts.join(', ');
 }
 
-/** Assemble the critic request from the candidate finding + numbers + resolved design. */
+/** Assemble the critic request from the candidate finding + numbers + resolved
+ *  design. The critic judges the run's own claim, so it can never confirm or veto
+ *  a flag against a claim that belongs to a different run of the same check. */
 function buildCriticRequest(
   scenarioId: ScenarioId,
   compute: ComputeResult,
   fields: FieldSpec[],
+  claim: string,
 ): CriticRequest {
   const design = resolveDesign(fields);
   return {
     checkId: compute.checkId,
     computeState: compute.state,
-    claim: claimFor(scenarioId, compute.checkId),
+    claim,
     datasetTitle: SCENARIOS[scenarioId].dataset.title,
     evidence: computeEvidence(compute),
     method: CRITIC_METHOD[compute.chart.kind],
@@ -284,6 +304,15 @@ export async function POST(req: Request) {
     const target = getComputeTarget();
     const compute = await target.computeCheck(body);
 
+    // The claim this run audits. The session sends the run's exact claimText
+    // (whose route params produced these numbers); a legacy numbers-only caller
+    // sends none, so fall back to the scenario's single per-check claim. Trim so
+    // an empty string never becomes a struck-through blank or an empty prompt.
+    const auditedClaim =
+      body.claim && body.claim.trim() !== ''
+        ? body.claim
+        : claimFor(body.scenarioId, body.checkId);
+
     // The actor-critic pass. A candidate finding (state 'flagged') is never shown
     // on one pass: when a reasoning backend is wired, an independent critic call
     // re-examines it and can confirm, downgrade, or veto it. A veto flips the
@@ -296,7 +325,7 @@ export async function POST(req: Request) {
     if (compute.state === 'flagged' && reasoner.available) {
       try {
         const judgment = await reasoner.critique(
-          buildCriticRequest(body.scenarioId, compute, body.fields),
+          buildCriticRequest(body.scenarioId, compute, body.fields, auditedClaim),
         );
         const gated = applyCriticGate(compute.state, judgment, reasoner.backend ?? 'bedrock');
         effectiveState = gated.state;
@@ -326,7 +355,7 @@ export async function POST(req: Request) {
     } else {
       try {
         narrative = await reasoner.narrate(
-          buildRequest(body.scenarioId, compute, effectiveState),
+          buildRequest(body.scenarioId, compute, effectiveState, auditedClaim),
         );
         source = reasoner.backend ?? 'curated';
       } catch {
@@ -342,6 +371,16 @@ export async function POST(req: Request) {
     if (effectiveState === 'clean' && narrative.error) {
       narrative = { ...narrative, error: null, original: null };
     }
+
+    // The struck-through claim on a flag must be the exact claim this run audited,
+    // on every path (model or curated), so a report row never strikes a claim that
+    // belongs to a different run of the same check. On a clean verdict there is no
+    // struck claim (original stays null), so this only touches a flag / flag_only /
+    // hard_stop that already carries a struck original.
+    if (effectiveState !== 'clean' && narrative.original !== null && auditedClaim !== '') {
+      narrative = { ...narrative, original: auditedClaim };
+    }
+
     const vetoed = critic?.verdict === 'veto';
 
     const result = CheckResult.parse({
