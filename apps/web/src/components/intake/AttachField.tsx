@@ -40,7 +40,11 @@ export function AttachField({
   const fieldId = useId();
   const hintId = `${fieldId}-hint`;
   const [focused, setFocused] = useState(false);
-  const [uploadName, setUploadName] = useState<string | null>(null);
+  // Remember the loaded file AND its text, so the "Loaded" caption shows only
+  // while the field still holds that upload. Any later change (typing, or a
+  // parent-driven "Load example") makes value diverge and the caption clears
+  // itself, so it never names a file the field no longer holds.
+  const [upload, setUpload] = useState<{ name: string; text: string } | null>(null);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const count = value.length;
@@ -49,15 +53,16 @@ export function AttachField({
     if (!file) return;
     if (file.size > MAX_ANALYSIS_FILE_BYTES) {
       setUploadErr('That file is too large. Paste the relevant part instead.');
-      setUploadName(null);
+      setUpload(null);
     } else {
       try {
-        onChange(await readAnalysisText(file, maxChars));
-        setUploadName(file.name);
+        const text = await readAnalysisText(file, maxChars);
+        onChange(text);
+        setUpload({ name: file.name, text });
         setUploadErr(null);
       } catch {
         setUploadErr('Could not read that file. Paste the text instead.');
-        setUploadName(null);
+        setUpload(null);
       }
     }
     if (inputRef.current) inputRef.current.value = ''; // let the same file be re-picked
@@ -82,6 +87,7 @@ export function AttachField({
             <>
               <button
                 type="button"
+                aria-label={`Upload a file for ${label}`}
                 onClick={() => inputRef.current?.click()}
                 style={{
                   font: '600 10px/1 var(--mono)',
@@ -100,7 +106,7 @@ export function AttachField({
                 ref={inputRef}
                 type="file"
                 accept={accept}
-                aria-label={`Upload a file for ${label}`}
+                tabIndex={-1}
                 onChange={(e) => onFile(e.target.files?.[0])}
                 style={{ display: 'none' }}
               />
@@ -139,8 +145,8 @@ export function AttachField({
       <p id={hintId} style={{ margin: 0, font: '400 11.5px/1.5 var(--sans)', color: 'var(--ink-4)' }}>
         {hint}
       </p>
-      {uploadName ? (
-        <p style={{ margin: 0, font: '400 11px/1.5 var(--mono)', color: 'var(--ink-4)' }}>Loaded {uploadName}</p>
+      {upload && value === upload.text ? (
+        <p style={{ margin: 0, font: '400 11px/1.5 var(--mono)', color: 'var(--ink-4)' }}>Loaded {upload.name}</p>
       ) : null}
       {uploadErr ? (
         <p role="alert" style={{ margin: 0, font: '400 11px/1.5 var(--sans)', color: 'var(--red)' }}>
