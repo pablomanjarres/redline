@@ -1,18 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import { AttachField } from './AttachField';
-import { EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
+import { NotebookField } from './NotebookField';
+import { EXAMPLE_CELLS, EXAMPLE_FILENAME, EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
+import { cellsToIpynb, type NotebookCell } from '@/lib/notebook';
 
 /**
  * Intake slab 02: the optional attach points. The dataset alone already audits,
- * so both fields here are optional. They let the scientist add the analysis they
- * ran (a notebook or script) and what they concluded (claims or prose), so the
- * extracted claims read in their own words. Both are text, paste or upload, so
- * they feed the model directly and work in every compute mode, fixture included.
+ * so both fields here are optional. Upload a notebook or script (a `.ipynb`
+ * renders as a real notebook) or paste it, add what you concluded (claims or
+ * prose), and the extracted claims read in your own words. Everything is text
+ * fed to the model, so it works in every compute mode, fixture included.
  *
  * "Load example" fills both fields with the demo's naive analysis, so a judge can
- * test the flow without writing one. "Download sample" hands back the same file,
- * to try the upload path.
+ * test the flow without writing one. "Download sample" hands back the same
+ * `.ipynb`, to try the upload path.
  */
 export function AnalysisSlab({
   notebook,
@@ -25,14 +28,24 @@ export function AnalysisSlab({
   onNotebook: (t: string) => void;
   onProse: (t: string) => void;
 }) {
+  // The parsed notebook, for the rendered preview. Held here so "Load example"
+  // can fill it; the flattened `notebook` text is what the parent sends on.
+  const [cells, setCells] = useState<NotebookCell[] | null>(null);
+
+  function onNotebookChange(text: string, nextCells: NotebookCell[] | null) {
+    onNotebook(text);
+    setCells(nextCells);
+  }
+
   function loadExample() {
     onNotebook(EXAMPLE_NOTEBOOK);
+    setCells(EXAMPLE_CELLS);
     onProse(EXAMPLE_PROSE);
   }
 
   function downloadSample() {
     if (typeof window === 'undefined') return;
-    const url = URL.createObjectURL(new Blob([EXAMPLE_NOTEBOOK], { type: 'text/x-python' }));
+    const url = URL.createObjectURL(new Blob([cellsToIpynb(EXAMPLE_CELLS)], { type: 'application/x-ipynb+json' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = EXAMPLE_FILENAME;
@@ -70,11 +83,11 @@ export function AnalysisSlab({
         </span>
       </div>
       <p style={{ margin: '13px 0 12px', maxWidth: 440, font: '400 12.5px/1.55 var(--sans)', color: 'var(--ink-2)' }}>
-        Redline can audit the dataset on its own. Add the analysis you ran, by paste or upload, so the claims read in your own words.
+        Redline can audit the dataset on its own. Upload or paste the analysis you ran so the claims read in your own words.
       </p>
 
       {/* Judges (and anyone testing) can fill both fields with the demo's naive
-          analysis in one click, or download the same file to try the upload. */}
+          analysis in one click, or download the same notebook to try the upload. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '0 0 16px' }}>
         <button
           type="button"
@@ -107,20 +120,12 @@ export function AnalysisSlab({
             textDecoration: 'underline',
           }}
         >
-          Download sample .py
+          Download sample .ipynb
         </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <AttachField
-          label="Notebook or script"
-          hint="Paste or upload your analysis code so the claims match the tests you actually ran."
-          placeholder="# de_analysis.ipynb, or a script..."
-          value={notebook}
-          onChange={onNotebook}
-          accept=".ipynb,.py,.r,.txt,.md"
-          maxChars={200_000}
-        />
+        <NotebookField value={notebook} cells={cells} onChange={onNotebookChange} maxChars={200_000} />
         <AttachField
           label="Claims or prose"
           hint="Paste or upload an abstract, figure captions, or a plain description of what you found."
