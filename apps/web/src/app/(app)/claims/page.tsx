@@ -42,6 +42,7 @@ export default function ClaimsPage() {
     setClaimStatus,
     setClaimText,
     setClaimRouting,
+    improveClaimText,
   } = useSession();
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -406,6 +407,9 @@ export default function ClaimsPage() {
                   onStatus={(status) => setClaimStatus(c.id, status)}
                   onText={(text) => setClaimText(c.id, text)}
                   onRouting={(checks) => setClaimRouting(c.id, checks)}
+                  onImprove={(text) =>
+                    improveClaimText({ text, restsOn: c.restsOn, checks: c.checks.map((r) => r.check) })
+                  }
                 />
               ))}
             </section>

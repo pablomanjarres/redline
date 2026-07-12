@@ -1,84 +1,103 @@
 import { describe, expect, it } from 'vitest';
-import { parseNotebook, renderMarkdownLite } from './notebook';
+import { cellsToIpynb, cellsToText, parseNotebook, readNotebookFile, scriptToCells } from './notebook';
 
-/**
- * The corrected notebook is shown inline so the scientist reads the cells before
- * downloading. The parser must handle the nbformat this app emits (source as an
- * array of lines) and fail soft on anything malformed, and the markdown-lite
- * renderer must turn the notebook's headings and paragraphs into legible blocks.
- */
 describe('parseNotebook', () => {
-  const nb = JSON.stringify({
-    cells: [
-      { cell_type: 'markdown', metadata: {}, source: ['# Redline corrected analysis\n', '\n', 'Dataset: CD4 T cells'] },
-      { cell_type: 'code', metadata: {}, execution_count: null, outputs: [], source: ['import scanpy as sc\n', 'print("ok")'] },
-    ],
-    metadata: {},
-    nbformat: 4,
-    nbformat_minor: 4,
+  it('parses code and markdown cells, joining array sources', () => {
+    const raw = JSON.stringify({
+      cells: [
+        { cell_type: 'markdown', source: ['# Title\n', 'intro'] },
+        { cell_type: 'code', source: ['import scanpy as sc\n', 'sc.read()'] },
+      ],
+    });
+    const cells = parseNotebook(raw)!;
+    expect(cells).toEqual([
+      { type: 'markdown', source: '# Title\nintro' },
+      { type: 'code', source: 'import scanpy as sc\nsc.read()' },
+    ]);
   });
 
-  it('returns the cells in order with type and joined source', () => {
-    const cells = parseNotebook(nb);
-    expect(cells).toHaveLength(2);
-    expect(cells[0].type).toBe('markdown');
-    expect(cells[0].source).toBe('# Redline corrected analysis\n\nDataset: CD4 T cells');
-    expect(cells[1].type).toBe('code');
-    expect(cells[1].source).toBe('import scanpy as sc\nprint("ok")');
+  it('extracts plain-text stream and result outputs, ignoring images', () => {
+    const raw = JSON.stringify({
+      cells: [
+        {
+          cell_type: 'code',
+          source: 'print(1)',
+          outputs: [
+            { output_type: 'stream', text: ['hello\n'] },
+            { output_type: 'execute_result', data: { 'text/plain': ['42'] } },
+            { output_type: 'display_data', data: { 'image/png': 'base64...' } },
+          ],
+        },
+      ],
+    });
+    expect(parseNotebook(raw)![0].outputs).toEqual(['hello', '42']);
   });
 
-  it('accepts a source given as a single string', () => {
-    const one = JSON.stringify({ cells: [{ cell_type: 'code', source: 'x = 1' }] });
-    expect(parseNotebook(one)[0].source).toBe('x = 1');
+  it('skips empty and raw/unknown cells', () => {
+    const raw = JSON.stringify({
+      cells: [
+        { cell_type: 'code', source: '   ' },
+        { cell_type: 'raw', source: 'x' },
+        { cell_type: 'code', source: 'ok' },
+      ],
+    });
+    expect(parseNotebook(raw)).toEqual([{ type: 'code', source: 'ok' }]);
   });
 
-  it('fails soft to an empty list on invalid JSON', () => {
-    expect(parseNotebook('not json{')).toEqual([]);
-  });
-
-  it('fails soft when there is no cells array', () => {
-    expect(parseNotebook(JSON.stringify({ metadata: {} }))).toEqual([]);
-  });
-
-  it('skips cells with an unknown type', () => {
-    const mixed = JSON.stringify({ cells: [{ cell_type: 'raw', source: 'x' }, { cell_type: 'code', source: 'y' }] });
-    const cells = parseNotebook(mixed);
-    expect(cells).toHaveLength(1);
-    expect(cells[0].source).toBe('y');
+  it('returns null for invalid JSON, non-notebooks, and empty notebooks', () => {
+    expect(parseNotebook('not json {')).toBeNull();
+    expect(parseNotebook('{"foo":1}')).toBeNull();
+    expect(parseNotebook('{"cells":[]}')).toBeNull();
   });
 });
 
-describe('renderMarkdownLite', () => {
-  it('reads heading level from the leading hashes', () => {
-    expect(renderMarkdownLite('# Title')).toEqual([{ kind: 'heading', level: 1, text: 'Title' }]);
-    expect(renderMarkdownLite('## Check 2: Double dipping')).toEqual([
-      { kind: 'heading', level: 2, text: 'Check 2: Double dipping' },
-    ]);
+describe('cellsToText / scriptToCells', () => {
+  it('flattens cell sources with blank-line separators', () => {
+    expect(cellsToText([{ type: 'markdown', source: '# A' }, { type: 'code', source: 'x = 1' }])).toBe('# A\n\nx = 1');
   });
 
-  it('joins consecutive non-blank lines into one paragraph', () => {
-    expect(renderMarkdownLite('This design cannot be rescued\nso there is no fix.')).toEqual([
-      { kind: 'para', text: 'This design cannot be rescued so there is no fix.' },
-    ]);
+  it('appends code-cell outputs so extraction reads what the preview shows', () => {
+    expect(cellsToText([{ type: 'code', source: 'print(x)', outputs: ['FOXP3 p=0.0004'] }])).toBe('print(x)\nFOXP3 p=0.0004');
   });
 
-  it('separates blocks on a blank line', () => {
-    const blocks = renderMarkdownLite('# Redline corrected analysis\n\nDataset: CD4 T cells\n\nverdict text');
-    expect(blocks).toEqual([
-      { kind: 'heading', level: 1, text: 'Redline corrected analysis' },
-      { kind: 'para', text: 'Dataset: CD4 T cells' },
-      { kind: 'para', text: 'verdict text' },
-    ]);
+  it('wraps a script as one code cell', () => {
+    expect(scriptToCells('print(1)')).toEqual([{ type: 'code', source: 'print(1)' }]);
+  });
+});
+
+describe('cellsToIpynb', () => {
+  it('produces a notebook that parses back to the same sources', () => {
+    const cells = [
+      { type: 'markdown' as const, source: '# T' },
+      { type: 'code' as const, source: 'a\nb' },
+    ];
+    const round = parseNotebook(cellsToIpynb(cells))!;
+    expect(round.map((c) => ({ type: c.type, source: c.source }))).toEqual(cells);
+  });
+});
+
+describe('readNotebookFile', () => {
+  const fake = (name: string, text: string) => ({ name, text: async () => text }) as unknown as File;
+
+  it('reads a .ipynb into cells + flattened text + name', async () => {
+    const raw = JSON.stringify({ cells: [{ cell_type: 'code', source: 'print(1)' }] });
+    const nb = await readNotebookFile(fake('a.ipynb', raw), 1000);
+    expect(nb.cells).toEqual([{ type: 'code', source: 'print(1)' }]);
+    expect(nb.text).toBe('print(1)');
+    expect(nb.name).toBe('a.ipynb');
   });
 
-  it('groups consecutive bullet lines into one list', () => {
-    expect(renderMarkdownLite('- one\n- two\n- three')).toEqual([
-      { kind: 'bullet', items: ['one', 'two', 'three'] },
-    ]);
+  it('wraps a plain script as one code cell', async () => {
+    expect((await readNotebookFile(fake('a.py', 'x = 1'), 1000)).cells).toEqual([{ type: 'code', source: 'x = 1' }]);
   });
 
-  it('returns nothing for empty or whitespace-only input', () => {
-    expect(renderMarkdownLite('')).toEqual([]);
-    expect(renderMarkdownLite('   \n  \n')).toEqual([]);
+  it('rejects a .ipynb that is not a readable notebook, rather than dumping raw JSON', async () => {
+    await expect(readNotebookFile(fake('a.ipynb', 'not json'), 1000)).rejects.toThrow();
+  });
+
+  it('clamps the flattened text to maxChars and flags truncation', async () => {
+    const nb = await readNotebookFile(fake('a.py', 'x'.repeat(50)), 10);
+    expect(nb.text).toHaveLength(10);
+    expect(nb.truncated).toBe(true);
   });
 });

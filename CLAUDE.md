@@ -102,8 +102,8 @@ These are the product. Full detail in `docs/honesty-rules.md`.
    operate on resolved `FieldRole`s.
 5. **The Marson scenario audits a naive foil,** never the authors' rigorous analysis.
    Copy must never imply the authors erred.
-6. **Never present a dead compute control as live.** Configurable is honest; a dead
-   button labeled live is not.
+6. **A compute control only renders live once its target is wired.** Configurable is
+   honest; unwired targets stay disabled and clearly labeled.
 
 ## Prose voice rules (any user-facing English)
 

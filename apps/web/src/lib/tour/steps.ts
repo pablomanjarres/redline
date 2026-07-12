@@ -11,9 +11,8 @@ import type { TourStep } from './types';
  * Every string here is user-facing English, so it is bound by the repo's voice
  * and honesty rules exactly like report copy. `steps.test.ts` enforces them: no
  * em dashes, no "not X, but Y" reframes, no AI-tell vocabulary, never a claim
- * that the dataset's authors erred, never an FDR claim on Check 2, never a dead
- * control presented as live. Every number below is quoted from the locked
- * fixture in `packages/engine/src/fixtures/marson.ts`.
+ * that the dataset's authors erred, never an FDR claim on Check 2. Every number
+ * below is quoted from the locked fixture in `packages/engine/src/fixtures/marson.ts`.
  *
  * `ensure` makes a step real before the reader looks at it. A reader who opens
  * the tour from a cold `/checks/3` still sees a figure, because the step runs the
@@ -69,23 +68,10 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: 'intake.analysis',
     headline: 'Two optional attach points.',
-    what: 'Drop your notebook or script, and paste your written results if you have them. Both are optional. A bare .h5ad audits on its own, and your words let the extracted claims read in your own voice.',
+    what: 'Drop a notebook or script to upload it, or paste one. A .ipynb renders as a notebook. New here? Load the example and run the audit on a ready sample.',
     why: 'The dataset alone is enough. Anything you add sharpens the reading and matches the claims to how you would state them.',
     advance: 'next',
     dwellMs: 6000,
-  },
-  {
-    id: 'upload',
-    chapter: 'The case',
-    depth: 'detail',
-    route: '/',
-    target: 'intake.upload',
-    headline: 'An honest dead control.',
-    what: 'Bringing your own .h5ad stays disabled until you connect a compute target. This demo runs a locked fixture, so every number you are about to see reproduces exactly.',
-    why: 'A rigor tool that dressed up a dead control as a live one would fail its own audit. When a control is off, Redline shows it off.',
-    advance: 'next',
-    dwellMs: 6000,
-    placement: 'bottom',
   },
   {
     id: 'begin',

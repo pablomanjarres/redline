@@ -41,11 +41,10 @@ async function main(): Promise<number> {
     }
 
     const ai = gradeAiWiring(caseProbes);
-    // The one interactive-looking control we audited: the intake upload affordance,
-    // now a disabled + labeled button. (A browser pass will scan the DOM live.)
-    const deadControls: DeadControl[] = [
-      { location: 'intake page', selector: 'upload-h5ad', label: 'Upload .h5ad (not available in this build)', dead: false },
-    ];
+    // The intake upload control renders only when a compute target is connected, so
+    // the fixture demo ships no upload control to audit. (A browser pass will scan
+    // the DOM live and report any interactive element with no handler and no label.)
+    const deadControls: DeadControl[] = [];
     const deadUnlabeled = deadControls.filter((d) => d.dead && !d.label).length;
     const { ready, failures } = isReady(caseVerdicts, ai, deadUnlabeled);
 

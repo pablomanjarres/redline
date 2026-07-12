@@ -80,7 +80,7 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
   // the audit used. Only offered when the finding carries corrected code.
   const runInputs =
     run && result?.correctedCode
-      ? { scenarioId, checkId, config: runCfg[runKey] ?? run.config, fields: fields ?? [] }
+      ? { scenarioId, checkId, config: runCfg[runKey] ?? run.config, fields: fields ?? [], claim, runKey }
       : undefined;
 
   return (

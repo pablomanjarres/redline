@@ -47,8 +47,16 @@ export function Pipeline() {
     runsByCheck.set(r.checkId, list);
   }
 
-  const stations: { href: string; n: string; label: string; active: boolean; light: string; pulse: boolean; locked: boolean }[] = [];
+  // `id` is a STABLE, unique key per station (design, claims, check-1..4,
+  // corrected, report, verify). React keys must be both, and `href` is neither:
+  // a locked or unrouted station falls back to `href: path`, so several stations
+  // collide on one href and that href changes on every navigation. Keying on it
+  // broke reconciliation ("two children with the same key"), leaving stale
+  // stations from prior pages mounted, so the rail filled with ghost 01/02/03
+  // entries. A semantic id fixes the identity of each station across renders.
+  const stations: { id: string; href: string; n: string; label: string; active: boolean; light: string; pulse: boolean; locked: boolean }[] = [];
   stations.push({
+    id: 'design',
     href: '/fields',
     n: '00',
     label: 'Design',
@@ -58,6 +66,7 @@ export function Pipeline() {
     locked: false,
   });
   stations.push({
+    id: 'claims',
     href: '/claims',
     n: '00b',
     label: 'Claims',
@@ -83,6 +92,7 @@ export function Pipeline() {
     if (anyRunning) light = '#2563EB';
     else if (done.length > 0) light = signalColor((done.find((x) => x.state !== 'clean') ?? done[0]!).state);
     stations.push({
+      id: `check-${id}`,
       href: firstKey ? `/checks/${encodeURIComponent(firstKey)}` : path,
       n: `0${id}`,
       label: ['Pseudoreplication', 'Double dipping', 'Fragility', 'Confounding'][id - 1]!,
@@ -97,6 +107,7 @@ export function Pipeline() {
   // The corrected bundle sits between the checks and the report: the honest
   // rewrite of every flagged finding, reachable once the design is confirmed.
   stations.push({
+    id: 'corrected',
     href: '/corrected',
     n: '',
     label: 'Corrected',
@@ -106,6 +117,7 @@ export function Pipeline() {
     locked: !fieldsConfirmed,
   });
   stations.push({
+    id: 'report',
     href: '/report',
     n: '',
     label: 'Report',
@@ -117,6 +129,7 @@ export function Pipeline() {
   // The self-verification surface: an internal QA station, always reachable, set
   // apart from the audit flow by its signal-blue light.
   stations.push({
+    id: 'verify',
     href: '/verifications',
     n: '',
     label: 'Verify',
@@ -144,7 +157,7 @@ export function Pipeline() {
       }}
     >
       {stations.map((s, i) => (
-        <div key={s.href} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
+        <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
           {i > 0 && <span aria-hidden style={{ width: 26, height: 1, background: 'var(--edge-2)', flex: 'none' }} />}
           <Link
             href={s.locked ? path : s.href}

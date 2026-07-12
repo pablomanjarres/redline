@@ -192,9 +192,8 @@ getComputeTarget(): ComputeTarget;   // reads REDLINE_COMPUTE_TARGET, default 'f
 The UI never changes when the target changes. Only the destination moves. The job
 payload and the return contract are identical regardless of target. A target whose
 env is not wired reports `available: false`, the app stays on `fixture`, and the
-control for that target renders disabled and clearly labeled. Redline never presents a
-dead control as live. See `honesty-rules.md` for why this is a hard rule and not a
-nicety.
+control for that target renders disabled and clearly labeled until it is wired. See
+`honesty-rules.md` for why this is a hard rule and not a nicety.
 
 `inspect()` runs on the same seam. It returns a `DatasetInventory` (the `obs` columns,
 the `uns` stored results, the cluster fields, whether raw counts are present) read from

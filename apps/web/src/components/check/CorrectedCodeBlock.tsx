@@ -22,12 +22,16 @@ import { correctionTerminal, type CorrectionTerminal, type TermTone } from '@/li
  * no corrected number.
  */
 
-/** What the Run action needs to recompute this finding's corrected method. */
+/** What the Run action needs to recompute this finding's corrected method. The
+ *  claim and run key match what the audit posted, so the recompute audits the
+ *  same run, never a per-check lookup. */
 export interface CorrectionRunInputs {
   scenarioId: ScenarioId;
   checkId: CheckId;
   config: CheckConfigMap[CheckId];
   fields: FieldSpec[];
+  claim: string;
+  runKey?: string;
 }
 
 type RunPhase = 'idle' | 'running' | 'done' | 'error';
