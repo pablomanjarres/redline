@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import type { DatasetMeta } from '@redline/contracts';
 import { fmt } from '@/lib/format';
 
@@ -8,11 +8,10 @@ import { fmt } from '@/lib/format';
  * Intake slab 01: the dataset, the one required input. The scientist brings an
  * .h5ad.
  *
- * Honesty (build rule 6): inspecting a real HDF5 file needs the Python engine,
- * so bringing your own file only works when a compute target is connected. This
- * demo runs the locked fixture, so the upload control is disabled and labeled
- * with why, and the scenario picker in the top strip is the honest way in. When
- * a real compute target is connected, the control is a live file picker.
+ * The demo runs a locked fixture, so the dataset is already loaded and there is
+ * nothing to upload. Inspecting a real HDF5 file needs the Python engine, so the
+ * file picker appears only when a compute target is connected; the scenario
+ * picker in the top strip is the way in for the fixture demo.
  */
 export function DatasetSlab({
   dataset,
@@ -21,7 +20,6 @@ export function DatasetSlab({
   dataset: DatasetMeta;
   computeTargetAvailable: boolean;
 }) {
-  const noteId = useId();
   const [pickedName, setPickedName] = useState<string | null>(null);
   const [uploadFocused, setUploadFocused] = useState(false);
 
@@ -98,11 +96,11 @@ export function DatasetSlab({
             {pickedName ? 'selected' : `${dataset.sizeGB} GB · loaded`}
           </div>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
-          {computeTargetAvailable ? (
-            // A real, connected compute target: a live file picker. The label
-            // carries the accessible name for the visually hidden (but focusable)
-            // input, and the whole control rings on keyboard focus.
+        {computeTargetAvailable ? (
+          <div style={{ marginLeft: 'auto' }}>
+            {/* A real, connected compute target: a live file picker. The label
+                carries the accessible name for the visually hidden (but focusable)
+                input, and the whole control rings on keyboard focus. */}
             <label
               data-tour="intake.upload"
               style={{
@@ -138,34 +136,14 @@ export function DatasetSlab({
                 }}
               />
             </label>
-          ) : (
-            // The demo's fixture target cannot inspect a file, so the control is
-            // disabled and labeled with why (the note below). Never live-looking.
-            <button
-              data-tour="intake.upload"
-              type="button"
-              disabled
-              aria-describedby={noteId}
-              style={{
-                font: '600 11px/1 var(--sans)',
-                color: 'var(--ink-4)',
-                background: 'var(--panel-3)',
-                border: '1px solid var(--edge-2)',
-                padding: '9px 13px',
-                borderRadius: 8,
-                cursor: 'not-allowed',
-              }}
-            >
-              Upload .h5ad
-            </button>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
 
-      {/* the honest reason the upload is off, and the way in that is on */}
+      {/* the fixture is already loaded; the way in is the scenario picker up top */}
       {!computeTargetAvailable ? (
-        <p id={noteId} style={{ margin: '10px 0 0', font: '400 11.5px/1.5 var(--sans)', color: 'var(--ink-4)' }}>
-          The demo runs a locked fixture dataset. Connect a compute target to inspect your own file. Pick a scenario in the top strip to run the audit now.
+        <p style={{ margin: '10px 0 0', font: '400 11.5px/1.5 var(--sans)', color: 'var(--ink-4)' }}>
+          The demo runs a locked fixture dataset, already loaded. Pick a scenario in the top strip to run the audit now.
         </p>
       ) : null}
 

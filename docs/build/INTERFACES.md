@@ -151,7 +151,7 @@ with any curated fallback in `@redline/reasoning`.
 The **fixture** target is deterministic, always `available`, and reproduces the locked
 demo numbers below. `local`/`cloudrun`/`endpoint` shell out / fetch the Python engine
 and return the SAME `ComputeResult` shape; if their env is unwired, `available=false`
-and the app stays on `fixture` (never present a dead control as live).
+and the app stays on `fixture` (a control only renders live once its target is wired).
 
 ## Reasoner (owned by the reasoning agent) — `@redline/reasoning`
 

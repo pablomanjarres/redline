@@ -10,9 +10,10 @@ import { AnalysisSlab } from '@/components/intake/AnalysisSlab';
 
 /**
  * Intake. Its own full-screen chrome (the pipeline shell begins at design
- * resolution). One clear job: get the analysis in. A required drop for the
- * dataset, and two optional attach points (a notebook / script, and pasted
- * claims / prose) that feed the extraction agent. A single primary action opens
+ * resolution). One clear job: get the analysis in. The required dataset (the
+ * loaded fixture, or a live upload on a real compute target), and two optional
+ * attach points (a notebook / script, and pasted claims / prose) that feed the
+ * extraction agent. A single primary action opens
  * design resolution. Nothing is tested here; the first real work happens once
  * fields are confirmed, then Redline reads the analysis and proposes the claims.
  */
@@ -65,8 +66,8 @@ export default function IntakePage() {
             {SCENARIOS.map((s) => {
               const active = scenarioId === s.id;
               // The verification foils carry no locked fixture numbers, so on the
-              // fixture target every check would 500. Honesty rule 6: disable and
-              // label the dead control rather than let it fail on click.
+              // fixture target every check would 500. Disable and label them until
+              // a real compute target is connected, rather than fail on click.
               const disabled = !!s.localOnly && !computeTargetAvailable;
               return (
                 <button key={s.id} type="button" aria-pressed={active} disabled={disabled}
@@ -90,6 +91,15 @@ export default function IntakePage() {
         <p style={{ margin: '20px 0 0', maxWidth: 640, font: '400 15.5px/1.6 var(--sans)', color: 'var(--ink-2)' }}>
           Drop in the data you analyzed and the analysis you ran. Redline re-runs the load-bearing statistics itself, then marks the false discoveries on your own figures, before they become a paper.
         </p>
+
+        {/* mascot: the lab critter walks in — Reviewer 2, in a lab coat */}
+        <img
+          src="/lab-critter-walk.gif"
+          alt="Redline's lab critter mascot walking in — Reviewer 2, in a lab coat, holding a red pen"
+          width={960}
+          height={300}
+          style={{ display: 'block', width: '100%', maxWidth: 560, height: 'auto', marginTop: 22, imageRendering: 'pixelated' }}
+        />
 
         {/* two slabs: the required dataset, and the optional analysis attach points */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: 40, alignItems: 'start' }}>

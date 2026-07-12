@@ -130,6 +130,39 @@ export const ClaimMappingResponse = z.object({
 });
 export type ClaimMappingResponse = z.infer<typeof ClaimMappingResponse>;
 
+/**
+ * Improve a claim's wording (Claim Review, the "Improve with AI" affordance). The
+ * scientist asks Redline to rewrite one claim into sharper, more precise, more
+ * testable language, grounded in the dataset and the claim's existing routing.
+ *
+ * `text` is the current wording (the scientist's draft in the edit field).
+ * `restsOn` and `checks` are context so the rewrite stays consistent with what
+ * the claim rests on and which checks will test it. Improving the wording never
+ * re-routes the claim: routing is a separate, explicit action.
+ *
+ * Rewriting a specific sentence is only honest with a real model reading it
+ * against this data, so there is no curated fallback. With no backend the request
+ * fails and the wording is left untouched, never guessed.
+ */
+export const ClaimImprovementRequest = z.object({
+  datasetTitle: z.string().max(500),
+  inventory: DatasetInventory,
+  fields: z.array(FieldSpec),
+  // The wording to sharpen. One claim, a sentence, not a document.
+  text: z.string().min(1).max(MAX_CLAIM_TEXT_LENGTH),
+  /** What the claim rests on, in words, for context. */
+  restsOn: z.string().max(2_000).optional(),
+  /** The checks the claim is routed to, for context. Improving does not re-route. */
+  checks: z.array(CheckId).optional(),
+});
+export type ClaimImprovementRequest = z.infer<typeof ClaimImprovementRequest>;
+
+export const ClaimImprovementResponse = z.object({
+  /** The rewritten claim, one or two sentences. Bounded like a typed claim. */
+  text: z.string().min(1).max(MAX_CLAIM_TEXT_LENGTH),
+});
+export type ClaimImprovementResponse = z.infer<typeof ClaimImprovementResponse>;
+
 // ── The honesty backstop ─────────────────────────────────────────────────────
 
 /**

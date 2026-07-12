@@ -1055,13 +1055,6 @@
     },
     "fieldResolutionAdaptsAcrossCases": true
   },
-  "deadControls": [
-    {
-      "location": "intake page",
-      "selector": "upload-h5ad",
-      "label": "Upload .h5ad (not available in this build)",
-      "dead": false
-    }
-  ],
+  "deadControls": [],
   "failures": []
 }
