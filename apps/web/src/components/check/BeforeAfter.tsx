@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Check3Config, PreviewArtifact } from '@redline/contracts';
 import { renderChart } from '@/components/charts';
 
@@ -17,14 +17,34 @@ import { renderChart } from '@/components/charts';
  *
  * The toggle is local UI state, like the Check 3 scrub. It moves the figure, it
  * does not re-run anything.
+ *
+ * `flipToAfter` lets the corrected-code "Run" reveal turn this to the honest
+ * analysis once the correction has run, so the reader lands on the corrected
+ * figure (or, when unsalvageable, the dead end). The tabs stay interactive after,
+ * so the reader can toggle back to what they claimed.
  */
 
 type Tab = 'before' | 'after';
 
-export function BeforeAfter({ preview, cfg3 }: { preview?: PreviewArtifact; cfg3?: Check3Config }) {
+export function BeforeAfter({
+  preview,
+  cfg3,
+  flipToAfter = false,
+}: {
+  preview?: PreviewArtifact;
+  cfg3?: Check3Config;
+  flipToAfter?: boolean;
+}) {
   const [tab, setTab] = useState<Tab>('before');
   const beforeRef = useRef<HTMLButtonElement>(null);
   const afterRef = useRef<HTMLButtonElement>(null);
+
+  // When the correction runs, move to the "after" view once. A later manual
+  // toggle is preserved because the effect only fires on the flip edge.
+  useEffect(() => {
+    if (flipToAfter) setTab('after');
+  }, [flipToAfter]);
+
   if (!preview) return null;
 
   const onKey = (e: React.KeyboardEvent) => {

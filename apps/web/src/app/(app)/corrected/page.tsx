@@ -6,6 +6,8 @@ import { checkMeta } from '@redline/contracts';
 import { buildBundle } from '@redline/engine';
 import { useSession } from '@/state/session';
 import { highlightPython } from '@/components/check/CorrectedCodeBlock';
+import { NotebookPreview } from '@/components/intake/NotebookPreview';
+import { parseNotebook } from '@/lib/notebook';
 import { downloadTextFile } from '@/lib/download';
 
 /**
@@ -27,6 +29,13 @@ export default function CorrectedPage() {
   }, [report, dataset]);
 
   const scripts = bundle?.scripts ?? [];
+
+  // The consolidated notebook, parsed for the inline preview. Same .ipynb the
+  // Download notebook button saves, so the preview and the file never disagree.
+  const notebookCells = useMemo(
+    () => (bundle ? parseNotebook(bundle.notebook) : null),
+    [bundle],
+  );
 
   return (
     <div style={{ maxWidth: 1060, margin: '0 auto', padding: '32px 40px 80px' }}>
@@ -65,6 +74,23 @@ export default function CorrectedPage() {
           </div>
         )}
       </div>
+
+      {/* the notebook, shown inline: the cells the Download notebook button saves */}
+      {notebookCells && notebookCells.length > 0 && (
+        <section
+          aria-label="Corrected notebook preview"
+          style={{ marginTop: 24, background: 'var(--panel)', border: '1px solid var(--edge)', borderRadius: 12, overflow: 'hidden' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', borderBottom: '1px solid var(--edge)', flexWrap: 'wrap' }}>
+            <span style={{ width: 6, height: 6, borderRadius: 2, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)', flex: 'none' }} />
+            <span style={{ font: '700 10px/1 var(--mono)', letterSpacing: '.18em', color: 'var(--ink)' }}>NOTEBOOK PREVIEW</span>
+            <span style={{ font: '500 11px/1 var(--mono)', color: 'var(--ink-3)' }}>redline_corrected.ipynb</span>
+          </div>
+          <div style={{ padding: '10px 16px 14px' }}>
+            <NotebookPreview cells={notebookCells} />
+          </div>
+        </section>
+      )}
 
       {/* scripts */}
       {scripts.length > 0 ? (

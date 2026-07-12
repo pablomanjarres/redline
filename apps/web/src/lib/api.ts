@@ -72,6 +72,11 @@ export async function postFields(body: { scenarioId: ScenarioId }): Promise<Fiel
 /**
  * Run one check: numbers from the compute target, prose from the reasoner,
  * merged into a `CheckResult`. POST /api/audit/check.
+ *
+ * `noReason` runs the numbers-only path: the compute target still produces the
+ * real statistics and correction, but the model narration is skipped. The
+ * corrected-code "Run" reveal uses it so replaying the corrected result is a
+ * genuine compute round-trip that does not wait on (or throttle) the reasoner.
  */
 export async function postCheck(body: {
   scenarioId: ScenarioId;
@@ -86,6 +91,10 @@ export async function postCheck(body: {
   claim: string;
   claimId?: string;
   runKey?: string;
+  // Numbers-only path: the corrected-code "Run" reveal posts this so replaying a
+  // finding's corrected result is a genuine compute round-trip that skips (and
+  // does not throttle) the reasoner.
+  noReason?: boolean;
 }): Promise<CheckResult> {
   const json = await postJson('/api/audit/check', body);
   return CheckResult.parse(json);

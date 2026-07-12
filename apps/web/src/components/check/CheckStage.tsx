@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { Check3Config, CheckId, CheckResult } from '@redline/contracts';
 import { checkMeta, checkRecord } from '@redline/contracts';
 import type { RunKey } from '@redline/engine';
@@ -51,7 +52,8 @@ function StatInterval({ s }: { s: CheckResult['stats'][number] }) {
  *  never disagree (honesty rule 2). Every correction section renders from this
  *  run's result and only when the finding carries that half. */
 export function CheckStage({ runKey }: { runKey: RunKey }) {
-  const { runs, runCfg, results, running, reasoning, reveal, cfg, runOne } = useSession();
+  const { runs, runCfg, results, running, reasoning, reveal, cfg, runOne, scenarioId, fields } =
+    useSession();
   const run = runs.find((r) => r.key === runKey);
   const checkId: CheckId = run?.checkId ?? 1; // the route guards the no-run case
   const claim = run?.claimText ?? '';
@@ -65,6 +67,21 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
   // The fragility figure needs this run's live Check-3 config (the scrub); other
   // checks never read it, so fall back to the base for a non-3 run.
   const cfg3: Check3Config = checkId === 3 && runCfg[runKey] ? (runCfg[runKey] as Check3Config) : cfg[3];
+
+  // Running the correction flips the before/after view to the honest result. The
+  // flag is per run, so opening a different card starts from "what you claimed".
+  const [correctionRan, setCorrectionRan] = useState(false);
+  useEffect(() => {
+    setCorrectionRan(false);
+  }, [runKey]);
+
+  // What the corrected-code Run action recomputes: this run's effective config
+  // (the claim's baked route params) against the same scenario and resolved fields
+  // the audit used. Only offered when the finding carries corrected code.
+  const runInputs =
+    run && result?.correctedCode
+      ? { scenarioId, checkId, config: runCfg[runKey] ?? run.config, fields: fields ?? [], claim, runKey }
+      : undefined;
 
   return (
     <div style={{ maxWidth: 1360, margin: '0 auto', padding: '30px 40px 72px' }}>
@@ -179,9 +196,15 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
           {/* The correction layer: the code that reproduces the honest analysis,
               what to do next, and the corrected result rendered beside the claim.
               Each renders only when this run's finding carries that half. */}
-          {showFigure && <CorrectedCodeBlock code={result!.correctedCode} />}
+          {showFigure && (
+            <CorrectedCodeBlock
+              code={result!.correctedCode}
+              run={runInputs}
+              onRan={() => setCorrectionRan(true)}
+            />
+          )}
           {showFigure && <Recommendations items={result!.recommendations} />}
-          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg3} />}
+          {showFigure && <BeforeAfter preview={result!.preview} cfg3={cfg3} flipToAfter={correctionRan} />}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
