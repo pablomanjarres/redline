@@ -412,7 +412,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (flag !== '1' && readSeen()) return;
-    if (window.location.pathname !== '/') return;
+    if (window.location.pathname !== '/start') return;
     const t = setTimeout(() => start('guided'), 550);
     return () => clearTimeout(t);
     // once, on mount

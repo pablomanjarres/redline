@@ -182,7 +182,7 @@ export default function FieldsPage() {
             Bring in a dataset from intake and Redline will propose what each field means.
           </p>
           <Link
-            href="/"
+            href="/start"
             style={{
               marginTop: 10,
               display: 'inline-flex',
