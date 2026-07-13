@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { usePathname } from 'next/navigation';
 import type { CheckId, CheckResult } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
@@ -89,7 +90,7 @@ export function Pipeline() {
     // Aggregate light: blue while any run runs, else the first non-clean verdict's
     // color (a flag on any of a check's runs surfaces), else green when all clean.
     let light = 'var(--ink-4)';
-    if (anyRunning) light = '#2563EB';
+    if (anyRunning) light = 'var(--signal)';
     else if (done.length > 0) light = signalColor((done.find((x) => x.state !== 'clean') ?? done[0]!).state);
     stations.push({
       id: `check-${id}`,
@@ -156,52 +157,80 @@ export function Pipeline() {
         flex: 'none',
       }}
     >
-      {stations.map((s, i) => (
-        <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
-          {i > 0 && <span aria-hidden style={{ width: 26, height: 1, background: 'var(--edge-2)', flex: 'none' }} />}
-          <Link
-            href={s.locked ? path : s.href}
-            aria-current={s.active ? 'page' : undefined}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              padding: '0 14px',
-              height: '100%',
-              textDecoration: 'none',
-              cursor: s.locked ? 'not-allowed' : 'pointer',
-              opacity: s.locked ? 0.4 : 1,
-              borderBottom: s.active ? '2px solid var(--red)' : '2px solid transparent',
-            }}
-          >
-            <span
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 9,
-                flex: 'none',
-                background: s.light,
-                boxShadow: s.light === 'var(--ink-4)' ? 'none' : `0 0 8px ${s.light}`,
-                animation: s.pulse ? 'rl-pulse 1s infinite' : undefined,
-              }}
-            />
-            {s.n && (
-              <span style={{ font: '600 10px/1 var(--mono)', color: s.active ? 'var(--ink)' : 'var(--ink-4)' }}>{s.n}</span>
+      {stations.map((s, i) => {
+        const prev = stations[i - 1];
+        // The track fills left to right: the segment joining two stations lights up
+        // once the flow has reached both. Verify sits off the linear audit flow, so
+        // the segment into it stays a neutral divider rather than reading as progress.
+        const connLit = i > 0 && !!prev && !prev.locked && !s.locked && s.id !== 'verify';
+        // Dot states, unmistakable at a glance: locked = a hollow lamp (off);
+        // running = a pulsing signal lamp; reached-but-no-verdict = a quiet filled
+        // dot; a settled verdict = a filled lamp with a soft ring halo, which reads
+        // on the light surface far better than the old blur glow did.
+        const idle = s.light === 'var(--ink-4)';
+        const dotBase: CSSProperties = { width: 9, height: 9, borderRadius: 9, flex: 'none' };
+        const dotStyle: CSSProperties = s.locked
+          ? { ...dotBase, background: 'transparent', border: '1px solid var(--edge-2)' }
+          : s.pulse
+            ? { ...dotBase, background: 'var(--signal)', boxShadow: '0 0 0 3px var(--signal-soft)', animation: 'rl-pulse 1s infinite' }
+            : idle
+              ? { ...dotBase, background: 'var(--ink-4)' }
+              : { ...dotBase, background: s.light, boxShadow: `0 0 0 3px color-mix(in srgb, ${s.light} 18%, transparent)` };
+        return (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
+            {i > 0 && (
+              <span
+                aria-hidden
+                style={{
+                  width: 26,
+                  height: connLit ? 2 : 1,
+                  borderRadius: 2,
+                  background: connLit ? 'var(--edge-hi)' : 'var(--edge)',
+                  flex: 'none',
+                  transition: 'background .2s ease, height .2s ease',
+                }}
+              />
             )}
-            <span
+            <Link
+              href={s.locked ? path : s.href}
+              aria-current={s.active ? 'page' : undefined}
+              aria-disabled={s.locked || undefined}
               style={{
-                font: `${s.active ? 700 : 500} 11px/1 var(--sans)`,
-                letterSpacing: '.04em',
-                textTransform: 'uppercase',
-                color: s.active ? 'var(--ink)' : 'var(--ink-3)',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                padding: '0 14px',
+                height: '100%',
+                textDecoration: 'none',
+                cursor: s.locked ? 'not-allowed' : 'pointer',
+                opacity: s.locked ? 0.42 : 1,
+                // Active station = the current tab: a faint signal wash + a signal
+                // underline. Blue is the interactive signal; red stays reserved for
+                // findings, so a flagged check keeps its red dot while the tab reads blue.
+                background: s.active ? 'var(--signal-soft)' : 'transparent',
+                borderBottom: s.active ? '2px solid var(--signal)' : '2px solid transparent',
+                transition: 'background .15s ease',
               }}
             >
-              {s.label}
-            </span>
-          </Link>
-        </div>
-      ))}
+              <span style={dotStyle} />
+              {s.n && (
+                <span style={{ font: '600 10px/1 var(--mono)', color: s.active ? 'var(--ink)' : 'var(--ink-4)' }}>{s.n}</span>
+              )}
+              <span
+                style={{
+                  font: `${s.active ? 700 : 500} 11px/1 var(--sans)`,
+                  letterSpacing: '.04em',
+                  textTransform: 'uppercase',
+                  color: s.active ? 'var(--ink)' : 'var(--ink-3)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s.label}
+              </span>
+            </Link>
+          </div>
+        );
+      })}
     </nav>
   );
 }

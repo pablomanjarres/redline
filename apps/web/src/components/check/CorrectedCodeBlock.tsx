@@ -265,8 +265,8 @@ function CorrectionOutput({
       </div>
 
       {phase === 'running' && (
-        <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: 9, font: '500 12px/1 var(--mono)', color: '#2563EB' }}>
-          <span aria-hidden style={{ width: 8, height: 8, borderRadius: 8, background: '#2563EB', animation: 'rl-pulse 1s infinite' }} />
+        <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: 9, font: '500 12px/1 var(--mono)', color: 'var(--signal)' }}>
+          <span aria-hidden style={{ width: 8, height: 8, borderRadius: 8, background: 'var(--signal)', animation: 'rl-pulse 1s infinite' }} />
           recomputing the corrected method…
         </div>
       )}
