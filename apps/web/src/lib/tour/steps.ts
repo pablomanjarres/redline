@@ -60,6 +60,9 @@ export const TOUR_STEPS: TourStep[] = [
     why: 'Hold two numbers side by side. About 52,000 cells, and 4 donors. The gap between them is where the first check starts.',
     advance: 'next',
     dwellMs: 5500,
+    // Seed the sample analysis now, so the case the tour narrates (the notebook
+    // and its four claims) is really loaded before the front door extracts them.
+    ensure: { kind: 'loadExample' },
   },
   {
     id: 'analysis',
@@ -68,7 +71,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/start',
     target: 'intake.analysis',
     headline: 'Two optional attach points.',
-    what: 'Drop a notebook or script to upload it, or paste one. A .ipynb renders as a notebook. New here? Load the example and run the audit on a ready sample.',
+    what: 'The sample analysis is loaded here, so the audit runs on a ready example. Drop a notebook or script to upload your own, or paste one. A .ipynb renders as a notebook.',
     why: 'The dataset alone is enough. Anything you add sharpens the reading and matches the claims to how you would state them.',
     advance: 'next',
     dwellMs: 6000,
