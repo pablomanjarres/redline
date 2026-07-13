@@ -1,12 +1,14 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { CheckId, CheckResult, CheckState, CriticAssessment } from '@redline/contracts';
 import { signalColor } from '@redline/ui';
 
-/* The verdict readout: the marked-up conclusion for a finding, on the dark
-   surface. A signal-colored rule down the left edge, the failure mode named
-   large, the scientist's claim struck through, and the defensible rewrite with
-   the redline caret. The method citation sits underneath. */
+/* The verdict readout: the marked-up conclusion for a finding on the light
+   instrument surface. A signal-colored rule down the left edge, the failure mode
+   named large, the scientist's claim struck through by a redline that draws
+   across it, then the defensible rewrite dropping in with the redline caret. The
+   method citation sits underneath. */
 
 const KICKER: Record<CheckState, string> = {
   flagged: 'Finding',
@@ -78,9 +80,46 @@ function CriticStrip({ critic }: { critic: CriticAssessment }) {
   );
 }
 
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const read = () => setReduced(mq.matches);
+    read();
+    mq.addEventListener('change', read);
+    return () => mq.removeEventListener('change', read);
+  }, []);
+  return reduced;
+}
+
 export function VerdictReadout({ result, checkId }: { result: CheckResult; checkId: CheckId }) {
   const { state } = result;
   const c = signalColor(state);
+
+  // The verdict beat: the struck claim draws its redline left-to-right, then the
+  // corrected conclusion drops in beside it. One play per finding. Parked at the
+  // finished state (struck + shown, no motion) when the viewer asked for it.
+  const reduced = useReducedMotion();
+  const hasOriginal = !!result.original;
+  const sig = `${checkId}|${state}|${result.original ?? ''}|${result.corrected}`;
+  const [struck, setStruck] = useState(false);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (reduced) {
+      setStruck(true);
+      setShown(true);
+      return;
+    }
+    setStruck(false);
+    setShown(false);
+    const t1 = window.setTimeout(() => setStruck(true), hasOriginal ? 260 : 0);
+    const t2 = window.setTimeout(() => setShown(true), hasOriginal ? 720 : 200);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [reduced, sig, hasOriginal]);
 
   return (
     <div
@@ -107,11 +146,45 @@ export function VerdictReadout({ result, checkId }: { result: CheckResult; check
       </div>
 
       {result.original && (
-        <p style={{ margin: '11px 0 0', font: '400 16px/1.5 var(--sans)', color: 'var(--ink-4)', textDecoration: 'line-through', textDecorationColor: 'var(--red)', textDecorationThickness: 2 }}>
-          {result.original}
-        </p>
+        <div style={{ position: 'relative', margin: '11px 0 0' }}>
+          <p style={{ margin: 0, font: '400 16px/1.5 var(--sans)', color: struck ? 'var(--ink-4)' : 'var(--ink-2)', transition: 'color 320ms ease' }}>
+            {result.original}
+          </p>
+          {/* the redline itself: the same claim, transparent glyphs, struck in red,
+              wiped left-to-right so the strike reads as it is drawn across it */}
+          <p
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              margin: 0,
+              font: '400 16px/1.5 var(--sans)',
+              color: 'transparent',
+              textDecoration: 'line-through',
+              textDecorationColor: 'var(--red)',
+              textDecorationThickness: 2,
+              clipPath: struck ? 'inset(0 0 0 0)' : 'inset(0 100% 0 0)',
+              transition: 'clip-path 440ms cubic-bezier(0.22,0.61,0.36,1)',
+              pointerEvents: 'none',
+            }}
+          >
+            {result.original}
+          </p>
+        </div>
       )}
-      <p data-testid="verdict-corrected" style={{ margin: '11px 0 0', font: '400 16px/1.55 var(--sans)', color: 'var(--ink)', display: 'flex', gap: 10 }}>
+      <p
+        data-testid="verdict-corrected"
+        style={{
+          margin: '11px 0 0',
+          font: '400 16px/1.55 var(--sans)',
+          color: 'var(--ink)',
+          display: 'flex',
+          gap: 10,
+          opacity: shown ? 1 : 0,
+          transform: shown ? 'translateY(0)' : 'translateY(-6px)',
+          transition: 'opacity 300ms ease, transform 300ms cubic-bezier(0.22,0.61,0.36,1)',
+        }}
+      >
         <span style={{ color: 'var(--red)', fontWeight: 800, flex: 'none' }}>▸</span>
         <span>{result.corrected}</span>
       </p>

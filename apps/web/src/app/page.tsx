@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import './landing.css';
 
 /**
@@ -141,6 +142,140 @@ const RULES = [
   },
 ];
 
+/* ── hero instrument: the signature beat, recreated in inline SVG + CSS ───────
+   A compact volcano that deflates from fireworks to nearly empty, beside the
+   struck claim and its corrected verdict. Every number is the locked Marson
+   fixture (packages/engine/src/fixtures/marson.ts, check 01): five genes read
+   significant on the naive per-cell test, one (IL2RA) survives the donor-level
+   re-test, and the claimed gene FOXP3 collapses from p = 6.2e-11 to p = 0.21.
+   Static, no data fetch. The resting state is the deflated answer, so the
+   reduced-motion path shows the truth with no motion. Colors are tokens via
+   inline CSS (SVG presentation attributes do not resolve var()). */
+const ALPHA = 0.05;
+const ALPHA_Y_VAL = -Math.log10(ALPHA); // ≈ 1.30
+const FIG = { W: 336, H: 208, left: 34, right: 312, top: 20, bottom: 166, maxAbsFc: 2, maxY: 11 };
+const figX = (fc: number): number =>
+  FIG.left + ((fc + FIG.maxAbsFc) / (2 * FIG.maxAbsFc)) * (FIG.right - FIG.left);
+const figY = (v: number): number =>
+  FIG.bottom - (Math.min(v, FIG.maxY) / FIG.maxY) * (FIG.bottom - FIG.top);
+const FIG_ALPHA_Y = figY(ALPHA_Y_VAL);
+
+type FigGene = { g: string; fc: number; before: number; after: number; claimed?: boolean; survives?: boolean; label?: boolean };
+const FIG_GENES: FigGene[] = [
+  { g: 'FOXP3', fc: 0.9, before: 10.21, after: 0.68, claimed: true, label: true },
+  { g: 'IL2RA', fc: -1.4, before: 8.1, after: 2.0, survives: true, label: true },
+  { g: 'CTLA4', fc: 0.7, before: 6.4, after: 0.5 },
+  { g: 'IKZF2', fc: 0.5, before: 4.2, after: 0.3 },
+  { g: 'TNFRSF18', fc: 0.3, before: 3.1, after: 0.2 },
+  { g: 'SELL', fc: -0.2, before: 1.2, after: 0.4 },
+];
+
+/** CSS custom props for the per-gene fall (start offset + shared delay). Cast
+ *  through unknown so the custom-property keys pass the CSSProperties type. */
+function figVars(delay: number, fromY: number): CSSProperties {
+  return { '--d': `${delay}s`, '--fromY': `${fromY}px` } as unknown as CSSProperties;
+}
+
+function HeroFigure() {
+  const tMono: CSSProperties = { font: '500 9px/1 var(--mono)', letterSpacing: '0.02em' };
+  return (
+    <svg
+      className="lp-fig-svg"
+      viewBox={`0 0 ${FIG.W} ${FIG.H}`}
+      role="img"
+      aria-label="Volcano plot. Five genes read significant on the naive per-cell test. After the donor-level re-test only IL2RA stays above the significance line, and the claimed gene FOXP3 collapses below it."
+    >
+      {/* baseline and zero-fold rule */}
+      <line x1={FIG.left} y1={FIG.bottom} x2={FIG.right} y2={FIG.bottom} style={{ stroke: 'var(--plate-line)' }} strokeWidth={1} />
+      <line x1={figX(0)} y1={FIG.top} x2={figX(0)} y2={FIG.bottom} style={{ stroke: 'var(--plate-line)' }} strokeWidth={1} />
+      {/* significance threshold */}
+      <line x1={FIG.left} y1={FIG_ALPHA_Y} x2={FIG.right} y2={FIG_ALPHA_Y} style={{ stroke: 'var(--edge-2)' }} strokeWidth={1} strokeDasharray="4 4" />
+      <text x={FIG.right} y={FIG_ALPHA_Y - 5} textAnchor="end" style={{ ...tMono, fill: 'var(--ink-3)' }}>α = .05</text>
+      <text x={FIG.left} y={FIG.top - 6} style={{ ...tMono, fill: 'var(--ink-4)' }}>−log₁₀ p</text>
+
+      {/* ghosts: where each firework sat before the honest re-test */}
+      {FIG_GENES.filter((g) => g.before > ALPHA_Y_VAL).map((g) => (
+        <g key={`gh-${g.g}`}>
+          <line
+            x1={figX(g.fc)} y1={figY(g.before) + 6} x2={figX(g.fc)} y2={figY(g.after) - 6}
+            style={{ stroke: 'var(--edge-2)' }} strokeWidth={1} strokeDasharray="2 4" strokeOpacity={0.7}
+          />
+          <circle cx={figX(g.fc)} cy={figY(g.before)} r={4.4} fill="none" style={{ stroke: 'var(--red)' }} strokeOpacity={0.34} strokeWidth={1.3} />
+        </g>
+      ))}
+
+      {/* the deflated dots: each falls from its ghost, red cooling to quiet */}
+      {FIG_GENES.map((g, i) => {
+        const xa = figX(g.fc);
+        const ya = figY(g.after);
+        const fromY = figY(g.before) - ya;
+        const restFill = g.survives ? 'var(--red)' : 'var(--ink-4)';
+        return (
+          <g key={g.g} className="lp-fig-fall" style={figVars(0.18 + i * 0.1, fromY)}>
+            {g.claimed && <circle cx={xa} cy={ya} r={6.8} fill="none" style={{ stroke: 'var(--ink-3)' }} strokeWidth={1.4} />}
+            <circle className="lp-fig-cool" cx={xa} cy={ya} r={4.2} style={{ fill: restFill }} />
+            {g.label && (
+              <text
+                x={xa + 10} y={ya + 3.4}
+                style={{ font: '600 9.5px/1 var(--mono)', fill: g.survives ? 'var(--red-deep)' : 'var(--ink-3)' }}
+              >
+                {g.g}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function HeroInstrument() {
+  return (
+    <figure className="lp-instrument">
+      <figcaption className="lp-fig-head">
+        <span className="lp-fig-tag">Check 01 · Pseudoreplication</span>
+        <span className="lp-fig-flag">Finding</span>
+      </figcaption>
+
+      <div className="lp-fig-plate">
+        <HeroFigure />
+        <div className="lp-fig-count">
+          <b>5</b> genes read significant <span aria-hidden="true">·</span> <b>1</b> survives the honest re-test
+        </div>
+      </div>
+
+      <div className="lp-fig-readout">
+        <p className="lp-fig-claim">
+          <span className="lp-sr">Claim, struck through: </span>
+          IL2RA knockdown significantly increased FOXP3 expression (p &lt; 0.001, n = 51,842).
+        </p>
+        <p className="lp-fig-corrected lp-fx-drop">
+          <span className="lp-sr">Corrected: </span>
+          <span className="lp-fig-caret" aria-hidden="true">▸</span>
+          <span>
+            IL2RA knockdown did not significantly change FOXP3 expression at the donor level
+            (Welch’s t, p = 0.21, n = 4 donors).
+          </span>
+        </p>
+      </div>
+
+      <div className="lp-fig-bench">
+        <span className="lp-fig-bench-k">False positives on clean controls</span>
+        <div className="lp-fig-bench-row">
+          <div className="lp-fig-bench-cell">
+            <b className="good">0%</b>
+            <span>Redline</span>
+          </div>
+          <div className="lp-fig-bench-cell">
+            <b>74%</b>
+            <span>single AI pass</span>
+          </div>
+        </div>
+      </div>
+    </figure>
+  );
+}
+
 function Checks({ items }: { items: typeof PILLARS }) {
   return (
     <div className="lp-checks">
@@ -187,33 +322,52 @@ export default function LandingPage() {
       <main>
         {/* ── hero ──────────────────────────────────────────────────── */}
         <header className="lp-hero">
-          <div className="lp-hero-art" aria-hidden="true" />
-          <div className="lp-hero-scrim" aria-hidden="true" />
+          <div className="lp-hero-grid" aria-hidden="true" />
           <div className="lp-hero-in">
-            <div className="lp-eyebrow lp-rise">
-              <span className="lp-tick" aria-hidden="true" />
-              Built with Claude · Life Sciences
+            <div className="lp-hero-copy">
+              <div className="lp-eyebrow lp-rise">
+                <span className="lp-tick" aria-hidden="true" />
+                Built with Claude · Life Sciences
+              </div>
+              <h1 className="lp-h1 lp-rise lp-d1">Break your own analysis before Reviewer 2 does.</h1>
+              <p className="lp-sub lp-rise lp-d2">
+                Point a general-purpose AI at your single-cell analysis and it cries wolf on <b>74%</b> of
+                clean results. Redline re-runs the load-bearing statistics on your own data and cries wolf
+                on <b>none</b> of them, then marks the real false discoveries on the figures you already made.
+              </p>
+              <div className="lp-hero-cta lp-rise lp-d3">
+                <Link className="lp-btn lp-btn-primary lp-btn-hero" href="/start?tour=1">
+                  Take the guided tour <span className="lp-arrow" aria-hidden="true">→</span>
+                </Link>
+                <a className="lp-btn lp-btn-ghost" href={REPO} target="_blank" rel="noreferrer">
+                  View on GitHub
+                </a>
+              </div>
+              <p className="lp-hero-note lp-rise lp-d3">
+                Live demo. It runs on a locked fixture with zero API keys.{' '}
+                <Link href="/start" className="lp-hero-skip">Skip to the workbench →</Link>
+              </p>
+              <div className="lp-hero-strip lp-rise lp-d4">
+                <span>scanpy</span>
+                <span>PyDESeq2</span>
+                <span>MCP</span>
+                <span>Claude</span>
+                <span>Next.js</span>
+              </div>
             </div>
-            <h1 className="lp-h1 lp-rise lp-d1">Break your own analysis before Reviewer 2 does.</h1>
-            <p className="lp-sub lp-rise lp-d2">
-              Redline is a statistical-rigor auditor for single-cell RNA-seq. Hand it your data and the
-              analysis you ran. It re-runs the load-bearing statistics itself, then marks the false
-              discoveries on your own figures, before they become a paper.
-            </p>
-            <div className="lp-hero-cta lp-rise lp-d3">
-              <Link className="lp-btn lp-btn-primary" href="/start">
-                Launch the workbench <span className="lp-arrow" aria-hidden="true">→</span>
-              </Link>
-              <a className="lp-btn lp-btn-ghost" href={REPO} target="_blank" rel="noreferrer">
-                View on GitHub
-              </a>
-            </div>
-            <div className="lp-hero-strip lp-rise lp-d4">
-              <span>scanpy</span>
-              <span>PyDESeq2</span>
-              <span>MCP</span>
-              <span>Claude</span>
-              <span>Next.js</span>
+
+            <div className="lp-hero-panel lp-rise lp-d2">
+              <HeroInstrument />
+              <div className="lp-hero-sign">
+                <img
+                  className="lp-hero-critter"
+                  src="/lab-critter-walk.gif"
+                  alt="Redline's lab-critter mascot, Reviewer 2 in a lab coat holding a red pen"
+                  width={960}
+                  height={300}
+                />
+                <span className="lp-hero-sign-cap">Your Reviewer 2, on the bench.</span>
+              </div>
             </div>
           </div>
         </header>
@@ -256,22 +410,23 @@ export default function LandingPage() {
             <div>
               <span className="lp-kicker">Measured, not asserted</span>
               <h2 id="proof-h" className="lp-h2">
-                Catches everything. Cries wolf at nothing.
+                Zero false positives, where a general-purpose AI hits 74%.
               </h2>
               <div className="lp-stat-row">
                 <div className="lp-stat good">
-                  <b>100%</b>
-                  <span>of planted errors caught</span>
-                </div>
-                <div className="lp-stat good">
                   <b>0%</b>
-                  <span>false-positive rate on clean controls</span>
+                  <span>Redline false-positive rate on clean controls</span>
+                </div>
+                <div className="lp-stat">
+                  <b>74%</b>
+                  <span>false-positive rate, one general-purpose AI call</span>
                 </div>
               </div>
               <div className="lp-vs">
-                On a 46-case benchmark of planted statistical errors and clean controls, Redline catches
-                every planted error and flags nothing clean. A single Claude call given the same analysis
-                write-up also catches <strong>100%</strong>, at a <strong>74% false-positive rate</strong>.
+                On a 46-case benchmark of planted statistical errors and clean controls, both Redline
+                and a single Claude call catch essentially all of the planted errors, so detection is
+                near-definitional. The load-bearing result is the false-positive gap. Redline flags
+                nothing clean. The general-purpose call flags <strong>74%</strong>.
                 See <code>services/rigor/bench</code>.
               </div>
             </div>
@@ -410,8 +565,8 @@ export default function LandingPage() {
             own data.
           </p>
           <div className="lp-close-cta">
-            <Link className="lp-btn lp-btn-primary" href="/start">
-              Launch the workbench <span className="lp-arrow" aria-hidden="true">→</span>
+            <Link className="lp-btn lp-btn-primary lp-btn-hero" href="/start?tour=1">
+              Take the guided tour <span className="lp-arrow" aria-hidden="true">→</span>
             </Link>
             <a className="lp-btn lp-btn-ghost" href={DOCS} target="_blank" rel="noreferrer">
               Read the docs

@@ -79,11 +79,11 @@ export function BeforeAfter({
 
       {/* the panel */}
       {tab === 'before' ? (
-        <div role="tabpanel" aria-label="What you claimed" style={{ padding: '16px 18px' }}>
+        <div role="tabpanel" aria-label="What you claimed" style={{ padding: '16px 18px', background: 'var(--void)' }}>
           <Plate label="What you claimed" tone="var(--red)">{renderChart(preview.before, cfg3)}</Plate>
         </div>
       ) : (
-        <div role="tabpanel" aria-label="The honest analysis" style={{ padding: '16px 18px' }}>
+        <div role="tabpanel" aria-label="The honest analysis" style={{ padding: '16px 18px', background: 'var(--void)' }}>
           {preview.unsalvageable || preview.after === null ? (
             <DeadEnd methodLabel={preview.methodLabel} caveat={preview.caveat} />
           ) : (
@@ -142,10 +142,10 @@ function Tab({
 
 function Plate({ label, tone, children }: { label: string; tone: string; children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 12, background: 'var(--plate)', boxShadow: 'var(--plate-glow)', overflow: 'hidden' }}>
+    <div style={{ borderRadius: 12, background: 'var(--plate)', boxShadow: '0 0 0 1px var(--plate-line), var(--plate-glow)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--plate-line)' }}>
         <span style={{ width: 6, height: 6, borderRadius: 6, background: tone, flex: 'none' }} />
-        <span style={{ font: '600 9px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: '#8792a3' }}>{label}</span>
+        <span style={{ font: '600 9px/1 var(--mono)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{label}</span>
       </div>
       <div style={{ padding: '18px 20px' }}>{children}</div>
     </div>

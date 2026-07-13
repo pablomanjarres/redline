@@ -154,7 +154,7 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
           <div data-tour="check.figure" style={{ position: 'relative', borderRadius: 16, background: 'var(--plate)', boxShadow: 'var(--plate-glow)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 18px', borderBottom: '1px solid var(--plate-line)' }}>
               <span style={{ width: 7, height: 7, borderRadius: 7, background: showFigure ? light : 'var(--plate-line)' }} />
-              <span style={{ font: '600 9.5px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: '#8792a3' }}>Figure</span>
+              <span style={{ font: '600 9.5px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Figure</span>
               {showFigure && (
                 <span style={{ marginLeft: 8, font: '600 13px/1.35 var(--sans)', color: 'var(--plate-ink)' }}>{result!.headline}</span>
               )}
@@ -164,11 +164,57 @@ export function CheckStage({ runKey }: { runKey: RunKey }) {
                 <div style={{ width: '100%' }}>{renderChart(result!.chart, cfg3)}</div>
               ) : (
                 <div style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 8, background: '#2563EB', animation: 'rl-pulse 1s infinite' }} />
-                    <span style={{ font: '600 12px/1 var(--mono)', color: '#2563EB', letterSpacing: '.06em' }}>RUNNING CHECK {checkId}…</span>
+                  {/* The re-run instrument: a scan cursor travels a measurement grid
+                      while two traces redraw themselves — the statistic being
+                      recomputed, not a content skeleton. rl-draw / rl-sweep / rl-pulse
+                      are the tokens.css keyframes; the global reduced-motion guard
+                      parks each at its resting (drawn / off-canvas) state. */}
+                  <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span aria-hidden style={{ width: 8, height: 8, borderRadius: 8, background: 'var(--signal)', boxShadow: '0 0 8px var(--signal)', animation: 'rl-pulse 1s infinite' }} />
+                    <span style={{ font: '600 12px/1 var(--mono)', color: 'var(--signal)', letterSpacing: '.06em' }}>RE-RUNNING CHECK 0{checkId}</span>
+                    <span style={{ font: '500 10px/1 var(--mono)', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>recomputing the statistic</span>
                   </div>
-                  <div style={{ marginTop: 20, height: 220, borderRadius: 12, background: 'linear-gradient(100deg,#f1f4f8,#ffffff,#f1f4f8)', backgroundSize: '200% 100%', animation: 'rl-sweep 1.3s linear infinite' }} />
+                  <div style={{ position: 'relative', marginTop: 18, height: 224, borderRadius: 12, background: 'var(--plate-2)', border: '1px solid var(--plate-line)', overflow: 'hidden' }}>
+                    <svg viewBox="0 0 620 224" width="100%" height="100%" preserveAspectRatio="none" style={{ display: 'block' }} aria-hidden>
+                      {[45, 90, 134, 179].map((y) => (
+                        <line key={`h${y}`} x1={0} y1={y} x2={620} y2={y} strokeWidth={1} style={{ stroke: 'var(--plate-line)' }} />
+                      ))}
+                      {[124, 248, 372, 496].map((x) => (
+                        <line key={`v${x}`} x1={x} y1={0} x2={x} y2={224} strokeWidth={1} style={{ stroke: 'var(--plate-line)' }} />
+                      ))}
+                      <path
+                        d="M0 170 C 120 170, 150 58, 250 58 S 380 168, 500 150 S 600 96, 620 96"
+                        fill="none"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        pathLength={1}
+                        style={{ stroke: 'var(--signal)', strokeDasharray: 1, strokeDashoffset: 1, animation: 'rl-draw 1.9s ease-in-out infinite' }}
+                      />
+                      <path
+                        d="M0 198 C 140 198, 170 120, 300 120 S 470 196, 620 176"
+                        fill="none"
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        pathLength={1}
+                        style={{ stroke: 'color-mix(in srgb, var(--signal) 42%, transparent)', strokeDasharray: 1, strokeDashoffset: 1, animation: 'rl-draw 1.9s ease-in-out .34s infinite' }}
+                      />
+                    </svg>
+                    <div
+                      aria-hidden
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background:
+                          'linear-gradient(90deg, transparent 0 47%, color-mix(in srgb, var(--signal) 46%, transparent) 49.5% 50.5%, transparent 53% 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'rl-sweep 2.1s linear infinite',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginTop: 12, font: '400 11px/1.4 var(--mono)', color: 'var(--ink-3)' }}>
+                    Holding the figure until the numbers settle.
+                  </div>
                 </div>
               )}
             </div>

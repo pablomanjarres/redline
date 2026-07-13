@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { PreparedRun } from '@redline/engine';
 import { signalColor, stateLabel } from '@redline/ui';
 import { useSession } from '@/state/session';
@@ -10,10 +10,11 @@ import { CHECK_META } from '@/components/check/CheckStage';
 
 /**
  * One station on the audit board: a whole-tile link into one (claim, check) RUN's
- * stage. Dark panel with a top strip tinted by the verdict signal, the check
- * number + name + failure mode, a verdict badge, the claim under audit, and a
- * MiniChart floating on a small white lightbox plate (the only white on the
- * surface). The headline and any error read as instrument output in mono.
+ * stage. A quiet white tile with a top strip tinted by the verdict signal, the
+ * check number + name + failure mode, a verdict badge, the claim under audit, and
+ * a MiniChart lifted onto a bright lightbox plate. The tile stays flat so the
+ * plate is its one raised surface. The headline and any error read as instrument
+ * output in mono.
  *
  * Every tile IS a real run, so there is no "no claim routes here" branch: the
  * workbench renders one tile per run, and when no claim routes to any check the
@@ -25,6 +26,7 @@ import { CHECK_META } from '@/components/check/CheckStage';
  */
 export function RunTile({ run }: { run: PreparedRun }) {
   const { results, running } = useSession();
+  const [lift, setLift] = useState(false);
   const checkId = run.checkId;
   const meta = CHECK_META[checkId];
   const result = results[run.key];
@@ -50,15 +52,15 @@ export function RunTile({ run }: { run: PreparedRun }) {
     plate = (
       <div style={{ width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 11 }}>
-          <span style={{ width: 7, height: 7, borderRadius: 7, background: '#2563EB', animation: 'rl-pulse 1s infinite' }} />
-          <span style={{ font: '600 9.5px/1 var(--mono)', letterSpacing: '.14em', color: '#2563EB' }}>RUNNING CHECK {checkId}…</span>
+          <span style={{ width: 7, height: 7, borderRadius: 7, background: 'var(--signal)', animation: 'rl-pulse 1s infinite' }} />
+          <span style={{ font: '600 9.5px/1 var(--mono)', letterSpacing: '.14em', color: 'var(--signal)' }}>RUNNING CHECK {checkId}…</span>
         </div>
-        <div style={{ height: 62, borderRadius: 8, background: 'linear-gradient(100deg,#f1f4f8,#ffffff,#f1f4f8)', backgroundSize: '200% 100%', animation: 'rl-sweep 1.3s linear infinite' }} />
+        <div style={{ height: 62, borderRadius: 8, background: 'linear-gradient(100deg,var(--panel-2),var(--plate),var(--panel-2))', backgroundSize: '200% 100%', animation: 'rl-sweep 1.3s linear infinite' }} />
       </div>
     );
   } else {
     plate = (
-      <span style={{ font: '500 9.5px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: '#8792a3' }}>
+      <span style={{ font: '500 9.5px/1 var(--mono)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
         Awaiting run
       </span>
     );
@@ -70,6 +72,10 @@ export function RunTile({ run }: { run: PreparedRun }) {
       href={`/checks/${encodeURIComponent(run.key)}`}
       data-testid={`run-tile-${run.key}`}
       aria-label={claim ? `Open the ${meta.name} audit of “${claim}”` : `Open check ${checkId}: ${meta.name}`}
+      onMouseEnter={() => setLift(true)}
+      onMouseLeave={() => setLift(false)}
+      onFocus={() => setLift(true)}
+      onBlur={() => setLift(false)}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -78,10 +84,14 @@ export function RunTile({ run }: { run: PreparedRun }) {
         textDecoration: 'none',
         color: 'var(--ink)',
         background: 'var(--panel)',
-        border: '1px solid var(--edge)',
+        border: lift ? '1px solid var(--edge-2)' : '1px solid var(--edge)',
         borderRadius: 14,
         overflow: 'hidden',
         minHeight: 336,
+        transform: lift ? 'translateY(-3px)' : 'none',
+        boxShadow: lift ? 'var(--glow)' : 'none',
+        transition: 'transform .16s cubic-bezier(0.22,0.61,0.36,1), box-shadow .18s ease, border-color .16s ease',
+        willChange: 'transform',
       }}
     >
       {/* verdict strip */}
@@ -133,14 +143,15 @@ export function RunTile({ run }: { run: PreparedRun }) {
           </span>
         </div>
 
-        {/* lightbox plate, the only white on the surface */}
+        {/* lightbox plate: the tile's one raised surface, floated off the flat
+            chrome by a crisp ring + the plate shadow so the figure reads as hero */}
         <div
           style={{
             marginTop: 16,
             height: 130,
-            borderRadius: 10,
+            borderRadius: 11,
             background: 'var(--plate)',
-            boxShadow: 'var(--plate-glow)',
+            boxShadow: '0 0 0 1px var(--plate-line), var(--plate-glow)',
             overflow: 'hidden',
             padding: '13px 15px',
             display: 'flex',

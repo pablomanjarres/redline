@@ -1,7 +1,8 @@
 import '@redline/ui/tokens.css';
 
-// Self-hosted fonts (no external requests). Archivo (bold grotesque) for UI and
-// display, JetBrains Mono for data, readouts, and the reasoning console.
+// Self-hosted fonts (no runtime requests). Archivo for body and UI text,
+// JetBrains Mono for data, readouts, and the reasoning console. The display face
+// (wordmark and headlines) is Red Hat Display, wired up below.
 import '@fontsource/archivo/400.css';
 import '@fontsource/archivo/500.css';
 import '@fontsource/archivo/600.css';
@@ -15,11 +16,25 @@ import '@fontsource/jetbrains-mono/700.css';
 
 import './globals.css';
 
+import { Red_Hat_Display } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { SessionProvider } from '@/state/session';
 import { TourProvider } from '@/state/tour';
 import { TourOverlay } from '@/components/tour/TourOverlay';
+
+// Display face for the wordmark, hero H1s, and check titles: a sharp technical
+// grotesque that reads like an instrument dial next to Archivo body and JetBrains
+// Mono data. Loaded at the exact weights the display slot uses (400/500/800/900),
+// so headlines render at true 800/900 with no synthetic bold. Next inlines it
+// into the build, so there is no runtime request. Exposed as --font-display and
+// consumed by --display in tokens.css.
+const display = Red_Hat_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '800', '900'],
+  variable: '--font-display',
+  display: 'swap',
+});
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -42,12 +57,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0b0d12',
+  themeColor: '#f3f5f9',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={display.variable}>
       <body>
         <SessionProvider>
           <TourProvider>

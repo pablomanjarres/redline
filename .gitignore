@@ -56,3 +56,6 @@ services/rigor/cache/
 .claude/pr-watch/heartbeat
 .claude/pr-watch/logs/
 .claude/pr-watch/DISABLED
+
+# playwright mcp screenshots (local only)
+.playwright-mcp/

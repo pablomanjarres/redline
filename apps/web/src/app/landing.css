@@ -78,24 +78,27 @@
 }
 .lp-btn-ghost:hover { border-color: var(--edge-hi); background: var(--panel); }
 .lp-btn-sm { padding: 10px 15px; border-radius: 9px; font-size: 12px; }
+.lp-btn-hero { padding: 16px 26px; border-radius: 12px; font-size: 14px; }
 
 /* ── hero ─────────────────────────────────────────────────────────────── */
 .lp-hero { position: relative; overflow: hidden; isolation: isolate; }
-.lp-hero-art {
-  position: absolute; inset: 0; z-index: -2;
-  background: url('/hero.webp') center bottom / cover no-repeat;
-}
-.lp-hero-scrim {
-  position: absolute; inset: 0; z-index: -1;
-  background:
-    linear-gradient(to bottom, var(--surface) 0%, color-mix(in srgb, var(--surface) 30%, transparent) 12%, transparent 34%),
-    linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 20%, transparent) 26%, transparent 52%);
+/* a faint lab-notebook grid, tokened, no image; fades out toward the copy */
+.lp-hero-grid {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0.55;
+  background-image:
+    linear-gradient(var(--edge) 1px, transparent 1px),
+    linear-gradient(90deg, var(--edge) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(118% 88% at 76% 2%, #000 0%, transparent 64%);
+  mask-image: radial-gradient(118% 88% at 76% 2%, #000 0%, transparent 64%);
 }
 .lp-hero-in {
   max-width: var(--lp-maxw); margin: 0 auto; padding-inline: var(--lp-gutter);
-  padding-top: clamp(68px, 11vh, 124px); padding-bottom: clamp(150px, 24vh, 288px);
-  text-align: center;
+  padding-top: clamp(44px, 7.5vh, 88px); padding-bottom: clamp(54px, 9vh, 104px);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 452px);
+  gap: clamp(28px, 4vw, 60px); align-items: center;
 }
+.lp-hero-copy { min-width: 0; }
 .lp-eyebrow {
   display: inline-flex; align-items: center; gap: 9px;
   font: 600 11px/1 var(--mono); letter-spacing: 0.24em; text-transform: uppercase;
@@ -103,25 +106,91 @@
 }
 .lp-eyebrow .lp-tick { width: 6px; height: 6px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px rgba(229,72,77,0.14); }
 .lp-h1 {
-  margin: 22px auto 0; max-width: 15ch;
-  font: 900 clamp(38px, 6.6vw, 74px) / 1.01 var(--display);
+  margin: 20px 0 0; max-width: 16ch;
+  font: 900 clamp(36px, 5.4vw, 64px) / 1.02 var(--display);
   letter-spacing: -0.035em; color: var(--ink);
 }
 .lp-sub {
-  margin: 22px auto 0; max-width: 60ch;
-  font: 400 clamp(15px, 1.5vw, 17.5px) / 1.6 var(--sans); color: var(--ink-2);
+  margin: 20px 0 0; max-width: 54ch;
+  font: 400 clamp(15px, 1.4vw, 17px) / 1.62 var(--sans); color: var(--ink-2);
 }
-.lp-hero-cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.lp-sub b { color: var(--ink); font-weight: 700; }
+.lp-hero-cta { margin-top: 28px; display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; }
+.lp-hero-note { margin: 15px 0 0; font: 500 12px/1.5 var(--mono); letter-spacing: 0.01em; color: var(--ink-3); }
+.lp-hero-skip { color: var(--signal); font-weight: 600; white-space: nowrap; }
+.lp-hero-skip:hover { text-decoration: underline; }
 .lp-hero-strip {
-  margin-top: 38px; display: flex; gap: 26px; justify-content: center; flex-wrap: wrap;
-  font: 600 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);
-  text-shadow: 0 1px 12px var(--surface), 0 0 4px var(--surface), 0 0 4px var(--surface);
+  margin-top: 30px; display: flex; gap: 22px; justify-content: flex-start; flex-wrap: wrap;
+  font: 600 10.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);
 }
 .lp-hero-strip span { position: relative; }
 .lp-hero-strip span + span::before {
-  content: ''; position: absolute; left: -14px; top: 50%; width: 3px; height: 3px;
+  content: ''; position: absolute; left: -12px; top: 50%; width: 3px; height: 3px;
   border-radius: 50%; background: var(--edge-hi); transform: translateY(-50%);
 }
+
+/* ── hero instrument panel (right column) ─────────────────────────────── */
+.lp-hero-panel { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.lp-hero-sign { display: flex; align-items: center; gap: 12px; padding-left: 2px; }
+.lp-hero-critter {
+  width: 176px; height: auto; display: block; image-rendering: pixelated;
+  filter: drop-shadow(0 6px 11px rgba(16, 24, 40, 0.12));
+}
+.lp-hero-sign-cap { font: 500 11px/1.35 var(--mono); letter-spacing: 0.02em; color: var(--ink-4); max-width: 13ch; }
+
+.lp-instrument {
+  margin: 0; background: var(--panel); border: 1px solid var(--edge); border-radius: 16px;
+  box-shadow: var(--glow); padding: 15px 15px 17px; overflow: hidden;
+}
+.lp-fig-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+.lp-fig-tag { font: 600 10px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+.lp-fig-flag {
+  font: 700 9px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--red-deep);
+  background: var(--red-soft); border: 1px solid var(--red-line); border-radius: 6px; padding: 5px 8px;
+}
+.lp-fig-plate {
+  background: linear-gradient(180deg, var(--plate), var(--plate-2));
+  border: 1px solid var(--plate-line); border-radius: 12px; box-shadow: var(--plate-glow);
+  padding: 11px 12px 9px;
+}
+.lp-fig-svg { display: block; width: 100%; height: auto; }
+.lp-fig-count {
+  margin-top: 5px; padding-top: 8px; border-top: 1px solid var(--plate-line);
+  font: 500 11px/1.4 var(--mono); letter-spacing: 0.01em; color: var(--ink-3); text-align: center;
+}
+.lp-fig-count b { color: var(--ink); font-weight: 700; }
+.lp-fig-readout { margin-top: 13px; }
+.lp-fig-claim {
+  margin: 0; font: 400 13px/1.5 var(--sans); color: var(--ink-4);
+  text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px;
+}
+.lp-fig-corrected {
+  margin: 9px 0 0; display: flex; gap: 8px; align-items: baseline;
+  font: 400 13px/1.5 var(--sans); color: var(--ink);
+}
+.lp-fig-caret { color: var(--red); font-weight: 800; flex: none; }
+.lp-fig-bench { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--edge); }
+.lp-fig-bench-k { font: 600 9.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); }
+.lp-fig-bench-row { margin-top: 9px; display: flex; gap: 26px; align-items: baseline; }
+.lp-fig-bench-cell { display: flex; align-items: baseline; gap: 8px; }
+.lp-fig-bench-cell b { font: 800 26px/1 var(--display); letter-spacing: -0.03em; color: var(--ink); }
+.lp-fig-bench-cell b.good { color: var(--green); }
+.lp-fig-bench-cell span { font: 500 11px/1.3 var(--mono); letter-spacing: 0.02em; color: var(--ink-3); }
+
+.lp-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* one-shot beat on load: fireworks deflate, then the corrected line drops in.
+   The resting state (no animation) is the deflated, corrected answer, so the
+   reduced-motion path below is the truth with zero motion. */
+@keyframes lp-fig-fall { from { transform: translateY(var(--fromY, -40px)); } }
+@keyframes lp-fig-cool { from { fill: var(--red); } }
+@keyframes lp-fx-drop { from { opacity: 0; transform: translateY(8px); } }
+.lp-fig-fall { animation: lp-fig-fall 0.9s var(--d, 0s) cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.lp-fig-cool { animation: lp-fig-cool 0.9s var(--d, 0s) cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.lp-fx-drop { animation: lp-fx-drop 0.55s 1.05s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* ── generic section rhythm ───────────────────────────────────────────── */
 .lp-section { padding-block: clamp(64px, 9vw, 128px); }
@@ -281,6 +350,10 @@
 .lp-d5 { animation-delay: 0.40s; }
 
 /* ── responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 940px) {
+  .lp-hero-in { grid-template-columns: 1fr; gap: 34px; align-items: start; }
+  .lp-hero-panel { max-width: 460px; }
+}
 @media (max-width: 900px) {
   .lp-nav-links { display: none; }
   .lp-nav-cta { margin-inline-start: auto; }
@@ -299,9 +372,12 @@
   .lp-note { grid-template-columns: 1fr; }
   .lp-stat-row { gap: 26px; }
   .lp-footer-links { margin-inline-start: 0; width: 100%; }
+  .lp-btn-hero { width: 100%; justify-content: center; }
+  .lp-hero-sign-cap { max-width: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lp-rise { animation: none; }
   .lp-btn, .lp-check, .lp-surface { transition: none; }
+  .lp-fig-fall, .lp-fig-cool, .lp-fx-drop { animation: none; }
 }

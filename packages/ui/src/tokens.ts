@@ -1,10 +1,10 @@
 import type { CheckState, Feasibility } from '@redline/contracts';
 
 /**
- * The chart palette as raw hex. The figures render on the bright lightbox plate
- * (not the dark chrome), so these are dark-on-white: slate ink, recessive cool
- * gridlines, one clean red for the finding, one blue for the operator's scrub.
- * Kept in lockstep with the `--plate-*` tokens in tokens.css.
+ * The chart palette as raw hex. The figures render on the bright lightbox plate,
+ * so these are dark-on-white: slate ink, recessive cool gridlines, one clean red
+ * for the finding, one blue for the operator's scrub. Kept in lockstep with the
+ * `--plate-*` tokens in tokens.css.
  */
 export const C = {
   desk: '#FFFFFF',
