@@ -30,6 +30,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { Check3Config, ScenarioId } from '@redline/contracts';
 import { useSession, type SessionValue } from '@/state/session';
 import { TOUR_STEPS } from '@/lib/tour/steps';
+import { EXAMPLE_NOTEBOOK, EXAMPLE_PROSE } from '@/lib/example-analysis';
 import { anchorSelector } from '@/lib/tour/anchors';
 import {
   INITIAL_TOUR_STATE,
@@ -217,6 +218,18 @@ export function TourProvider({ children }: { children: ReactNode }) {
         // The script quotes the Marson fixture's numbers, so it narrates that
         // scenario. `stop()` puts the reader's own scenario back.
         if (s.scenarioId !== e.scenarioId) s.loadScenario(e.scenarioId);
+        return;
+      case 'loadExample':
+        // The tour narrates auditing the sample's four claims, and claim
+        // extraction reads the notebook and prose. Seed the demo's naive
+        // analysis, the same text the "Load example" button sets, so the front
+        // door runs on a ready sample and the Claim Review screen is never empty.
+        // Only when the reader has not brought their own, so this never clobbers
+        // a notebook or prose they pasted before opening the tour.
+        if (!s.notebook && !s.prose) {
+          s.setNotebook(EXAMPLE_NOTEBOOK);
+          s.setProse(EXAMPLE_PROSE);
+        }
         return;
       case 'resolveFields':
         if (!s.fields) await s.resolveFields();

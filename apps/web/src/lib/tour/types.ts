@@ -29,6 +29,7 @@ export type TourAdvanceEvent = 'click' | 'change';
  */
 export type TourEnsure =
   | { kind: 'loadScenario'; scenarioId: ScenarioId }
+  | { kind: 'loadExample' }
   | { kind: 'resolveFields' }
   | { kind: 'confirmFields' }
   | { kind: 'confirmClaims' }

@@ -240,6 +240,23 @@ describe('the tour script is structurally sound', () => {
     expect(bad).toEqual([]);
   });
 
+  it('seeds the sample analysis on the spine before it extracts claims', () => {
+    // The walkthrough narrates auditing the sample's claims, and claim
+    // extraction (confirmFields) reads the notebook and prose. Leave the
+    // analysis empty and, with a live reasoner, extraction returns zero claims:
+    // the Claim Review screen renders "No auditable claims" and the anchors the
+    // tour spotlights (claims.card.1, its routing, the confirm button) never
+    // mount, so the walkthrough breaks from the Claim Review chapter on. A step
+    // must load the example, before the first extraction, and on the spine so
+    // the hands-free presenter run (which plays only the spine) gets it too.
+    const firstExtract = TOUR_STEPS.findIndex((s) => s.ensure?.kind === 'confirmFields');
+    expect(firstExtract, 'a step must extract claims').toBeGreaterThan(-1);
+    const load = TOUR_STEPS.findIndex((s) => s.ensure?.kind === 'loadExample');
+    expect(load, 'a step must seed the sample analysis').toBeGreaterThan(-1);
+    expect(load, 'the example must load before claims are extracted').toBeLessThan(firstExtract);
+    expect(TOUR_STEPS[load]!.depth, 'the example load must be on the spine so presenter plays it').toBe('spine');
+  });
+
   it('keeps the clean beat, and points it at the stable group', () => {
     // Two of the three drafts wired the clean beat to `Effector`, the spurious
     // group, which would have flagged red while the copy promised green. The
