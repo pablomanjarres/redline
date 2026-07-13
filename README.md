@@ -5,13 +5,13 @@
 <p align="center"><strong>Break your own analysis before Reviewer 2 does.</strong></p>
 
 <p align="center">
-  <a href="https://redline-sooty-zeta.vercel.app"><strong>Open the live demo</strong></a> · runs in your browser, zero API keys, nothing to install.
+  <a href="https://science-redline.vercel.app"><strong>Open the live demo</strong></a> · runs in your browser, zero API keys, nothing to install.
 </p>
 
 <p align="center"><em>A statistical-rigor auditor for single-cell RNA-seq. It re-runs the load-bearing statistics on your own data and marks the false discoveries on your own figures, before they become a paper.</em></p>
 
 <p align="center">
-  <a href="https://redline-sooty-zeta.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/live_demo-online-2ea043?style=flat&logo=vercel&logoColor=white" /></a>
+  <a href="https://science-redline.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/live_demo-online-2ea043?style=flat&logo=vercel&logoColor=white" /></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" />
   <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white" />
   <img alt="React 19" src="https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB" />
@@ -28,7 +28,7 @@ Redline audits the statistics behind a single-cell RNA-seq analysis before that 
 QC is a solved, commoditized layer, and a generic reviewer reads a finished manuscript. Redline works one level in from both: on your own data and your own code, on the statistical reasoning, before any of it is published. It catches eight classes of error that no QC tool and no generic agent flags: four founding pillars plus four rigor checks built on the same interface.
 
 > [!IMPORTANT]
-> **For judges (60 seconds).** Open the live demo at https://redline-sooty-zeta.vercel.app. No API key, nothing to install.
+> **For judges (60 seconds).** Open the live demo at https://science-redline.vercel.app. No API key, nothing to install.
 > On the workbench, pick **Play it for me** to let the tour drive itself, or **Walk me through it** to click through at your own pace.
 > Watch Check 1. A p-value of 6.2e-11 claimed across 51,842 cells gets struck through, and the honest p of 0.21 across the 4 real donors drops in beside it as the bar falls under the significance line. Redline names the failure mode, pseudoreplication, and cites Squair 2021.
 
@@ -179,7 +179,7 @@ REDLINE_S3_PREFIX=marson2025_data/
 
 Hackathon v1. Built for **Built with Claude: Life Sciences** (Anthropic × Gladstone Institutes).
 
-The stack is on disk and runs end to end: the contracts and design system, the orchestration engine with its `ComputeTarget` seam and the locked fixtures, the plots-first workbench (deployed to Vercel), the Claude reasoning layer (first-party Claude API, or Bedrock for the hosted demo, with a curated fallback), and the Python rigor service (the eight checks, the MCP server, the Cloud Run job runner, and the Claude Skill packaging). The `next build` is green, and the hosted demo is live at https://redline-sooty-zeta.vercel.app, running on the fixture target with zero cloud credentials. Point `REDLINE_COMPUTE_TARGET` at the Python engine to run the real statistics on your own `.h5ad`.
+The stack is on disk and runs end to end: the contracts and design system, the orchestration engine with its `ComputeTarget` seam and the locked fixtures, the plots-first workbench (deployed to Vercel), the Claude reasoning layer (first-party Claude API, or Bedrock for the hosted demo, with a curated fallback), and the Python rigor service (the eight checks, the MCP server, the Cloud Run job runner, and the Claude Skill packaging). The `next build` is green, and the hosted demo is live at https://science-redline.vercel.app, running on the fixture target with zero cloud credentials. Point `REDLINE_COMPUTE_TARGET` at the Python engine to run the real statistics on your own `.h5ad`.
 
 ## License
 

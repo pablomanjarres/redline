@@ -7,7 +7,7 @@
 <p align="center"><strong>Built with Claude: Life Sciences</strong> (Anthropic × Gladstone Institutes) · Builder track</p>
 
 <p align="center">
-  <a href="https://redline-sooty-zeta.vercel.app"><strong>Live demo</strong></a> ·
+  <a href="https://science-redline.vercel.app"><strong>Live demo</strong></a> ·
   <a href="https://github.com/pablomanjarres/redline">Repository</a> ·
   runs in your browser, zero API keys, nothing to install
 </p>
@@ -22,13 +22,13 @@ Redline audits those statistics on your own data before you submit. Hand it your
 
 The honest number is a false-positive gap. On a 46-case benchmark of planted errors and clean controls, redline stays quiet on clean data at 0% false positives. One Claude call given the same write-up cries wolf 74% of the time.
 
-I built redline with Claude Code running a loop that reviewed its own pull requests, which caught three real bugs, including a check that was committing the pseudoreplication the tool exists to catch. Try it with no API keys at https://redline-sooty-zeta.vercel.app
+I built redline with Claude Code running a loop that reviewed its own pull requests, which caught three real bugs, including a check that was committing the pseudoreplication the tool exists to catch. Try it with no API keys at https://science-redline.vercel.app
 
 ---
 
 ## See it in 60 seconds
 
-1. Open [the live demo](https://redline-sooty-zeta.vercel.app). No key, nothing to install.
+1. Open [the live demo](https://science-redline.vercel.app). No key, nothing to install.
 2. On the workbench, pick **Play it for me** and the tour drives itself, or **Walk me through it** to click at your own pace.
 3. Watch Check 1. A p-value of 6.2e-11 claimed across 51,842 cells strikes through, and the honest p of 0.21 across the 4 real donors drops in beside it as the bar falls under the significance line. Redline names the failure mode, pseudoreplication, and cites Squair 2021.
 4. Download the corrected Python bundle. Each script takes `--h5ad PATH` and runs on your own data.
@@ -79,4 +79,4 @@ A submission is only as trustworthy as the claims it will not make.
 
 ---
 
-<p align="center">Built by Pablo Manjarres · <a href="https://redline-sooty-zeta.vercel.app">redline-sooty-zeta.vercel.app</a></p>
+<p align="center">Built by Pablo Manjarres · <a href="https://science-redline.vercel.app">science-redline.vercel.app</a></p>
