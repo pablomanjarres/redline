@@ -9,35 +9,62 @@ description: >-
   replicates), double dipping (markers tested on the same cells that defined the
   cluster), clustering fragility (a state that rides on an arbitrary resolution),
   or confounding (a comparison inseparable from a technical variable like batch
-  or lane). Redline re-runs the load-bearing statistics, returns a flagged or
-  clean verdict per check, names the failure mode, cites the fixing method, and
-  rewrites the conclusion in language that survives peer review.
+  or lane). It runs four more rigor checks on the same interface: uncorrected
+  multiple testing across genes, an unmodeled technical covariate, a clustering
+  resolution the data does not justify, and a DE test whose assumptions the
+  counts break. Redline re-runs the load-bearing statistics, returns a flagged or
+  clean verdict per check, names the failure mode, cites the fixing method, emits
+  runnable corrected code, and rewrites the conclusion in language that survives
+  peer review.
 ---
 
 # Redline: statistical-rigor auditor for single-cell RNA-seq
 
 You are auditing a scientist's own single-cell analysis before publication. Your
-job is to catch four specific reasoning errors that QC tools and generic
-reviewers miss: pseudoreplication, double dipping, clustering fragility, and
-technical confounding. The value is a confident, cited verdict on each, not a
-rewrite of their science.
+job is to catch the statistical reasoning errors that QC tools and generic
+reviewers miss. Four are the founding pillars: pseudoreplication, double dipping,
+clustering fragility, and technical confounding. Four more run on the same
+interface: uncorrected multiple testing, an unmodeled covariate, an unjustified
+clustering resolution, and a broken test assumption. The value is a confident,
+cited verdict on each, and the corrected code behind it, not a rewrite of their
+science.
 
 **The split you are working inside.** This skill carries the procedure: when to
 run each check, how to read what comes back, how to write the report, and the
 honesty rules you never break. The compute lives elsewhere, in the `redline` MCP
-server (one tool per pillar). You call those tools; you do not reimplement the
-statistics in prose. On a surface with local code execution you can also run
+server: one tool per check, plus dataset intake, a corrected-code emitter, and a
+one-call audit. You call those tools; you do not reimplement the statistics in
+prose. On a surface with local code execution you can also run
 `scripts/redline_audit.py` directly against the `.h5ad`.
 
-The tools:
+The tools (twelve total: intake, the foundation step, the eight checks, a
+corrected-code emitter, and a one-call audit):
 
 | Step | MCP tool | Local-execution equivalent |
 |---|---|---|
+| Intake: inventory the `.h5ad` (obs, uns, counts) | `redline_inspect` | `redline_audit.py --check inspect` |
 | Foundation: resolve obs roles | `redline_resolve_fields` | `redline_audit.py --check fields` |
 | Pillar 1: pseudoreplication | `redline_check_pseudoreplication` | `redline_audit.py --check 1` |
 | Pillar 2: double dipping | `redline_check_double_dipping` | `redline_audit.py --check 2` |
 | Pillar 3: clustering fragility | `redline_check_fragility` | `redline_audit.py --check 3` |
 | Pillar 4: confounding | `redline_check_confounding` | `redline_audit.py --check 4` |
+| Check 5: multiple testing (FDR) | `redline_check_multiple_testing` | `redline_audit.py --check 5` |
+| Check 6: unmodeled covariate | `redline_check_unmodeled_covariate` | `redline_audit.py --check 6` |
+| Check 7: resolution choice | `redline_check_resolution_choice` | `redline_audit.py --check 7` |
+| Check 8: test assumptions | `redline_check_test_assumptions` | `redline_audit.py --check 8` |
+| Runnable corrected script for a check | `redline_corrected_code` | rides along in each check's result (`correctedCode`) |
+| One-call audit (foundation + every applicable check) | `redline_audit` | `redline_audit.py --check audit` |
+
+**Two ways in.** For a guided audit, resolve the design (Step 0) and run the
+checks the claims call for, reading each verdict as below. For a fast first pass,
+call `redline_audit` (or `--check audit`) with any hints you have (`gene`,
+`markers`, `target_group`, `track`, or a per-check `config` map): it runs the
+foundation step and every check that applies and returns `{ fields, results,
+report }`. Checks that do not apply are simply absent. Before either, `redline_inspect`
+returns the obs columns, the stored `uns` results (marker and DE tables), whether
+raw integer counts are present and where, the layers and `obsm` keys, and a sample
+of gene ids, all without loading the expression matrix. That inventory is what
+tells you which claims are auditable and which checks have the data they need.
 
 ---
 
@@ -78,7 +105,11 @@ not fabricate a re-run from unsuitable data.
 
 ## The founding four checks: when to run, and how to read what comes back
 
-Each check returns a `ComputeResult`: `{ checkId, state, headline, stats[], chart{} }`.
+Each check returns a flat `EngineResult`: the `ComputeResult` keys `{ checkId,
+state, headline, stats[], chart{} }`, plus, when the check produced them, the
+correction keys `correctedCode`, `recommendations`, and `preview`. A clean verdict
+carries no correction keys. The same shape comes back from all eight checks, the
+founding four below and the rigor four after them.
 
 - `state` is the verdict: `flagged`, `clean`, `flag_only`, or `hard_stop`.
 - `headline` is a one-line plain statement of the finding.
@@ -191,6 +222,103 @@ grid means perfect alignment. `verified` is whether the check actually ran.
 
 ---
 
+## The rigor checks (5 to 8): same interface, same verdicts
+
+These four return the same `EngineResult` and the same four states as the pillars.
+They extend the audit into the everyday statistics of a single-cell paper. Run the
+ones the claims call for. Pass the confirmed `fields` in the same way, and read
+`state` first every time.
+
+### Check 5: multiple testing (raw p-values across thousands of genes)
+
+**When.** A differential-expression claim reports "significant" genes from a
+per-gene test across the transcriptome with no correction, or a correction you
+cannot see. Twenty thousand genes at alpha 0.05 is a thousand false positives by
+construction.
+
+**What it does.** Re-tests the claim across every gene and applies a real
+Benjamini-Hochberg (`config.method: "bh"`) or Benjamini-Yekutieli (`"by"`)
+correction at `config.alpha`, then reports how many raw hits survive the adjusted
+threshold. `config` knobs: `alpha`, `method`, and the `grouping` under test.
+Unlike Pillar 2 (a held-out evidence check), this is a certified FDR correction,
+so you may report the surviving set as the defensible result.
+
+**Reading it.** The `chart` carries the per-gene volcano and the FDR staircase:
+the raw hits, the adjusted cutoff, and the survivors. Lead your report with the
+`bad`/`good` stats: raw hit count against survivor count.
+
+- `state: flagged` means many raw hits collapse under correction. Report the
+  corrected survivor count as the honest number.
+- `state: clean` means the hits survive the FDR correction. Say so; the result
+  holds.
+- `state: flag_only` means a per-gene result was not recoverable from the object,
+  so multiplicity cannot be checked. Say what is missing.
+
+### Check 6: unmodeled covariate (a known technical variable left out of the model)
+
+**When.** The effect of interest is separable from a technical variable (unlike a
+full confound, which is Pillar 4), but the analysis never put that variable in the
+model: a batch, a chemistry, a sequencing run that is unbalanced without being
+perfectly aligned.
+
+**What it does.** Refits the effect of interest (`config.interest`) with the
+technical variable (`config.covariate`) added to the model, when the two are
+separable, and reports whether the claim survives once the known structure is
+modeled. `config` knobs: `interest`, `covariate`, `alpha`.
+
+- `state: flagged` means the effect does not survive the multi-factor refit. The
+  original number was carrying batch. Report the adjusted result.
+- `state: clean` means the effect holds with the covariate in the model. Say so.
+- `state: flag_only` means the refit could not run (the two are not separable, or
+  the covariate is missing). Point to Pillar 4, or name what is needed.
+
+### Check 7: resolution choice (a clustering resolution that was never justified)
+
+**When.** The analysis picked a clustering resolution and never showed it was the
+right one. Pillar 3 asks whether a named group is stable across resolutions; this
+check asks whether the chosen resolution is the one a quality criterion supports.
+
+**What it does.** Sweeps the resolution from `config.min` to `config.max` in
+`config.step` increments, scores each by `config.criterion` (`"silhouette"` or
+`"ari"`), and reports whether the chosen resolution (`config.chosen`) is the one
+the criterion supports.
+
+- `state: flagged` means the chosen resolution is not where the criterion peaks.
+  Report the supported window with the chosen point beside it.
+- `state: clean` means the choice sits in the supported range. Say so plainly.
+- `state: flag_only` means no cluster-quality criterion could be scored on this
+  data.
+
+### Check 8: test assumptions (the wrong test for the data)
+
+**When.** The analysis reports a p-value from a test whose assumptions the data
+break: a t-test on raw counts, a parametric test on a tiny, skewed group.
+
+**What it does.** Checks whether the data meet the assumptions of the test the
+analysis used (`config.claimedTest`: `"ttest"`, `"wilcoxon"`, or `"unknown"`) for
+the grouping in `config.grouping`, and reports the assumption-respecting result at
+`config.alpha`.
+
+- `state: flagged` means the claimed test was wrong for the data and the
+  assumption-respecting test changes the call. Report the corrected result.
+- `state: clean` means the test used already respects the data (a count-aware or
+  rank-based method). Say so.
+- `state: flag_only` means the test used was not recorded, so its assumptions
+  cannot be checked. Name what is missing.
+
+### The corrected code (Pillar 1 and the rigor checks)
+
+When a check has something to correct, its `EngineResult` carries `correctedCode`:
+a runnable `{ filename, inline, entrypoint, params, language }` script that
+reproduces the honest re-analysis. `redline_corrected_code` returns that script on
+its own (a clean verdict has nothing to correct and returns a short message
+instead). The script takes `--h5ad PATH` and prints `REDLINE_RESULT` as its last
+line of stdout, so it is its own oracle: the number in your report, the `preview`
+artifact, and the script's own output are the same number. Offer the download and
+never hand-edit the script, because that is what keeps the correction reproducible.
+
+---
+
 ## How to write the report
 
 Redline corrects, and shows its work. Everything it asserts, recommends, or
@@ -217,12 +345,16 @@ concern to have something to flag.
 
 ### Citations (one behind every call)
 
-| Pillar | Method paper | Fix |
+| Check | Method paper | Fix |
 |---|---|---|
 | 1 pseudoreplication | Squair et al. 2021, Nature Communications | Aggregate correlated cells to the independent unit (pseudobulk) before testing. |
 | 2 double dipping | Gao, Bien & Witten 2022, J. Amer. Stat. Assoc.; Neufeld et al. (count splitting) | Validate markers on data held out from the choice that defined the cluster. Stronger method: ClusterDE. |
 | 3 clustering fragility | Luecken & Theis 2019, Molecular Systems Biology | Report cluster stability across resolutions; unstable clusters are not discrete populations. |
 | 4 confounding | Hicks et al. 2018, Biostatistics | An effect perfectly aligned with a technical variable is not identifiable; balance the design. |
+| 5 multiple testing | Benjamini & Hochberg 1995, J. R. Stat. Soc. B | Adjust p-values across every gene tested (BH or BY) and report only the survivors. |
+| 6 unmodeled covariate | Hicks et al. 2018, Biostatistics | Add the known technical variable to the model and re-estimate the effect of interest. |
+| 7 resolution choice | Rousseeuw 1987 (silhouette); Hubert & Arabie 1985 (adjusted Rand index) | Choose the resolution a cluster-quality criterion supports, and show the sweep. |
+| 8 test assumptions | Soneson & Robinson 2018, Nature Methods | Use a test whose assumptions the data meet (rank-based or count-aware), not a t-test on counts. |
 
 Reference links: Squair (pseudoreplication)
 https://www.nature.com/articles/s41467-021-25960-2 . ClusterDE (double dipping)
@@ -248,6 +380,10 @@ the specific citation with its finding; use that when present.
 - **Pillar 2 is evidence, not a certified correction.** Count splitting shows how
   many markers survive a held-out test. It does not certify FDR control. Name
   ClusterDE as the stronger method.
+- **Check 5 is a certified FDR correction; Pillar 2 is not.** Benjamini-Hochberg
+  controls the false discovery rate, so you may report its survivors as the
+  corrected result. Count splitting (Pillar 2) is held-out evidence. Keep the two
+  apart in your copy.
 - **The grouping variable is configurable.** It is whatever the scientist is
   comparing: a cell type, a cell state, a condition, or a perturbation. Never
   hardcode "cell type" into a finding.
