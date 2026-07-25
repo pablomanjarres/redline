@@ -1,40 +1,55 @@
 <p align="center">
-  <img src=".github/redline-logo.svg" alt="Redline, statistical auditor for single-cell RNA-seq" width="860">
+  <a href="https://pablomanjarres.com/oss/redline"><img src=".github/redline-logo.svg" alt="Redline, statistical auditor for single-cell RNA-seq" width="860"></a>
 </p>
 
+<h1 align="center">Redline</h1>
+
 <p align="center"><strong>Break your own analysis before Reviewer 2 does.</strong></p>
+
+<p align="center"><em>A statistical-rigor auditor for single-cell RNA-seq. It re-runs the load-bearing statistics on your own data and marks the false discoveries on your own figures, before they become a paper.</em></p>
 
 <p align="center">
   <a href="https://science-redline.vercel.app"><strong>Open the live demo</strong></a> · runs in your browser, zero API keys, nothing to install.
 </p>
 
-<p align="center"><em>A statistical-rigor auditor for single-cell RNA-seq. It re-runs the load-bearing statistics on your own data and marks the false discoveries on your own figures, before they become a paper.</em></p>
-
 <p align="center">
   <a href="https://science-redline.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/live_demo-online-2ea043?style=flat&logo=vercel&logoColor=white" /></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" />
-  <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white" />
+  <img alt="Python 3.11" src="https://img.shields.io/badge/Python_3.11-3776AB?style=flat&logo=python&logoColor=white" />
   <img alt="React 19" src="https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB" />
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=flat&logo=nextdotjs&logoColor=white" />
   <img alt="Zod" src="https://img.shields.io/badge/Zod-3E67B1?style=flat&logo=zod&logoColor=white" />
-  <img alt="MCP" src="https://img.shields.io/badge/MCP-CE2A1E?style=flat&logo=modelcontextprotocol&logoColor=white" />
-  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-CE2A1E?style=flat" />
-  <img alt="status building" src="https://img.shields.io/badge/status-building-A9741A?style=flat" />
+  <img alt="MCP 12 tools" src="https://img.shields.io/badge/MCP-12_tools-c8542a?style=flat&logo=modelcontextprotocol&logoColor=white" />
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-c8542a?style=flat" />
+  <img alt="status shipped" src="https://img.shields.io/badge/status-shipped-success?style=flat" />
+  <a href="https://pablomanjarres.com/portfolio/projects/redline"><img alt="Portfolio" src="https://img.shields.io/badge/portfolio-pablomanjarres.com-c8542a?style=flat" /></a>
+  <a href="https://pablomanjarres.com/oss/redline"><img alt="Landing" src="https://img.shields.io/badge/landing-pablo--oss-c8542a?style=flat" /></a>
   <img alt="Built with Claude: Life Sciences" src="https://img.shields.io/badge/Built_with_Claude-Life_Sciences-CE2A1E?style=flat&logo=anthropic&logoColor=white" />
 </p>
+
+<p align="center"><img src="https://pablomanjarres.com/portfolio/previews/redline.png" alt="Redline screenshot" width="720" /></p>
 
 Redline audits the statistics behind a single-cell RNA-seq analysis before that analysis becomes a paper. A scientist hands it their data (an AnnData `.h5ad`) and the analysis they ran. Redline re-runs the load-bearing steps itself, then turns adversarial on the results: it finds where a conclusion is statistically invalid, or only looks significant because of how the data was handled. Every finding lands on the scientist's own figure, names the exact failure mode, cites the method paper that fixes it, and rewrites the conclusion in language that survives peer review.
 
 QC is a solved, commoditized layer, and a generic reviewer reads a finished manuscript. Redline works one level in from both: on your own data and your own code, on the statistical reasoning, before any of it is published. It catches eight classes of error that no QC tool and no generic agent flags: four founding pillars plus four rigor checks built on the same interface.
 
 > [!IMPORTANT]
-> **For judges (60 seconds).** Open the live demo at https://science-redline.vercel.app. No API key, nothing to install.
+> **See it in 60 seconds.** Open the live demo at https://science-redline.vercel.app. No API key, nothing to install.
 > On the workbench, pick **Play it for me** to let the tour drive itself, or **Walk me through it** to click through at your own pace.
 > Watch Check 1. A p-value of 6.2e-11 claimed across 51,842 cells gets struck through, and the honest p of 0.21 across the 4 real donors drops in beside it as the bar falls under the significance line. Redline names the failure mode, pseudoreplication, and cites Squair 2021.
 
 <p align="center">
   <img src=".github/lab-critter-walk.gif" alt="Redline's lab critter mascot walking in, Reviewer 2 in a lab coat" width="880">
 </p>
+
+## Highlights
+
+- **The false-positive rate is the number that carries the whole claim.** On a 46-case benchmark of planted statistical errors and clean controls, Redline stays quiet on clean data at a 0% false-positive rate, while a single Claude call given the same write-up cries wolf on 74% of them. Same model in both arms, and `services/rigor/bench` reproduces the entire comparison from committed transcripts.
+- **It catches eight classes of error, each as its own instrument.** Four founding pillars (pseudoreplication, double dipping, clustering fragility, confounding) and four rigor checks (multiple testing, unmodeled covariates, resolution choice, test assumptions) live as `m01` through `m08` in `services/rigor/redline/modules` on one shared module interface, with a panel per check in `apps/web` and its knobs exposed.
+- **The statistics are real, not a narration of statistics.** `services/rigor` runs scanpy, decoupler, and PyDESeq2 for pseudobulk differential expression, Poisson count-splitting, Leiden resolution sweeps, and design-matrix rank checks. Claude writes the narrative around a finding in `packages/reasoning`, and never the numbers underneath it.
+- **Nothing runs until the design is confirmed.** Column names in an `.h5ad` are arbitrary, so a foundation step proposes which column is the biological replicate, which is the compared group, and which are technical nuisances, each with a reason and a confidence, then waits for the scientist to confirm. A wrong role makes every downstream flag wrong. See `docs/intake-and-claims.md`.
+- **What you download is exactly what you saw.** Every corrected check emits a runnable Python script that takes `--h5ad PATH`, and the corrected result on screen is the output of that script, so the two agree by construction. When a design is unsalvageable (a full confound, n = 1), the contract in `packages/contracts` structurally refuses to carry a corrected artifact, so there is no fabricated fix to hand back. See `docs/correction-layer.md`.
+- **One engine, three Claude surfaces.** The same rigor core ships as the plots-first web workbench, a 12-tool MCP server (`services/rigor/redline/mcp_server.py`), and a Claude Skill (`services/skill/SKILL.md`) that loads into Claude Science. 345 TypeScript tests across the engine, contracts, reasoning, critic, and workbench hold the seam between them.
 
 ## What it catches
 
@@ -112,7 +127,7 @@ Redline does not stop at the flags. For every corrected check it hands back a ru
 
 ## How Claude Code built this
 
-Redline was built by a fleet of Claude Code agents with the guardrails wired in. 282 commits, 23 merged PRs. Along the way Claude reviewed its own pull requests, caught its own statistical bugs, and drove the running app to prove the numbers on screen were real.
+Redline was built by a fleet of Claude Code agents with the guardrails wired in. 287 commits, 22 merged PRs. Along the way Claude reviewed its own pull requests, caught its own statistical bugs, and drove the running app to prove the numbers on screen were real.
 
 - **Claude reviews its own PRs to convergence, unattended.** `scripts/pr-watch.sh` runs under launchd every 600 seconds. It finds any pull request it has not seen against a watermark, pages my phone, and spawns headless Claude on the `/pr-loop` skill. Each pass runs six steps: verify the claim, attack the PR's strongest sentence and try to falsify it with evidence, investigate to root cause, fix at the root, re-verify, check direction. The loop stops only when two consecutive passes turn up zero new confirmed findings and `scripts/pr-verify.sh` exits 0. It reviews and it fixes, and it never merges unless a human sets the merge flag. Every kill switch defaults off.
 - **The loop caught three real statistical bugs that every test suite had passed.** Reviewing six merged PRs, it found that Pillar 2 flagged clean analyses, that clustering fragility missed 5 of 6 continuum cases, and that Pillar 4 fed 1,140 individual cells to PyDESeq2 as if they were replicates. The check written to catch pseudoreplication was committing it, and reporting the result to the scientist. Root cause: the `[stats]` extra shipped scanpy without `leidenalg`, scanpy imports it lazily inside `sc.tl.leiden`, a bare `except` swallowed the error, and every clustering call had been silently running KMeans. The test named `test_pillar3_runs_real_leiden_sweep` passed the whole time without once running Leiden. The lesson went straight into the verifier: install the real stack and assert `sc.tl.leiden` actually partitions a graph before believing any passing test.
@@ -125,13 +140,13 @@ Redline was built by a fleet of Claude Code agents with the guardrails wired in.
 
 Redline is dataset-agnostic, but it is built and validated against one reference set: the Marson/Pritchard genome-scale CD4+ T-cell Perturb-seq data (Zhu, Dann et al. 2025), Gladstone's flagship single-cell resource and the dataset this hackathon highlighted. It sits on an open S3 bucket (`s3://genome-scale-tcell-perturb-seq/marson2025_data/`, no credentials), MIT licensed, with raw counts so the re-runs are real. Its structure (4 donors, 3 conditions) is a native fit for the pseudoreplication and confounding checks.
 
-The full set is 1.7 TB (individual matrices 15–148 GiB), so the complete recompute across the checks runs on a machine with the data, not in the hosted demo. The two small published summary tables (`sample_metadata`, `DE_stats`, MIT) are committed in `services/rigor/data/real/`, and `services/rigor/data/build_real_marson.py` derives real numbers from them with no matrix: the real experimental design and the real batch confound (`culture_condition` × sequencing run, Cramér's V = 0.50: every 48-hour sample ran in batch R2). The app surfaces those on its Environment page. The matrix-dependent checks (the naive cell-level p, double-dipping AUC, clustering fragility) run through the Python engine (`REDLINE_COMPUTE_TARGET=local`, `redline.remote_adapter`).
+The full set is 1.7 TB (individual matrices 15 to 148 GiB), so the complete recompute across the checks runs on a machine with the data, not in the hosted demo. The two small published summary tables (`sample_metadata`, `DE_stats`, MIT) are committed in `services/rigor/data/real/`, and `services/rigor/data/build_real_marson.py` derives real numbers from them with no matrix: the real experimental design and the real batch confound (`culture_condition` × sequencing run, Cramér's V = 0.50: every 48-hour sample ran in batch R2). The app surfaces those on its Environment page. The matrix-dependent checks (the naive cell-level p, double-dipping AUC, clustering fragility) run through the Python engine (`REDLINE_COMPUTE_TARGET=local`, `redline.remote_adapter`).
 
 One hard rule governs every demo. The authors did their analysis rigorously: they provide pseudobulk matrices and a dedicated DE stage, and the computational lead authored Milo. There is no error in their published work to catch, and Redline never implies otherwise. Redline audits a naive foil instead, the standard cluster-then-annotate-then-DE workflow a less-experienced scientist would run on the same data. Their rigor is the standard Redline helps others reach. Pointed at a clean analysis, Redline reports clean.
 
 ## Tech stack
 
-TypeScript, Node 22, pnpm, and turbo, with Zod contracts binding every surface. React 19 and Next.js for the workbench. Python with scanpy, decoupler, and PyDESeq2 for the real statistics: pseudobulk differential expression, count-split reclustering, Leiden resolution sweeps, and design-matrix rank checks. Claude writes the reasoning layer (the failure-mode name, the citation, the defensible rewrite) over the first-party Claude API, or AWS Bedrock for the hosted demo. MCP for the engine surface, packaged as a Claude Skill for Claude Science. GCP Cloud Run for the heavy jobs, Vercel for the web app.
+TypeScript 6 · Node 22 · pnpm + turbo · Zod 3 · React 19.2 · Next.js 16.2 · Python 3.11 (scanpy · decoupler · PyDESeq2 · numpy · scikit-learn) · Claude API + AWS Bedrock · Model Context Protocol · GCP Cloud Run · Vercel · Vitest 4
 
 ## Getting started
 
@@ -144,7 +159,7 @@ cd redline
 pnpm install
 pnpm build        # builds the four packages, then the Next.js workbench
 pnpm typecheck
-pnpm test         # engine (42) + reasoning (11) + guided tour (32)
+pnpm test         # 345 tests: engine 119 · contracts 92 · reasoning 66 · web 59 · critic 9
 ```
 
 ### Take the tour
@@ -162,10 +177,10 @@ Append `?tour=1` to reopen it, or `?tour=0` to keep it shut. See `docs/guided-to
 Copy `.env.example` to `.env.local` and set only what you need. Nothing is hardcoded.
 
 ```bash
-# Reasoning — Claude. Set a key and Claude writes the findings; unset = curated fallback.
+# Reasoning, by Claude. Set a key and Claude writes the findings; unset = curated fallback.
 ANTHROPIC_API_KEY=sk-ant-...                # first-party Claude API (the path you run)
 # REDLINE_ANTHROPIC_MODEL=claude-opus-4-8   # optional; defaults to Claude Opus 4.8
-# The hosted demo pins AWS Bedrock instead (REDLINE_REASONING_BACKEND=bedrock) — see .env.example.
+# The hosted demo pins AWS Bedrock instead (REDLINE_REASONING_BACKEND=bedrock), see .env.example.
 
 # Where the heavy statistics run: fixture (default) | local | cloudrun | endpoint
 REDLINE_COMPUTE_TARGET=fixture
@@ -174,6 +189,27 @@ REDLINE_COMPUTE_TARGET=fixture
 REDLINE_S3_BUCKET=genome-scale-tcell-perturb-seq
 REDLINE_S3_PREFIX=marson2025_data/
 ```
+
+### Wire up the MCP server
+
+The rigor engine is a Python package with a console script, so Claude can run the eight checks
+against an `.h5ad` on your own machine. Install the `[stats]` extra, which pins the real
+statistical stack (scanpy, leidenalg, igraph, decoupler, PyDESeq2). Without `leidenalg` the
+clustering checks fall back to KMeans, and a Leiden-to-KMeans downgrade changes what a fragility
+flag means, so the engine returns the algorithm it actually ran (`KMeans fallback (...)`) instead
+of passing the result off as Leiden.
+
+```bash
+cd services/rigor
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[stats,mcp]"
+
+claude mcp add redline -- "$PWD/.venv/bin/redline-mcp"
+```
+
+That exposes 12 tools: `redline_inspect` and `redline_resolve_fields` for intake and design,
+one tool per check (`redline_check_pseudoreplication` through `redline_check_test_assumptions`),
+`redline_corrected_code` for the runnable fix, and `redline_audit` for a one-call full pass.
 
 ## Status
 
@@ -188,5 +224,8 @@ MIT. See [LICENSE](./LICENSE).
 ---
 
 <p align="center">
-  Built with Claude: Life Sciences (Anthropic × Gladstone Institutes) · Built by Pablo Manjarres
+  <a href="https://pablomanjarres.com/oss/redline">Landing</a> ·
+  <a href="https://pablomanjarres.com/portfolio/projects/redline">Portfolio write-up</a> ·
+  Built with Claude: Life Sciences (Anthropic × Gladstone Institutes) ·
+  Built by Pablo Manjarres
 </p>
